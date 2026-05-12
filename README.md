@@ -2,6 +2,9 @@
 
 A simple full-stack notes app — Express REST API backend with a React + Vite frontend.
 
+## Design
+[Figma design](https://www.figma.com/design/6tgxbVBCI2aQEKWJ6ljoyo/NoteDeck?node-id=2028-172&t=TxnQ93y2De1SI7VC-1)
+
 ## Stack
 
 | Layer | Technology |
