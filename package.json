@@ -1,0 +1,14 @@
+{
+	"name": "notedeck",
+	"private": true,
+	"workspaces": ["backend", "frontend"],
+	"scripts": {
+		"dev": "concurrently -n be,fe,sb -c blue,green,magenta \"yarn workspace notedeck-backend dev\" \"yarn workspace notedeck-frontend dev\" \"yarn workspace notedeck-frontend storybook\"",
+		"build": "yarn workspace notedeck-backend build && yarn workspace notedeck-frontend build",
+		"lint": "biome check ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"concurrently": "^9.2.1"
+	}
+}
