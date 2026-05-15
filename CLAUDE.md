@@ -25,16 +25,22 @@ Per-workspace (if needed):
 - `yarn workspace notedeck-frontend dev` — frontend only (Vite)
 - `yarn workspace notedeck-frontend build` — frontend only (Vite build)
 - `yarn workspace notedeck-frontend storybook` — Storybook only
-- `yarn workspace notedeck-frontend lint` — ESLint
+- `yarn workspace notedeck-frontend lint` — ESLint (project-wide lint/format is Biome — see below)
 
 There is no test runner configured yet on either side.
+
+Yarn 4 (via Corepack); `.yarnrc.yml` pins `nodeLinker: node-modules` so Vite/Storybook/Biome resolve normally (not PnP).
 
 ## Architecture
 
 - **Backend** (`backend/src/index.ts`) wires up `cors`, `express.json()`, and mounts the notes router at `/api/notes`. Notes are stored in-memory in `backend/src/routes/notes.ts` (no persistence layer); restarting the server clears them. CRUD endpoints: `GET /api/notes`, `GET /api/notes/:id`, `POST /api/notes`, `PUT /api/notes/:id`, `DELETE /api/notes/:id`.
-- **Frontend** (`frontend/src/App.jsx`) is a single-page client that fetches the notes list and supports create/delete. The API base URL is read from `VITE_API_URL` and falls back to `http://localhost:3000/api`.
+- **Frontend** is a feature-organized React app (react-router). Routes: `/` (notes UI), `/login`, `/register` (stubs). Entry `frontend/src/main.jsx` → `routes/router.jsx`. The notes feature currently runs on **dummy data** — see `frontend/ARCHITECTURE.md` for the full `src/` layout and conventions.
+- **Data layer / backend swap point**: all data access goes through `frontend/src/services/notesService.js`, an API-shaped facade. It currently delegates to `localStorageRepo.js` (localStorage, seeded from `data/seed.js`). Connecting the real backend = rewriting only `notesService.js`; no component changes. Entities: `Folder {id,name,color,order,collapsed}`, `Page {id,folderId,title,content,order}`.
+- **Notes UI state**: `features/notes/NotesContext.jsx` (React Context) holds folders/pages/view/selection and exposes action callbacks; `useNotes()` consumes it.
+- **Drag-and-drop**: `@dnd-kit` — a single `DndContext` in `FolderList` reorders folders and reorders/moves pages within and across folders; drag logic lives in `NotesContext` (`handleDndOver`/`handleDndEnd`).
 - **Dev proxy**: `frontend/vite.config.js` proxies `/api` → `http://localhost:3000`, so the frontend can call `/api/...` directly when both servers run locally.
-- **Tailwind**: v4 via `@tailwindcss/vite` plugin — no `tailwind.config.js`; configured via `@theme {}` in CSS if needed. Imported with `@import "tailwindcss"` in `frontend/src/index.css`.
+- **Tailwind**: v4 via `@tailwindcss/vite` plugin — no `tailwind.config.js`. Design tokens (colors, fonts) live in an `@theme {}` block in `frontend/src/styles/index.css`. Per-folder colors are applied via inline `style` (dynamic) using `folderHex()` from `lib/constants.js`.
+- **Icons**: SVGs in `frontend/src/assets/icons/` (fill `currentColor`); render via the `components/Icon.jsx` wrapper.
 - **Storybook**: `@storybook/react-vite` at port 6006. Config in `frontend/.storybook/`. Component stories live alongside components as `*.stories.jsx`.
 - **Config**: backend reads `PORT` from `.env` (see `backend/.env.example`).
 
