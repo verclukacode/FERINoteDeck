@@ -97,6 +97,11 @@ export function NotesProvider({ children }) {
 		setPages((prev) => prev.map((p) => (p.id === id ? { ...p, title } : p)));
 	}, []);
 
+	const updatePageContent = useCallback(async (id, content) => {
+		await service.updatePage(id, { content });
+		setPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
+	}, []);
+
 	const removePage = useCallback(async (id) => {
 		await service.deletePage(id);
 		setPages((prev) => prev.filter((p) => p.id !== id));
@@ -188,6 +193,7 @@ export function NotesProvider({ children }) {
 			toggleCollapsed,
 			addPage,
 			renamePage,
+			updatePageContent,
 			removePage,
 			selectPage,
 			handleDndOver,
@@ -205,6 +211,7 @@ export function NotesProvider({ children }) {
 			toggleCollapsed,
 			addPage,
 			renamePage,
+			updatePageContent,
 			removePage,
 			selectPage,
 			handleDndOver,

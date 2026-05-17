@@ -22,6 +22,7 @@ features/notes/       everything specific to the notes feature
   FolderPreview / PagePreview   static rows for the drag overlay/placeholder
   AddFolderButton / FolderModal
   NotePanel / FlashcardsPlaceholder
+  editor/             block-based note editor (see "Note editor" below)
 components/            shared, feature-agnostic UI
                        Icon, Modal, Pill, ContextMenu, ConfirmDialog, DuoButton
 services/
@@ -47,7 +48,8 @@ or hook changes are needed because the signatures stay the same.
 
 Entities:
 - `Folder { id, name, color, order, collapsed }` — `color` is a key (`"red"`…`"purple"`).
-- `Page { id, folderId, title, content, order }` — `content` is markdown (renderer not built yet).
+- `Page { id, folderId, title, content, order }` — `content` is the note body as one
+  markdown string, edited by the block editor (see "Note editor").
 
 Seed data is written to localStorage on first load only; later reorders/deletes/creates persist.
 
@@ -56,9 +58,25 @@ Seed data is written to localStorage on first load only; later reorders/deletes/
 `features/notes/NotesContext.jsx` is a React Context provider holding `folders`, `pages`,
 `view`, `selectedPageId`, `loading`. It loads data via the service on mount and exposes action
 callbacks (`addFolder`, `editFolder`, `removeFolder`, `toggleCollapsed`, `addPage`,
-`removePage`, `selectPage`, `setView`, `handleDndOver`, `handleDndEnd`). Consume it with
-`useNotes()`. A future flashcards feature should get its own context under
-`features/flashcards/`.
+`renamePage`, `updatePageContent`, `removePage`, `selectPage`, `setView`, `handleDndOver`,
+`handleDndEnd`). Consume it with `useNotes()`. A future flashcards feature should get its own
+context under `features/flashcards/`.
+
+## Note editor
+
+`features/notes/editor/` is a block-based editor mounted in `NotePanel` (keyed by page id so
+it remounts per page). It edits `Page.content`, which is **one markdown string** — there is no
+per-block storage.
+
+- 8 block types: `h1`, `h2`, `text`, `bullet`, `numbered`, `task`, `image`, `separator`.
+- `markdown.js` `parse()`/`serialize()` convert between the string and the block array. The
+  string is wrapped in a `<<<NoteDeckMD>>>` sentinel; plain text lines that look like a marker
+  are backslash-escaped for a clean round-trip.
+- `BlockEditor.jsx` owns the block array + all cross-block keyboard logic and a debounced
+  (~500 ms) save via `updatePageContent`; `EditorBlock.jsx` is one `contentEditable` block with
+  auto-format, inline bold (`**…**`) and auto-linked URLs (`inlineFormat.js` helpers).
+- Images are uploaded as base64 data URLs embedded in the markdown (no image hosting).
+- Full UX and storage details: `docs/editor.md`.
 
 ## Drag-and-drop
 
@@ -103,4 +121,4 @@ SVGs live in `assets/icons/` with `fill="currentColor"` so they recolor via CSS 
 
 - All files `.jsx`. Minimal comments — only where intent is non-obvious.
 - Lint/format: Biome (repo root `biome.json`) — tabs, double quotes, import sorting.
-- Not built yet: markdown renderer/editor, flashcards logic, auth logic.
+- Not built yet: flashcards logic, auth logic, real backend.

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { useNotes } from "./NotesContext.jsx";
+import BlockEditor from "./editor/BlockEditor.jsx";
 
 // Editable page title — Enter (or blur) commits, empty input reverts.
 function TitleField({ page, onRename }) {
@@ -26,7 +27,7 @@ function TitleField({ page, onRename }) {
 }
 
 export default function NotePanel() {
-	const { selectedPage, renamePage } = useNotes();
+	const { selectedPage, renamePage, updatePageContent } = useNotes();
 
 	if (!selectedPage) {
 		return (
@@ -60,7 +61,13 @@ export default function NotePanel() {
 					</button>
 				</div>
 			</div>
-			<div className="flex-1 overflow-y-auto px-8 py-6" />
+			<div className="flex-1 overflow-y-auto px-8 py-6">
+				<BlockEditor
+					key={selectedPage.id}
+					page={selectedPage}
+					onChange={updatePageContent}
+				/>
+			</div>
 		</div>
 	);
 }
