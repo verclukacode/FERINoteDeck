@@ -6,7 +6,7 @@ import ViewToggle from "./ViewToggle.jsx";
 export default function SidebarHeader() {
 	return (
 		<div className="flex flex-col">
-			<div className="flex items-center gap-3 border-b-2 border-border-soft px-5 py-4">
+			<div className="flex h-[88px] items-center gap-3 border-b-2 border-border-soft px-5">
 				<img
 					src={logo}
 					alt="NoteDeck"

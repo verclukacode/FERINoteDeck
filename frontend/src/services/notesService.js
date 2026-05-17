@@ -76,6 +76,13 @@ export async function createPage({ folderId, title }) {
 	return page;
 }
 
+export async function updatePage(id, patch) {
+	const pages = await repo.getPages();
+	const next = pages.map((p) => (p.id === id ? { ...p, ...patch } : p));
+	await repo.savePages(next);
+	return next.find((p) => p.id === id);
+}
+
 export async function deletePage(id) {
 	const pages = await repo.getPages();
 	await repo.savePages(pages.filter((p) => p.id !== id));

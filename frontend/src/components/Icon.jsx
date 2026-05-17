@@ -3,6 +3,7 @@ import chevron from "../assets/icons/chevron.svg?raw";
 import document from "../assets/icons/document.svg?raw";
 import flashcards from "../assets/icons/flashcards.svg?raw";
 import folder from "../assets/icons/folder.svg?raw";
+import paperplane from "../assets/icons/paperplane.svg?raw";
 import party from "../assets/icons/party.svg?raw";
 import plus from "../assets/icons/plus.svg?raw";
 import search from "../assets/icons/search.svg?raw";
@@ -17,6 +18,7 @@ const ICONS = {
 	document,
 	flashcards,
 	folder,
+	paperplane,
 	party,
 	plus,
 	search,
