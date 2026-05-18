@@ -29,6 +29,7 @@ export function NotesProvider({ children }) {
 	const [view, setView] = useState(VIEW.NOTES);
 	const [selectedPageId, setSelectedPageId] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [accountOpen, setAccountOpen] = useState(false);
 
 	const pagesRef = useRef(pages);
 	pagesRef.current = pages;
@@ -186,6 +187,8 @@ export function NotesProvider({ children }) {
 			selectedPageId,
 			selectedPage: pages.find((p) => p.id === selectedPageId) ?? null,
 			loading,
+			accountOpen,
+			setAccountOpen,
 			setView,
 			addFolder,
 			editFolder,
@@ -205,6 +208,8 @@ export function NotesProvider({ children }) {
 			view,
 			selectedPageId,
 			loading,
+			accountOpen,
+			setAccountOpen,
 			addFolder,
 			editFolder,
 			removeFolder,
