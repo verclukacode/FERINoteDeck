@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import authRouter from "./routes/auth";
 import notesRouter from "./routes/notes";
 
 const app = express();
@@ -29,6 +30,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api/auth", authRouter);
 app.use("/api/notes", notesRouter);
 
 app.listen(PORT, () => {
