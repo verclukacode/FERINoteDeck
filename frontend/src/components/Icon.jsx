@@ -5,6 +5,7 @@ import divider from "../assets/icons/divider.svg?raw";
 import document from "../assets/icons/document.svg?raw";
 import flashcards from "../assets/icons/flashcards.svg?raw";
 import folder from "../assets/icons/folder.svg?raw";
+import grip from "../assets/icons/grip.svg?raw";
 import heading1 from "../assets/icons/heading1.svg?raw";
 import heading2 from "../assets/icons/heading2.svg?raw";
 import image from "../assets/icons/image.svg?raw";
@@ -28,6 +29,7 @@ const ICONS = {
 	document,
 	flashcards,
 	folder,
+	grip,
 	heading1,
 	heading2,
 	image,

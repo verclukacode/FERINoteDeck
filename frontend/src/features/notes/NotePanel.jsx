@@ -39,7 +39,7 @@ export default function NotePanel() {
 
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="flex h-[88px] items-center gap-4 border-b-2 border-border-soft px-8">
+			<div className="flex h-[88px] items-center gap-4 border-b-2 border-border-soft px-5">
 				<TitleField
 					key={selectedPage.id}
 					page={selectedPage}
@@ -61,7 +61,7 @@ export default function NotePanel() {
 					</button>
 				</div>
 			</div>
-			<div className="flex-1 overflow-y-auto px-8 py-6">
+			<div className="flex-1 overflow-y-auto py-6">
 				<BlockEditor
 					key={selectedPage.id}
 					page={selectedPage}

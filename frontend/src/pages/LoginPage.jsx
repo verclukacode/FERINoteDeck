@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../features/auth/AuthContext.jsx";
 import AppLogo from "../components/AppLogo.jsx";
+import { useAuth } from "../features/auth/AuthContext.jsx";
 
 export default function LoginPage() {
 	const { login } = useAuth();
@@ -36,13 +36,17 @@ export default function LoginPage() {
 					<AppLogo />
 					<div>
 						<p className="text-sm text-body leading-tight">Welcome to</p>
-						<p className="text-2xl font-bold text-title leading-tight">NoteDeck</p>
+						<p className="text-2xl font-bold text-title leading-tight">
+							NoteDeck
+						</p>
 					</div>
 				</div>
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-title">Email adress</label>
+						<label className="text-sm font-medium text-title">
+							Email adress
+						</label>
 						<input
 							type="email"
 							placeholder="example@email.com"
@@ -63,7 +67,9 @@ export default function LoginPage() {
 						/>
 					</div>
 
-					{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+					{error && (
+						<p className="text-sm text-folder-red text-center">{error}</p>
+					)}
 
 					<div className="mt-4 flex flex-col items-center gap-3">
 						<button
@@ -73,7 +79,10 @@ export default function LoginPage() {
 						>
 							{loading ? "Logging in…" : "Log in"}
 						</button>
-						<Link to="/register" className="text-sm font-medium text-folder-blue">
+						<Link
+							to="/register"
+							className="text-sm font-medium text-folder-blue"
+						>
 							Forgot password
 						</Link>
 					</div>

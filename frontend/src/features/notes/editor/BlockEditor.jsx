@@ -1,7 +1,21 @@
+import {
+	DndContext,
+	DragOverlay,
+	PointerSensor,
+	closestCenter,
+	useSensor,
+	useSensors,
+} from "@dnd-kit/core";
+import {
+	SortableContext,
+	arrayMove,
+	verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { useCallback, useEffect, useRef, useState } from "react";
+import BlockPreview from "./BlockPreview.jsx";
 import EditorBlock from "./EditorBlock.jsx";
 import SlashMenu from "./SlashMenu.jsx";
-import { LIST_TYPES, createBlock } from "./blockModel.js";
+import { LIST_TYPES, createBlock, ensureTrailingBlock } from "./blockModel.js";
 import { restoreCursor } from "./inlineFormat.js";
 import { parse, serialize } from "./markdown.js";
 
@@ -16,9 +30,12 @@ const TEXT_BEARING = new Set([
 const isList = (type) => LIST_TYPES.includes(type);
 
 export default function BlockEditor({ page, onChange }) {
-	const [blocks, setBlocks] = useState(() => parse(page.content));
+	const [blocks, setBlocks] = useState(() =>
+		ensureTrailingBlock(parse(page.content)),
+	);
 	const [focusedId, setFocusedId] = useState(null);
-	const [slash, setSlash] = useState(null);
+	const [menu, setMenu] = useState(null);
+	const [activeId, setActiveId] = useState(null);
 	const blockRefs = useRef({});
 	const blocksRef = useRef(blocks);
 	const firstRun = useRef(true);
@@ -63,8 +80,9 @@ export default function BlockEditor({ page, onChange }) {
 	}, [page.id, onChange]);
 
 	const apply = (next) => {
-		blocksRef.current = next;
-		setBlocks(next);
+		const normalized = ensureTrailingBlock(next);
+		blocksRef.current = normalized;
+		setBlocks(normalized);
 	};
 
 	const updateBlock = (id, patch) => {
@@ -179,18 +197,41 @@ export default function BlockEditor({ page, onChange }) {
 		focusBlock(id);
 	};
 
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+	);
+
+	const handleBlockDragEnd = ({ active, over }) => {
+		setActiveId(null);
+		if (!over || active.id === over.id) return;
+		const prev = blocksRef.current;
+		const from = prev.findIndex((b) => b.id === active.id);
+		const to = prev.findIndex((b) => b.id === over.id);
+		if (from < 0 || to < 0) return;
+		apply(arrayMove(prev, from, to));
+	};
+
 	const handleSlash = (id) => {
 		const el = blockRefs.current[id];
 		const rect = el ? el.getBoundingClientRect() : { left: 120, bottom: 120 };
-		setSlash({
+		setMenu({
 			blockId: id,
 			position: { left: rect.left, top: rect.bottom + 6 },
+			canDelete: false,
 		});
 	};
 
-	const handleSlashSelect = (type) => {
-		const id = slash?.blockId;
-		setSlash(null);
+	const handleOpenMenu = (id, rect) => {
+		setMenu({
+			blockId: id,
+			position: { left: rect.left, top: rect.bottom + 6 },
+			canDelete: true,
+		});
+	};
+
+	const handleMenuSelect = (type) => {
+		const id = menu?.blockId;
+		setMenu(null);
 		const prev = blocksRef.current;
 		const idx = prev.findIndex((b) => b.id === id);
 		if (idx < 0) return;
@@ -206,7 +247,7 @@ export default function BlockEditor({ page, onChange }) {
 		if (type === "image") {
 			apply(
 				prev.map((b, i) =>
-					i === idx ? { ...b, type: "image", content: "" } : b,
+					i === idx ? { ...b, type: "image", content: "", imageUrl: "" } : b,
 				),
 			);
 			return;
@@ -215,36 +256,81 @@ export default function BlockEditor({ page, onChange }) {
 		focusBlock(id, 0);
 	};
 
+	const handleMenuDelete = () => {
+		const id = menu?.blockId;
+		setMenu(null);
+		const prev = blocksRef.current;
+		const idx = prev.findIndex((b) => b.id === id);
+		if (idx < 0) return;
+		let next = prev.filter((_, i) => i !== idx);
+		if (next.length === 0) next = [createBlock("text")];
+		apply(next);
+		const target = prev[idx - 1] || next[0];
+		if (target) focusBlock(target.id, (target.content || "").length);
+	};
+
 	let numberRun = 0;
+	const numberFor = (id) => {
+		let run = 0;
+		for (const b of blocks) {
+			run = b.type === "numbered" ? run + 1 : 0;
+			if (b.id === id) return run;
+		}
+		return 0;
+	};
+	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
 
 	return (
-		<div className="mx-auto max-w-[720px] pb-24">
-			{blocks.map((block) => {
-				numberRun = block.type === "numbered" ? numberRun + 1 : 0;
-				return (
-					<EditorBlock
-						key={block.id}
-						block={block}
-						numberIndex={numberRun}
-						showPlaceholder={block.id === focusedId || blocks.length === 1}
-						registerRef={registerRef}
-						onUpdate={(patch) => updateBlock(block.id, patch)}
-						onEnter={(info) => handleEnter(block.id, info)}
-						onBackspaceAtStart={() => handleBackspaceAtStart(block.id)}
-						onSlash={() => handleSlash(block.id)}
-						onMove={(dir) => handleMove(block.id, dir)}
-						onAutoFormat={(type, content) =>
-							handleAutoFormat(block.id, type, content)
-						}
-						onFocusChange={setFocusedId}
-					/>
-				);
-			})}
-			{slash && (
+		<div className="w-full px-5 pb-24">
+			<DndContext
+				sensors={sensors}
+				collisionDetection={closestCenter}
+				onDragStart={({ active }) => setActiveId(active.id)}
+				onDragEnd={handleBlockDragEnd}
+				onDragCancel={() => setActiveId(null)}
+			>
+				<SortableContext
+					items={blocks.map((b) => b.id)}
+					strategy={verticalListSortingStrategy}
+				>
+					{blocks.map((block) => {
+						numberRun = block.type === "numbered" ? numberRun + 1 : 0;
+						return (
+							<EditorBlock
+								key={block.id}
+								block={block}
+								numberIndex={numberRun}
+								showPlaceholder={block.id === focusedId || blocks.length === 1}
+								registerRef={registerRef}
+								onUpdate={(patch) => updateBlock(block.id, patch)}
+								onEnter={(info) => handleEnter(block.id, info)}
+								onBackspaceAtStart={() => handleBackspaceAtStart(block.id)}
+								onSlash={() => handleSlash(block.id)}
+								onMove={(dir) => handleMove(block.id, dir)}
+								onAutoFormat={(type, content) =>
+									handleAutoFormat(block.id, type, content)
+								}
+								onFocusChange={setFocusedId}
+								onOpenMenu={(rect) => handleOpenMenu(block.id, rect)}
+							/>
+						);
+					})}
+				</SortableContext>
+				<DragOverlay>
+					{activeBlock && (
+						<BlockPreview
+							block={activeBlock}
+							numberIndex={numberFor(activeBlock.id)}
+						/>
+					)}
+				</DragOverlay>
+			</DndContext>
+			{menu && (
 				<SlashMenu
-					position={slash.position}
-					onSelect={handleSlashSelect}
-					onClose={() => setSlash(null)}
+					position={menu.position}
+					onSelect={handleMenuSelect}
+					onClose={() => setMenu(null)}
+					onDelete={menu.canDelete ? handleMenuDelete : undefined}
 				/>
 			)}
 		</div>

@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useMemo,
+	useState,
+} from "react";
 import * as authService from "../../services/authService.js";
 
 const AuthContext = createContext(null);
@@ -20,15 +26,21 @@ export function AuthProvider({ children }) {
 		setUser(data.user);
 	}, []);
 
-	const login = useCallback(async (email, password) => {
-		const data = await authService.login(email, password);
-		persist(data);
-	}, [persist]);
+	const login = useCallback(
+		async (email, password) => {
+			const data = await authService.login(email, password);
+			persist(data);
+		},
+		[persist],
+	);
 
-	const register = useCallback(async (email, password) => {
-		const data = await authService.register(email, password);
-		persist(data);
-	}, [persist]);
+	const register = useCallback(
+		async (email, password) => {
+			const data = await authService.register(email, password);
+			persist(data);
+		},
+		[persist],
+	);
 
 	const logout = useCallback(() => {
 		localStorage.removeItem(TOKEN_KEY);

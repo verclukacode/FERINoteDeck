@@ -69,7 +69,7 @@ export async function createPage({ folderId, title }) {
 		id: createId(),
 		folderId,
 		title: name,
-		content: `# ${name}\n`,
+		content: "Nothing here yet, tap to edit.",
 		order: siblings.length,
 	};
 	await repo.savePages([...pages, page]);

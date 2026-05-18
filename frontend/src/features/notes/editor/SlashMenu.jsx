@@ -12,7 +12,7 @@ const ITEMS = [
 	{ type: "separator", label: "Separator", icon: "divider" },
 ];
 
-export default function SlashMenu({ position, onSelect, onClose }) {
+export default function SlashMenu({ position, onSelect, onClose, onDelete }) {
 	const [query, setQuery] = useState("");
 	const [active, setActive] = useState(0);
 
@@ -79,6 +79,19 @@ export default function SlashMenu({ position, onSelect, onClose }) {
 				))}
 				{filtered.length === 0 && (
 					<p className="px-3 py-2 text-sm text-body">No blocks</p>
+				)}
+				{onDelete && (
+					<>
+						<div className="my-1 border-t-2 border-border-soft" />
+						<button
+							type="button"
+							onClick={onDelete}
+							className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-medium text-folder-red hover:bg-bg-secondary"
+						>
+							<Icon name="trash" size={18} />
+							Delete block
+						</button>
+					</>
 				)}
 			</div>
 		</>

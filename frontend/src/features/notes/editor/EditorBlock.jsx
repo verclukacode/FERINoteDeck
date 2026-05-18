@@ -1,4 +1,7 @@
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
+import Icon from "../../../components/Icon.jsx";
 import SelectionToolbar from "./SelectionToolbar.jsx";
 import { SQUIGGLE } from "./dividerShape.js";
 import {
@@ -65,10 +68,21 @@ export default function EditorBlock({
 	onMove,
 	onAutoFormat,
 	onFocusChange,
+	onOpenMenu,
 }) {
 	const ref = useRef(null);
+	const gripDownPos = useRef(null);
 	const [toolbar, setToolbar] = useState(null);
 	const isInline = INLINE.has(block.type);
+
+	const {
+		attributes,
+		listeners,
+		setNodeRef: setSortableRef,
+		transform,
+		transition,
+		isDragging,
+	} = useSortable({ id: block.id });
 
 	// Callback ref keeps blockRefs in sync even when the rendered element
 	// changes (e.g. image placeholder -> caption).
@@ -206,85 +220,6 @@ export default function EditorBlock({
 		reader.readAsDataURL(file);
 	};
 
-	if (block.type === "separator") {
-		return (
-			<button
-				type="button"
-				ref={setNodeRef}
-				onFocus={() => onFocusChange(block.id)}
-				onClick={() => onEnter({ pos: 1, len: 0 })}
-				onKeyDown={(e) => {
-					if (e.key === "Backspace") {
-						e.preventDefault();
-						onBackspaceAtStart();
-					}
-				}}
-				className="my-2 block w-full cursor-pointer rounded-lg outline-none focus:bg-bg-secondary"
-			>
-				<svg
-					viewBox="0 0 2000 22"
-					preserveAspectRatio="xMinYMid slice"
-					className="h-5 w-full"
-					aria-hidden="true"
-				>
-					<path
-						d={SQUIGGLE}
-						fill="none"
-						stroke="#cdcdcd"
-						strokeWidth="3"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					/>
-				</svg>
-			</button>
-		);
-	}
-
-	if (block.type === "image") {
-		if (!block.imageUrl) {
-			return (
-				<label className="my-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-body/40 py-8 text-body">
-					Upload image
-					<input
-						type="file"
-						accept="image/*"
-						className="hidden"
-						onChange={handleImageFile}
-					/>
-				</label>
-			);
-		}
-		return (
-			<div className="group my-2">
-				<div className="relative inline-block">
-					<img
-						src={block.imageUrl}
-						alt={block.content}
-						className="max-h-[420px] rounded-xl"
-					/>
-					<button
-						type="button"
-						onClick={() => onUpdate({ imageUrl: "" })}
-						className="absolute right-2 top-2 rounded-lg bg-bg/90 px-2 py-1 text-sm font-medium text-folder-red opacity-0 group-hover:opacity-100"
-					>
-						Remove
-					</button>
-				</div>
-				<div
-					ref={setNodeRef}
-					contentEditable
-					suppressContentEditableWarning
-					data-placeholder="Caption..."
-					onFocus={() => onFocusChange(block.id)}
-					onBlur={() => onFocusChange(null)}
-					onInput={() => onUpdate({ content: ref.current.textContent })}
-					onKeyDown={handleKeyDown}
-					className="mt-1 text-sm text-body outline-none"
-				/>
-			</div>
-		);
-	}
-
 	const Tag = block.type === "h1" ? "h1" : block.type === "h2" ? "h2" : "div";
 	const editable = (
 		<Tag
@@ -309,28 +244,100 @@ export default function EditorBlock({
 		/>
 	);
 
-	if (block.type === "bullet") {
-		return (
+	let inner;
+	if (block.type === "separator") {
+		inner = (
+			<button
+				type="button"
+				ref={setNodeRef}
+				onFocus={() => onFocusChange(block.id)}
+				onClick={() => onEnter({ pos: 1, len: 0 })}
+				onKeyDown={(e) => {
+					if (e.key === "Backspace") {
+						e.preventDefault();
+						onBackspaceAtStart();
+					}
+				}}
+				className="my-2 block w-full cursor-pointer rounded-lg outline-none focus:bg-bg-secondary"
+			>
+				<svg
+					viewBox="0 0 2000 22"
+					preserveAspectRatio="xMinYMid slice"
+					className="h-5 w-full"
+					aria-hidden="true"
+				>
+					<path
+						d={SQUIGGLE}
+						fill="none"
+						stroke="#d7d7d7"
+						strokeWidth="1.8"
+						vectorEffect="non-scaling-stroke"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					/>
+				</svg>
+			</button>
+		);
+	} else if (block.type === "image" && !block.imageUrl) {
+		inner = (
+			<label className="my-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-body/40 py-8 text-body">
+				Upload image
+				<input
+					type="file"
+					accept="image/*"
+					className="hidden"
+					onChange={handleImageFile}
+				/>
+			</label>
+		);
+	} else if (block.type === "image") {
+		inner = (
+			<div className="group/img my-2">
+				<div className="relative inline-block">
+					<img
+						src={block.imageUrl}
+						alt={block.content}
+						className="max-h-[420px] rounded-xl"
+					/>
+					<button
+						type="button"
+						onClick={() => onUpdate({ imageUrl: "" })}
+						className="absolute right-2 top-2 rounded-lg bg-bg/90 px-2 py-1 text-sm font-medium text-folder-red opacity-0 group-hover/img:opacity-100"
+					>
+						Remove
+					</button>
+				</div>
+				<div
+					ref={setNodeRef}
+					contentEditable
+					suppressContentEditableWarning
+					data-placeholder="Caption..."
+					onFocus={() => onFocusChange(block.id)}
+					onBlur={() => onFocusChange(null)}
+					onInput={() => onUpdate({ content: ref.current.textContent })}
+					onKeyDown={handleKeyDown}
+					className="mt-1 text-sm text-body outline-none"
+				/>
+			</div>
+		);
+	} else if (block.type === "bullet") {
+		inner = (
 			<div className="flex gap-2 py-0.5">
 				<span className="select-none pt-1 text-body">•</span>
 				{editable}
 				<SelectionToolbar rect={toolbar} onBold={applyBold} />
 			</div>
 		);
-	}
-
-	if (block.type === "numbered") {
-		return (
+	} else if (block.type === "numbered") {
+		inner = (
 			<div className="flex gap-2 py-0.5">
 				<span className="select-none pt-0.5 text-body">{numberIndex}.</span>
 				{editable}
 				<SelectionToolbar rect={toolbar} onBold={applyBold} />
 			</div>
 		);
-	}
-
-	if (block.type === "task") {
-		return (
+	} else if (block.type === "task") {
+		inner = (
 			<div className="flex gap-2 py-0.5">
 				<input
 					type="checkbox"
@@ -342,12 +349,54 @@ export default function EditorBlock({
 				<SelectionToolbar rect={toolbar} onBold={applyBold} />
 			</div>
 		);
+	} else {
+		inner = (
+			<div className="py-0.5">
+				{editable}
+				<SelectionToolbar rect={toolbar} onBold={applyBold} />
+			</div>
+		);
 	}
 
 	return (
-		<div className="py-0.5">
-			{editable}
-			<SelectionToolbar rect={toolbar} onBold={applyBold} />
+		<div
+			ref={setSortableRef}
+			style={{
+				transform: isDragging ? undefined : CSS.Transform.toString(transform),
+				transition,
+				opacity: isDragging ? 0.4 : 1,
+			}}
+			className="group relative"
+		>
+			{/* Grip: tap (no movement) opens the menu, drag reorders the block.
+			    dnd-kit suppresses onClick on a drag handle, so a tap is detected
+			    from pointer up/down positions instead. */}
+			<button
+				type="button"
+				aria-label="Block options — click to transform, drag to move"
+				{...attributes}
+				onPointerDown={(e) => {
+					gripDownPos.current = { x: e.clientX, y: e.clientY };
+					listeners?.onPointerDown?.(e);
+				}}
+				onPointerUp={(e) => {
+					const down = gripDownPos.current;
+					gripDownPos.current = null;
+					if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4) {
+						onOpenMenu(e.currentTarget.getBoundingClientRect());
+					}
+				}}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onOpenMenu(e.currentTarget.getBoundingClientRect());
+					}
+				}}
+				className="absolute -left-5 top-1.5 flex h-5 w-5 cursor-grab items-center justify-center rounded-md text-body opacity-0 hover:bg-bg-secondary group-hover:opacity-100"
+			>
+				<Icon name="grip" size={14} />
+			</button>
+			{inner}
 		</div>
 	);
 }

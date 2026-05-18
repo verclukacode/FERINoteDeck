@@ -22,9 +22,7 @@ function NotesWorkspace() {
 					<NotePanel />
 				)}
 
-				{accountOpen && (
-					<AccountModal onClose={() => setAccountOpen(false)} />
-				)}
+				{accountOpen && <AccountModal onClose={() => setAccountOpen(false)} />}
 			</main>
 		</div>
 	);
