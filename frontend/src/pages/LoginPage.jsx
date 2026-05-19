@@ -17,6 +17,7 @@ function ForgotPasswordForm({ onBack }) {
 		// await fetch("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email: resetEmail }) });
 		setLoading(false);
 		setSubmitted(true);
+	}
 
 	return (
 		<form onSubmit={handleSubmit} className="flex flex-col gap-4">
