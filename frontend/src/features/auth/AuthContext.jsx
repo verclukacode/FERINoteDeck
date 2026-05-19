@@ -1,9 +1,12 @@
 import {
+	EmailAuthProvider,
 	createUserWithEmailAndPassword,
 	onAuthStateChanged,
+	reauthenticateWithCredential,
 	sendEmailVerification,
 	signInWithEmailAndPassword,
 	signOut,
+	verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { auth } from "../../lib/firebase.js";
@@ -34,6 +37,11 @@ export function AuthProvider({ children }) {
 			},
 			resendVerification: () => sendEmailVerification(auth.currentUser),
 			reloadUser: () => auth.currentUser?.reload(),
+			changeEmail: async (newEmail, password) => {
+				const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
+				await reauthenticateWithCredential(auth.currentUser, credential);
+				await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
+			},
 			logout: () => signOut(auth),
 		}),
 		[user, loading],

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DuoButton from "../../components/DuoButton.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { authErrorMessage } from "../auth/firebaseError.js";
 import userProfilePic from "../../assets/userProfilePic.svg";
 import pencilIcon from "../../assets/pencil.svg";
 import arrowIcon from "../../assets/arrow.svg";
@@ -21,16 +22,132 @@ function Row({ icon, label, onClick }) {
 	);
 }
 
+function ChangeEmailPanel({ onBack }) {
+	const { changeEmail, logout } = useAuth();
+	const navigate = useNavigate();
+	const [newEmail, setNewEmail] = useState("");
+	const [confirmEmail, setConfirmEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [success, setSuccess] = useState(false);
+
+	async function handleSubmit(e) {
+		e.preventDefault();
+		if (newEmail !== confirmEmail) {
+			setError("Emails do not match.");
+			return;
+		}
+		setError("");
+		setLoading(true);
+		try {
+			await changeEmail(newEmail, password);
+			setSuccess(true);
+		} catch (err) {
+			setError(authErrorMessage(err));
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	async function handleSignOutAfterChange() {
+		await logout();
+		navigate("/login", { replace: true });
+	}
+
+	if (success) {
+		return (
+			<div className="flex flex-col items-center gap-4 py-2 text-center">
+				<div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+						<polyline points="20 6 9 17 4 12" />
+					</svg>
+				</div>
+				<div>
+					<p className="font-bold text-title">Verification sent!</p>
+					<p className="mt-1 text-sm text-body">
+						Click the link in <span className="font-semibold text-title">{newEmail}</span>, then sign back in with your new email.
+					</p>
+				</div>
+				<DuoButton
+					type="button"
+					onClick={handleSignOutAfterChange}
+					className="h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf]"
+				>
+					Sign out
+				</DuoButton>
+			</div>
+		);
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className="flex flex-col gap-3">
+			<button type="button" onClick={onBack} className="mb-1 flex items-center gap-1 text-sm font-semibold text-folder-blue">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+				Back
+			</button>
+			<h3 className="text-lg font-bold text-title">Change email</h3>
+
+			<div className="flex flex-col gap-1">
+				<label className="text-sm font-medium text-title">New email</label>
+				<input
+					type="email"
+					value={newEmail}
+					onChange={(e) => setNewEmail(e.target.value)}
+					placeholder="new@email.com"
+					required
+					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+				/>
+			</div>
+
+			<div className="flex flex-col gap-1">
+				<label className="text-sm font-medium text-title">Confirm new email</label>
+				<input
+					type="email"
+					value={confirmEmail}
+					onChange={(e) => setConfirmEmail(e.target.value)}
+					placeholder="new@email.com"
+					required
+					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+				/>
+			</div>
+
+			<div className="flex flex-col gap-1">
+				<label className="text-sm font-medium text-title">Current password</label>
+				<input
+					type="password"
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
+					placeholder="Your current password"
+					required
+					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+				/>
+			</div>
+
+			{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+
+			<DuoButton
+				type="submit"
+				disabled={loading}
+				className="mt-2 h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
+			>
+				{loading ? "Sending…" : "Send verification link"}
+			</DuoButton>
+		</form>
+	);
+}
+
 export default function AccountModal({ onClose }) {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
 	const [copied, setCopied] = useState(false);
+	const [panel, setPanel] = useState(null);
 
 	useEffect(() => {
-		const onKey = (e) => e.key === "Escape" && onClose();
+		const onKey = (e) => e.key === "Escape" && (panel ? setPanel(null) : onClose());
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [onClose]);
+	}, [onClose, panel]);
 
 	function handleCopy() {
 		navigator.clipboard.writeText(user?.email ?? "");
@@ -61,68 +178,74 @@ export default function AccountModal({ onClose }) {
 					<Icon name="xmark" size={14} />
 				</button>
 
-				{/* Avatar */}
-				<div className="mb-4 flex flex-col items-center gap-2">
-					<div className="relative inline-block">
-						<img src={userProfilePic} width={80} height={80} alt="Profile picture" />
+				{panel === "email" ? (
+					<ChangeEmailPanel onBack={() => setPanel(null)} />
+				) : (
+					<>
+						{/* Avatar */}
+						<div className="mb-4 flex flex-col items-center gap-2">
+							<div className="relative inline-block">
+								<img src={userProfilePic} width={80} height={80} alt="Profile picture" />
+								<button
+									type="button"
+									aria-label="Edit profile picture"
+									className="absolute -bottom-1 -right-1"
+								>
+									<img src={pencilIcon} width={28} height={28} alt="" />
+								</button>
+							</div>
+							<div className="text-center">
+								<h2 className="text-xl font-bold text-title">My account</h2>
+								<p className="text-sm text-body">
+									Manage your account settings and preferences.
+								</p>
+							</div>
+						</div>
+
+						<div className="mb-3 h-px bg-border-soft" />
+
+						{/* Email display */}
+						<div className="mb-3 flex items-center justify-between rounded-2xl border border-border-soft px-4 py-3">
+							<div>
+								<p className="text-xs text-body">Email address</p>
+								<p className="font-semibold text-title">{user?.email ?? ""}</p>
+							</div>
+							<button
+								type="button"
+								onClick={handleCopy}
+								title="Copy email"
+								className="flex h-8 w-8 items-center justify-center rounded-xl bg-bg-secondary text-body hover:bg-border-soft"
+							>
+								{copied ? <CheckIcon /> : <CopyIcon />}
+							</button>
+						</div>
+
+						{/* Action rows */}
+						<div className="flex flex-col gap-2 mb-4">
+							<Row icon={<MailIcon />} label="Change email" onClick={() => setPanel("email")} />
+							<Row icon={<LockIcon />} label="Change password" />
+							<Row icon={<PersonIcon size={18} />} label="Change profile picture" />
+						</div>
+
+						{/* Sign out */}
+						<DuoButton
+							type="button"
+							onClick={handleSignOut}
+							className="mb-2 flex h-[45px] w-full items-center justify-center gap-2 bg-folder-red text-white shadow-[0_2.5px_0_#c45252]"
+						>
+							<SignOutIcon />
+							Sign out
+						</DuoButton>
+
 						<button
 							type="button"
-							aria-label="Edit profile picture"
-							className="absolute -bottom-1 -right-1"
+							onClick={onClose}
+							className="w-full py-2 text-sm text-body hover:text-title"
 						>
-							<img src={pencilIcon} width={28} height={28} alt="" />
+							Close
 						</button>
-					</div>
-					<div className="text-center">
-						<h2 className="text-xl font-bold text-title">My account</h2>
-						<p className="text-sm text-body">
-							Manage your account settings and preferences.
-						</p>
-					</div>
-				</div>
-
-				<div className="mb-3 h-px bg-border-soft" />
-
-				{/* Email display */}
-				<div className="mb-3 flex items-center justify-between rounded-2xl border border-border-soft px-4 py-3">
-					<div>
-						<p className="text-xs text-body">Email address</p>
-						<p className="font-semibold text-title">{user?.email ?? ""}</p>
-					</div>
-					<button
-						type="button"
-						onClick={handleCopy}
-						title="Copy email"
-						className="flex h-8 w-8 items-center justify-center rounded-xl bg-bg-secondary text-body hover:bg-border-soft"
-					>
-						{copied ? <CheckIcon /> : <CopyIcon />}
-					</button>
-				</div>
-
-				{/* Action rows */}
-				<div className="flex flex-col gap-2 mb-4">
-					<Row icon={<MailIcon />} label="Change email" />
-					<Row icon={<LockIcon />} label="Change password" />
-					<Row icon={<PersonIcon size={18} />} label="Change profile picture" />
-				</div>
-
-				{/* Sign out */}
-				<DuoButton
-					type="button"
-					onClick={handleSignOut}
-					className="mb-2 flex h-[45px] w-full items-center justify-center gap-2 bg-folder-red text-white shadow-[0_2.5px_0_#c45252]"
-				>
-					<SignOutIcon />
-					Sign out
-				</DuoButton>
-
-				<button
-					type="button"
-					onClick={onClose}
-					className="w-full py-2 text-sm text-body hover:text-title"
-				>
-					Close
-				</button>
+					</>
+				)}
 			</div>
 		</div>
 	);
