@@ -6,6 +6,7 @@ import {
 	sendEmailVerification,
 	signInWithEmailAndPassword,
 	signOut,
+	updatePassword,
 	verifyBeforeUpdateEmail,
 } from "firebase/auth";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
@@ -41,6 +42,11 @@ export function AuthProvider({ children }) {
 				const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
 				await reauthenticateWithCredential(auth.currentUser, credential);
 				await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
+			},
+			changePassword: async (currentPassword, newPassword) => {
+				const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+				await reauthenticateWithCredential(auth.currentUser, credential);
+				await updatePassword(auth.currentUser, newPassword);
 			},
 			logout: () => signOut(auth),
 		}),

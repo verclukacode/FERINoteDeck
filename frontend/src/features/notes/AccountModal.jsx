@@ -57,18 +57,11 @@ function ChangeEmailPanel({ onBack }) {
 
 	if (success) {
 		return (
-			<div className="flex flex-col items-center gap-4 py-2 text-center">
-				<div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-						<polyline points="20 6 9 17 4 12" />
-					</svg>
-				</div>
-				<div>
-					<p className="font-bold text-title">Verification sent!</p>
-					<p className="mt-1 text-sm text-body">
-						Click the link in <span className="font-semibold text-title">{newEmail}</span>, then sign back in with your new email.
-					</p>
-				</div>
+			<div className="flex flex-col gap-4">
+				<SuccessState
+					title="Verification sent!"
+					description={`Click the link in ${newEmail}, then sign back in with your new email.`}
+				/>
 				<DuoButton
 					type="button"
 					onClick={handleSignOutAfterChange}
@@ -82,10 +75,7 @@ function ChangeEmailPanel({ onBack }) {
 
 	return (
 		<form onSubmit={handleSubmit} className="flex flex-col gap-3">
-			<button type="button" onClick={onBack} className="mb-1 flex items-center gap-1 text-sm font-semibold text-folder-blue">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-				Back
-			</button>
+			<BackButton onClick={onBack} />
 			<h3 className="text-lg font-bold text-title">Change email</h3>
 
 			<div className="flex flex-col gap-1">
@@ -137,6 +127,130 @@ function ChangeEmailPanel({ onBack }) {
 	);
 }
 
+function BackButton({ onClick }) {
+	return (
+		<button type="button" onClick={onClick} className="mb-1 flex items-center gap-1 text-sm font-semibold text-folder-blue">
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+			Back
+		</button>
+	);
+}
+
+function SuccessState({ title, description }) {
+	return (
+		<div className="flex flex-col items-center gap-3 py-2 text-center">
+			<div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+				<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+					<polyline points="20 6 9 17 4 12" />
+				</svg>
+			</div>
+			<div>
+				<p className="font-bold text-title">{title}</p>
+				<p className="mt-1 text-sm text-body">{description}</p>
+			</div>
+		</div>
+	);
+}
+
+function ChangePasswordPanel({ onBack }) {
+	const { changePassword } = useAuth();
+	const [currentPassword, setCurrentPassword] = useState("");
+	const [newPassword, setNewPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [success, setSuccess] = useState(false);
+
+	async function handleSubmit(e) {
+		e.preventDefault();
+		if (newPassword !== confirmPassword) {
+			setError("Passwords do not match.");
+			return;
+		}
+		setError("");
+		setLoading(true);
+		try {
+			await changePassword(currentPassword, newPassword);
+			setSuccess(true);
+		} catch (err) {
+			setError(authErrorMessage(err));
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	if (success) {
+		return (
+			<div className="flex flex-col gap-4">
+				<SuccessState
+					title="Password changed!"
+					description="Your password has been updated. You can continue using the app."
+				/>
+				<DuoButton
+					type="button"
+					onClick={onBack}
+					className="h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf]"
+				>
+					Back to account
+				</DuoButton>
+			</div>
+		);
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className="flex flex-col gap-3">
+			<BackButton onClick={onBack} />
+			<h3 className="text-lg font-bold text-title">Change password</h3>
+
+			<div className="flex flex-col gap-1">
+				<label className="text-sm font-medium text-title">Current password</label>
+				<input
+					type="password"
+					value={currentPassword}
+					onChange={(e) => setCurrentPassword(e.target.value)}
+					placeholder="Your current password"
+					required
+					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+				/>
+			</div>
+
+			<div className="flex flex-col gap-1">
+				<label className="text-sm font-medium text-title">New password</label>
+				<input
+					type="password"
+					value={newPassword}
+					onChange={(e) => setNewPassword(e.target.value)}
+					placeholder="New password"
+					required
+					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+				/>
+			</div>
+
+			<div className="flex flex-col gap-1">
+				<label className="text-sm font-medium text-title">Confirm new password</label>
+				<input
+					type="password"
+					value={confirmPassword}
+					onChange={(e) => setConfirmPassword(e.target.value)}
+					placeholder="New password again"
+					required
+					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+				/>
+			</div>
+
+			{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+
+			<DuoButton
+				type="submit"
+				disabled={loading}
+				className="mt-2 h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
+			>
+				{loading ? "Updating…" : "Update password"}
+			</DuoButton>
+		</form>
+	);
+}
+
 export default function AccountModal({ onClose }) {
 	const { user, logout } = useAuth();
 	const navigate = useNavigate();
@@ -180,6 +294,8 @@ export default function AccountModal({ onClose }) {
 
 				{panel === "email" ? (
 					<ChangeEmailPanel onBack={() => setPanel(null)} />
+				) : panel === "password" ? (
+					<ChangePasswordPanel onBack={() => setPanel(null)} />
 				) : (
 					<>
 						{/* Avatar */}
@@ -223,7 +339,7 @@ export default function AccountModal({ onClose }) {
 						{/* Action rows */}
 						<div className="flex flex-col gap-2 mb-4">
 							<Row icon={<MailIcon />} label="Change email" onClick={() => setPanel("email")} />
-							<Row icon={<LockIcon />} label="Change password" />
+							<Row icon={<LockIcon />} label="Change password" onClick={() => setPanel("password")} />
 							<Row icon={<PersonIcon size={18} />} label="Change profile picture" />
 						</div>
 
