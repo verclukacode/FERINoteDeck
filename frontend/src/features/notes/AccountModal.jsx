@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "../../components/Icon.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
+import userProfilePic from "../../assets/userProfilePic.svg";
+import pencilIcon from "../../assets/pencil.svg";
+import arrowIcon from "../../assets/arrow.svg";
 
 function Row({ icon, label, onClick }) {
 	return (
@@ -12,7 +15,7 @@ function Row({ icon, label, onClick }) {
 		>
 			<span className="text-body">{icon}</span>
 			<span className="flex-1 font-medium text-title">{label}</span>
-			<Icon name="chevron" size={16} className="text-body" />
+			<img src={arrowIcon} width={26} height={26} alt="" />
 		</button>
 	);
 }
@@ -52,22 +55,21 @@ export default function AccountModal({ onClose }) {
 				<button
 					type="button"
 					onClick={onClose}
-					className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-bg-secondary text-body hover:bg-border-soft"
+					className="absolute right-8 top-8 flex h-8 w-8 items-center justify-center rounded-full bg-bg-secondary text-body hover:bg-border-soft"
 				>
 					<Icon name="xmark" size={14} />
 				</button>
 
 				{/* Avatar */}
 				<div className="mb-4 flex flex-col items-center gap-2">
-					<div className="relative">
-						<div className="flex h-20 w-20 items-center justify-center rounded-full bg-bg-secondary text-body">
-							<PersonIcon />
-						</div>
+					<div className="relative inline-block">
+						<img src={userProfilePic} width={80} height={80} alt="Profile picture" />
 						<button
 							type="button"
-							className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-bg bg-title text-bg"
+							aria-label="Edit profile picture"
+							className="absolute -bottom-1 -right-1"
 						>
-							<PencilIcon />
+							<img src={pencilIcon} width={28} height={28} alt="" />
 						</button>
 					</div>
 					<div className="text-center">
@@ -100,7 +102,7 @@ export default function AccountModal({ onClose }) {
 				<div className="flex flex-col gap-2 mb-4">
 					<Row icon={<MailIcon />} label="Change email" />
 					<Row icon={<LockIcon />} label="Change password" />
-					<Row icon={<PersonIcon size={18} />} label="A rabmo se kj?" />
+					<Row icon={<PersonIcon size={18} />} label="Change profile picture" />
 				</div>
 
 				{/* Sign out */}
@@ -127,41 +129,15 @@ export default function AccountModal({ onClose }) {
 
 function PersonIcon({ size = 36 }) {
 	return (
-		<svg
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
+		<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-		</svg>
-	);
-}
-
-function PencilIcon() {
-	return (
-		<svg
-			width="12"
-			height="12"
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
-			<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
 		</svg>
 	);
 }
 
 function CopyIcon() {
 	return (
-		<svg
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
+		<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" />
 		</svg>
 	);
@@ -169,13 +145,7 @@ function CopyIcon() {
 
 function CheckIcon() {
 	return (
-		<svg
-			width="16"
-			height="16"
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
+		<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
 		</svg>
 	);
@@ -183,13 +153,7 @@ function CheckIcon() {
 
 function MailIcon() {
 	return (
-		<svg
-			width="18"
-			height="18"
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
 		</svg>
 	);
@@ -197,13 +161,7 @@ function MailIcon() {
 
 function LockIcon() {
 	return (
-		<svg
-			width="18"
-			height="18"
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z" />
 		</svg>
 	);
@@ -211,13 +169,7 @@ function LockIcon() {
 
 function SignOutIcon() {
 	return (
-		<svg
-			width="18"
-			height="18"
-			viewBox="0 0 24 24"
-			fill="currentColor"
-			aria-hidden="true"
-		>
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 			<path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z" />
 		</svg>
 	);

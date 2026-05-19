@@ -4,6 +4,67 @@ import AppLogo from "../components/AppLogo.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
 import { authErrorMessage } from "../features/auth/firebaseError.js";
 
+function ForgotPasswordForm({ onBack }) {
+	const [resetEmail, setResetEmail] = useState("");
+	const [submitted, setSubmitted] = useState(false);
+	const [loading, setLoading] = useState(false);
+
+	async function handleSubmit(e) {
+		e.preventDefault();
+		if (!resetEmail) return;
+		setLoading(true);
+		// TODO: call backend reset-password endpoint when available
+		// await fetch("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email: resetEmail }) });
+		setLoading(false);
+		setSubmitted(true);
+
+	return (
+		<form onSubmit={handleSubmit} className="flex flex-col gap-4">
+			{submitted ? (
+				<p className="text-sm text-body text-center py-2">
+					If an account exists for <span className="font-semibold text-title">{resetEmail}</span>,
+					a reset link will be sent to that address.
+				</p>
+			) : (
+				<div className="flex flex-col gap-1">
+					<label htmlFor="forgot-email" className="text-sm font-medium text-title">
+						Email address
+					</label>
+					<input
+						id="forgot-email"
+						type="email"
+						placeholder="example@email.com"
+						value={resetEmail}
+						onChange={(e) => setResetEmail(e.target.value)}
+						className="rounded-full bg-bg px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+						autoFocus
+					/>
+				</div>
+			)}
+
+			<div className="mt-4 flex flex-col items-center gap-2">
+				{!submitted && (
+					<button
+						type="submit"
+						disabled={loading || !resetEmail}
+						className="w-full rounded-full bg-folder-blue py-3 text-sm font-semibold text-white disabled:opacity-60"
+						style={{ boxShadow: "0px 2.5px 0px #3e86cf" }}
+					>
+						{loading ? "Sending…" : "Send reset link"}
+					</button>
+				)}
+				<button
+					type="button"
+					onClick={onBack}
+					className="text-sm font-semibold text-folder-blue py-1"
+				>
+					Back to log in
+				</button>
+			</div>
+		</form>
+	);
+}
+
 export default function LoginPage() {
 	const { login } = useAuth();
 	const navigate = useNavigate();
@@ -11,6 +72,7 @@ export default function LoginPage() {
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [showForgot, setShowForgot] = useState(false);
 
 	async function handleSubmit(e) {
 		e.preventDefault();
@@ -37,67 +99,66 @@ export default function LoginPage() {
 					<AppLogo />
 					<div>
 						<p className="text-sm text-body leading-tight">Welcome to</p>
-						<p className="text-2xl font-bold text-title leading-tight">
-							NoteDeck
-						</p>
+						<p className="text-2xl font-bold text-title leading-tight">NoteDeck</p>
 					</div>
 				</div>
 
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
-					<div className="flex flex-col gap-1">
-						<label
-							htmlFor="login-email"
-							className="text-sm font-medium text-title"
-						>
-							Email adress
-						</label>
-						<input
-							id="login-email"
-							type="email"
-							placeholder="example@email.com"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							className="rounded-full bg-bg px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
-						/>
-					</div>
+				{showForgot ? (
+					<ForgotPasswordForm onBack={() => setShowForgot(false)} />
+				) : (
+					<form onSubmit={handleSubmit} className="flex flex-col gap-4">
+						<div className="flex flex-col gap-1">
+							<label htmlFor="login-email" className="text-sm font-medium text-title">
+								Email address
+							</label>
+							<input
+								id="login-email"
+								type="email"
+								placeholder="example@email.com"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								className="rounded-full bg-bg px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+							/>
+						</div>
 
-					<div className="flex flex-col gap-1">
-						<label
-							htmlFor="login-password"
-							className="text-sm font-medium text-title"
-						>
-							Password
-						</label>
-						<input
-							id="login-password"
-							type="password"
-							placeholder="NoPassword123"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							className="rounded-full bg-bg px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
-						/>
-					</div>
+						<div className="flex flex-col gap-1">
+							<label htmlFor="login-password" className="text-sm font-medium text-title">
+								Password
+							</label>
+							<input
+								id="login-password"
+								type="password"
+								placeholder="NoPassword123"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								className="rounded-full bg-bg px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
+							/>
+						</div>
 
-					{error && (
-						<p className="text-sm text-folder-red text-center">{error}</p>
-					)}
+						{error && <p className="text-sm text-folder-red text-center">{error}</p>}
 
-					<div className="mt-4 flex flex-col items-center gap-3">
-						<button
-							type="submit"
-							disabled={loading}
-							className="w-full rounded-full bg-folder-blue py-3 text-sm font-semibold text-white disabled:opacity-60"
-						>
-							{loading ? "Logging in…" : "Log in"}
-						</button>
-						<Link
-							to="/register"
-							className="text-sm font-medium text-folder-blue"
-						>
-							Forgot password
-						</Link>
-					</div>
-				</form>
+						<div className="mt-4 flex flex-col items-center gap-2">
+							<button
+								type="submit"
+								disabled={loading}
+								className="w-full rounded-full bg-folder-blue py-3 text-sm font-semibold text-white disabled:opacity-60"
+								style={{ boxShadow: "0px 2.5px 0px #3e86cf" }}
+							>
+								{loading ? "Logging in…" : "Log in"}
+							</button>
+							<button
+								type="button"
+								onClick={() => setShowForgot(true)}
+								className="text-sm font-semibold text-folder-blue py-1"
+							>
+								Forgot password
+							</button>
+							<Link to="/register" className="text-sm font-semibold text-folder-blue py-1">
+								Sign up
+							</Link>
+						</div>
+					</form>
+				)}
 			</div>
 		</div>
 	);
