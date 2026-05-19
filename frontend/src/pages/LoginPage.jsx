@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
+import DuoButton from "../components/DuoButton.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
 import { authErrorMessage } from "../features/auth/firebaseError.js";
 
@@ -45,14 +46,13 @@ function ForgotPasswordForm({ onBack }) {
 
 			<div className="mt-4 flex flex-col items-center gap-2">
 				{!submitted && (
-					<button
+					<DuoButton
 						type="submit"
 						disabled={loading || !resetEmail}
-						className="w-full rounded-full bg-folder-blue py-3 text-sm font-semibold text-white disabled:opacity-60"
-						style={{ boxShadow: "0px 2.5px 0px #3e86cf" }}
+						className="h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
 					>
 						{loading ? "Sending…" : "Send reset link"}
-					</button>
+					</DuoButton>
 				)}
 				<button
 					type="button"
@@ -139,14 +139,13 @@ export default function LoginPage() {
 						{error && <p className="text-sm text-folder-red text-center">{error}</p>}
 
 						<div className="mt-4 flex flex-col items-center gap-2">
-							<button
+							<DuoButton
 								type="submit"
 								disabled={loading}
-								className="w-full rounded-full bg-folder-blue py-3 text-sm font-semibold text-white disabled:opacity-60"
-								style={{ boxShadow: "0px 2.5px 0px #3e86cf" }}
+								className="h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
 							>
 								{loading ? "Logging in…" : "Log in"}
-							</button>
+							</DuoButton>
 							<button
 								type="button"
 								onClick={() => setShowForgot(true)}

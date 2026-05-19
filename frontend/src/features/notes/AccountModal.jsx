@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import DuoButton from "../../components/DuoButton.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import userProfilePic from "../../assets/userProfilePic.svg";
@@ -106,14 +107,14 @@ export default function AccountModal({ onClose }) {
 				</div>
 
 				{/* Sign out */}
-				<button
+				<DuoButton
 					type="button"
 					onClick={handleSignOut}
-					className="mb-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 py-3.5 font-semibold text-folder-red hover:bg-red-100"
+					className="mb-2 flex h-[45px] w-full items-center justify-center gap-2 bg-folder-red text-white shadow-[0_2.5px_0_#c45252]"
 				>
 					<SignOutIcon />
 					Sign out
-				</button>
+				</DuoButton>
 
 				<button
 					type="button"

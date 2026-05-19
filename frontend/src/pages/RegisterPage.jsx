@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
+import DuoButton from "../components/DuoButton.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
 import { authErrorMessage } from "../features/auth/firebaseError.js";
 
@@ -105,13 +106,13 @@ export default function RegisterPage() {
 					)}
 
 					<div className="mt-4 flex flex-col items-center gap-3">
-						<button
+						<DuoButton
 							type="submit"
 							disabled={loading}
-							className="w-full rounded-full bg-folder-blue py-3 text-sm font-semibold text-white disabled:opacity-60"
+							className="h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
 						>
 							{loading ? "Signing up…" : "Sign up"}
-						</button>
+						</DuoButton>
 						<Link to="/login" className="text-sm font-medium text-folder-blue">
 							Already have an account
 						</Link>
