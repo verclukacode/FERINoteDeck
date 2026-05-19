@@ -34,8 +34,8 @@ export default function AccountModal({ onClose }) {
 		setTimeout(() => setCopied(false), 1500);
 	}
 
-	function handleSignOut() {
-		logout();
+	async function handleSignOut() {
+		await logout();
 		navigate("/login", { replace: true });
 	}
 
@@ -127,7 +127,13 @@ export default function AccountModal({ onClose }) {
 
 function PersonIcon({ size = 36 }) {
 	return (
-		<svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
 		</svg>
 	);
@@ -135,7 +141,13 @@ function PersonIcon({ size = 36 }) {
 
 function PencilIcon() {
 	return (
-		<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width="12"
+			height="12"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
 		</svg>
 	);
@@ -143,7 +155,13 @@ function PencilIcon() {
 
 function CopyIcon() {
 	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width="16"
+			height="16"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" />
 		</svg>
 	);
@@ -151,7 +169,13 @@ function CopyIcon() {
 
 function CheckIcon() {
 	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width="16"
+			height="16"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
 		</svg>
 	);
@@ -159,7 +183,13 @@ function CheckIcon() {
 
 function MailIcon() {
 	return (
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
 		</svg>
 	);
@@ -167,7 +197,13 @@ function MailIcon() {
 
 function LockIcon() {
 	return (
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M18 8h-1V6A5 5 0 0 0 7 6v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zm-6 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm3.1-9H8.9V6a3.1 3.1 0 0 1 6.2 0v2z" />
 		</svg>
 	);
@@ -175,7 +211,13 @@ function LockIcon() {
 
 function SignOutIcon() {
 	return (
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+		<svg
+			width="18"
+			height="18"
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			aria-hidden="true"
+		>
 			<path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8v-2H4V5z" />
 		</svg>
 	);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import BlockEditor from "./editor/BlockEditor.jsx";
@@ -28,6 +28,8 @@ function TitleField({ page, onRename }) {
 
 export default function NotePanel() {
 	const { selectedPage, renamePage, updatePageContent } = useNotes();
+	const editorRef = useRef(null);
+	const [dirty, setDirty] = useState(false);
 
 	if (!selectedPage) {
 		return (
@@ -48,6 +50,18 @@ export default function NotePanel() {
 				<div className="flex items-center gap-2.5">
 					<button
 						type="button"
+						disabled={!dirty}
+						onClick={() => editorRef.current?.save()}
+						className={`flex h-[45px] items-center rounded-full border-[2.5px] px-5 text-xl font-semibold ${
+							dirty
+								? "border-folder-blue/15 bg-folder-blue/15 text-folder-blue"
+								: "cursor-default border-border-soft bg-bg text-body/40"
+						}`}
+					>
+						{dirty ? "Save" : "Saved"}
+					</button>
+					<button
+						type="button"
 						className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
 					>
 						<Icon name="paperplane" size={20} />
@@ -64,8 +78,10 @@ export default function NotePanel() {
 			<div className="flex-1 overflow-y-auto py-6">
 				<BlockEditor
 					key={selectedPage.id}
+					ref={editorRef}
 					page={selectedPage}
 					onChange={updatePageContent}
+					onDirtyChange={setDirty}
 				/>
 			</div>
 		</div>

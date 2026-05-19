@@ -1,95 +1,88 @@
-// API-shaped facade over the data layer. Swap the repo import (or the bodies)
-// for a fetch-based backend client without touching any component.
-import { DEFAULT_FOLDER_COLOR } from "../lib/constants.js";
-import { createId } from "../lib/id.js";
-import * as repo from "./localStorageRepo.js";
+// API-shaped data layer — talks to the Express + MySQL backend.
+// Every request carries the current Firebase user's ID token.
+import { auth } from "../lib/firebase.js";
 
-function byOrder(a, b) {
-	return a.order - b.order;
+const BASE = "/api";
+
+async function authHeader() {
+	const token = await auth.currentUser?.getIdToken();
+	return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export async function listFolders() {
-	const folders = await repo.getFolders();
-	return [...folders].sort(byOrder);
+async function apiRequest(path, { method = "GET", body } = {}) {
+	const headers = await authHeader();
+	const opts = { method, headers };
+	if (body !== undefined) {
+		headers["Content-Type"] = "application/json";
+		opts.body = JSON.stringify(body);
+	}
+	const res = await fetch(`${BASE}${path}`, opts);
+	if (res.status === 204) return null;
+	const data = await res.json().catch(() => null);
+	if (!res.ok) throw new Error(data?.error ?? "Request failed");
+	return data;
+}
+
+export function listFolders() {
+	return apiRequest("/folders");
+}
+
+export function createFolder({ name, color }) {
+	return apiRequest("/folders", { method: "POST", body: { name, color } });
+}
+
+export function updateFolder(id, patch) {
+	return apiRequest(`/folders/${id}`, { method: "PATCH", body: patch });
+}
+
+export function deleteFolder(id) {
+	return apiRequest(`/folders/${id}`, { method: "DELETE" });
+}
+
+export function reorderFolders(orderedIds) {
+	return apiRequest("/folders/order", { method: "PUT", body: { orderedIds } });
+}
+
+export function listAllPages() {
+	return apiRequest("/pages");
 }
 
 export async function listPages(folderId) {
-	const pages = await repo.getPages();
-	return pages.filter((p) => p.folderId === folderId).sort(byOrder);
+	const pages = await apiRequest("/pages");
+	return pages.filter((p) => p.folderId === folderId);
 }
 
-export async function listAllPages() {
-	const pages = await repo.getPages();
-	return [...pages].sort(byOrder);
+export function getPage(id) {
+	return apiRequest(`/pages/${id}`);
 }
 
-export async function getPage(id) {
-	const pages = await repo.getPages();
-	return pages.find((p) => p.id === id) ?? null;
+export function createPage({ folderId, title }) {
+	return apiRequest("/pages", { method: "POST", body: { folderId, title } });
 }
 
-export async function createFolder({ name, color }) {
-	const folders = await repo.getFolders();
-	const folder = {
-		id: createId(),
-		name: name.trim() || "Untitled folder",
-		color: color || DEFAULT_FOLDER_COLOR,
-		order: folders.length,
-		collapsed: true,
-	};
-	await repo.saveFolders([...folders, folder]);
-	return folder;
+export function updatePage(id, patch) {
+	return apiRequest(`/pages/${id}`, { method: "PATCH", body: patch });
 }
 
-export async function updateFolder(id, patch) {
-	const folders = await repo.getFolders();
-	const next = folders.map((f) => (f.id === id ? { ...f, ...patch } : f));
-	await repo.saveFolders(next);
-	return next.find((f) => f.id === id);
+export function deletePage(id) {
+	return apiRequest(`/pages/${id}`, { method: "DELETE" });
 }
 
-export async function deleteFolder(id) {
-	const folders = await repo.getFolders();
-	const pages = await repo.getPages();
-	await repo.saveFolders(folders.filter((f) => f.id !== id));
-	await repo.savePages(pages.filter((p) => p.folderId !== id));
+export function savePages(pages) {
+	return apiRequest("/pages/order", { method: "PUT", body: { pages } });
 }
 
-export async function reorderFolders(orderedIds) {
-	const folders = await repo.getFolders();
-	const next = folders.map((f) => ({ ...f, order: orderedIds.indexOf(f.id) }));
-	await repo.saveFolders(next);
-}
-
-export async function createPage({ folderId, title }) {
-	const pages = await repo.getPages();
-	const siblings = pages.filter((p) => p.folderId === folderId);
-	const name = (title || "").trim() || "Untitled page";
-	const page = {
-		id: createId(),
-		folderId,
-		title: name,
-		content: "Nothing here yet, tap to edit.",
-		order: siblings.length,
-	};
-	await repo.savePages([...pages, page]);
-	return page;
-}
-
-export async function updatePage(id, patch) {
-	const pages = await repo.getPages();
-	const next = pages.map((p) => (p.id === id ? { ...p, ...patch } : p));
-	await repo.savePages(next);
-	return next.find((p) => p.id === id);
-}
-
-export async function deletePage(id) {
-	const pages = await repo.getPages();
-	await repo.savePages(pages.filter((p) => p.id !== id));
-}
-
-// Persists the full pages collection — used after drag-and-drop, which can
-// reorder pages and move them between folders in one gesture.
-export async function savePages(pages) {
-	await repo.savePages(pages);
+// Upload an image file; returns { url } to embed in note markdown.
+export async function uploadImage(file) {
+	const headers = await authHeader();
+	const form = new FormData();
+	form.append("image", file);
+	const res = await fetch(`${BASE}/images`, {
+		method: "POST",
+		headers,
+		body: form,
+	});
+	const data = await res.json().catch(() => null);
+	if (!res.ok) throw new Error(data?.error ?? "Upload failed");
+	return data;
 }

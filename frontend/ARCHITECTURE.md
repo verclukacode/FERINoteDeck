@@ -12,46 +12,48 @@ routes/
   router.jsx          createBrowserRouter route table
   RootLayout.jsx      shared shell (<Outlet/>)
 pages/
-  NotesPage.jsx       "/"          two-panel notes UI
-  LoginPage.jsx       "/login"     stub
-  RegisterPage.jsx    "/register"  stub
+  NotesPage.jsx       "/"          two-panel notes UI (auth-gated)
+  LoginPage.jsx       "/login"     Firebase email/password sign-in
+  RegisterPage.jsx    "/register"  Firebase sign-up
+features/auth/        AuthContext (Firebase) + firebaseError helper
 features/notes/       everything specific to the notes feature
   NotesContext.jsx    state provider + useNotes() hook
   Sidebar / SidebarHeader / ViewToggle / UserProfileRow
   FolderList / FolderItem / PageList / PageItem
   FolderPreview / PagePreview   static rows for the drag overlay/placeholder
-  AddFolderButton / FolderModal
+  AddFolderButton / FolderModal / AccountModal
   NotePanel / FlashcardsPlaceholder
   editor/             block-based note editor (see "Note editor" below)
 components/            shared, feature-agnostic UI
                        Icon, Modal, Pill, ContextMenu, ConfirmDialog, DuoButton
 services/
-  notesService.js     API-shaped facade — THE backend swap point
-  localStorageRepo.js  localStorage persistence
-data/seed.js          initial folders + pages (seeded on first load)
+  notesService.js     API-shaped facade — fetch() to the backend
 hooks/                reusable hooks — useContextMenu, useResizableWidth
-lib/                  constants.js (tokens, enums), id.js
+lib/                  constants.js (tokens, enums), id.js, firebase.js
 assets/               Logo.png, icons/*.svg
 styles/index.css      Tailwind import + @theme design tokens
 ```
 
-## Data flow & the backend swap
+## Data flow
 
-Components never touch storage directly. They call `NotesContext` actions, which call
-`services/notesService.js`. The service is an API-shaped facade — every function is async and
-named like a REST call (`listFolders`, `createFolder`, `deleteFolder`, `reorderFolders`,
-`createPage`, `deletePage`, `savePages`, …).
+Components never touch the network directly. They call `NotesContext` actions, which call
+`services/notesService.js` — an API-shaped facade whose functions (`listFolders`,
+`createFolder`, `deleteFolder`, `reorderFolders`, `createPage`, `updatePage`, `deletePage`,
+`savePages`, `uploadImage`, …) `fetch` the Express backend at `/api/folders`, `/api/pages`,
+`/api/images`. Every request carries the current Firebase user's ID token as a
+`Bearer` header. The backend persists to MySQL (see `backend/docs/SETUP.md`).
 
-Today the service delegates to `localStorageRepo.js`. **To connect the real backend, rewrite
-only `notesService.js`** (e.g. swap the repo for a `fetch`-based client). No component, context,
-or hook changes are needed because the signatures stay the same.
-
-Entities:
+Entities (ids assigned by the server, data scoped per user):
 - `Folder { id, name, color, order, collapsed }` — `color` is a key (`"red"`…`"purple"`).
 - `Page { id, folderId, title, content, order }` — `content` is the note body as one
   markdown string, edited by the block editor (see "Note editor").
 
-Seed data is written to localStorage on first load only; later reorders/deletes/creates persist.
+## Auth
+
+`features/auth/AuthContext.jsx` wraps Firebase Authentication (`lib/firebase.js`): `login` /
+`register` / `logout` and `{ user, loading }` from `onAuthStateChanged`. `ProtectedRoute`
+gates `/` on `user`. `notesService` reads the ID token straight from the Firebase SDK
+(`auth.currentUser.getIdToken()`), so it stays free of React context.
 
 ## State — NotesContext
 
@@ -72,10 +74,14 @@ per-block storage.
 - `markdown.js` `parse()`/`serialize()` convert between the string and the block array. The
   string is wrapped in a `<<<NoteDeckMD>>>` sentinel; plain text lines that look like a marker
   are backslash-escaped for a clean round-trip.
-- `BlockEditor.jsx` owns the block array + all cross-block keyboard logic and a debounced
-  (~500 ms) save via `updatePageContent`; `EditorBlock.jsx` is one `contentEditable` block with
-  auto-format, inline bold (`**…**`) and auto-linked URLs (`inlineFormat.js` helpers).
-- Images are uploaded as base64 data URLs embedded in the markdown (no image hosting).
+- `BlockEditor.jsx` owns the block array + all cross-block keyboard logic; `EditorBlock.jsx`
+  is one `contentEditable` block with auto-format, inline bold (`**…**`) and auto-linked URLs
+  (`inlineFormat.js` helpers).
+- **No auto-save**: `BlockEditor` exposes `save()` (via `ref`) and reports a `dirty` flag;
+  `NotePanel`'s Save button calls `save()` → `updatePageContent`. Switching pages discards
+  unsaved edits.
+- Images are uploaded to `/api/images` (`uploadImage`) and stored as files server-side; the
+  markdown holds a `![](/api/images/…)` URL, not base64.
 - Full UX and storage details: `docs/editor.md`.
 
 ## Drag-and-drop
@@ -121,4 +127,4 @@ SVGs live in `assets/icons/` with `fill="currentColor"` so they recolor via CSS 
 
 - All files `.jsx`. Minimal comments — only where intent is non-obvious.
 - Lint/format: Biome (repo root `biome.json`) — tabs, double quotes, import sorting.
-- Not built yet: flashcards logic, auth logic, real backend.
+- Not built yet: flashcards logic.

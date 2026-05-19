@@ -15,6 +15,10 @@ storybook-static/
 .env
 .env.local
 
+# Secrets & uploads
+backend/serviceAccountKey.json
+backend/uploads/
+
 # OS
 .DS_Store
 Thumbs.db

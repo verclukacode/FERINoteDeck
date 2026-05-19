@@ -1,13 +1,25 @@
 import "dotenv/config";
+import fs from "node:fs";
 import cors from "cors";
-import express from "express";
+import express, {
+	type NextFunction,
+	type Request,
+	type Response,
+} from "express";
+import { MulterError } from "multer";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
-import authRouter from "./routes/auth";
-import notesRouter from "./routes/notes";
+import "./lib/firebase";
+import { requireAuth } from "./middleware/requireAuth";
+import foldersRouter from "./routes/folders";
+import imagesRouter, { uploadsDir } from "./routes/images";
+import pagesRouter from "./routes/pages";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:5173";
+
+fs.mkdirSync(uploadsDir, { recursive: true });
 
 const swaggerSpec = swaggerJsdoc({
 	definition: {
@@ -15,23 +27,38 @@ const swaggerSpec = swaggerJsdoc({
 		info: {
 			title: "NoteDeck API",
 			version: "1.0.0",
-			description: "Simple in-memory notes REST API",
+			description: "NoteDeck notes API — MySQL persistence, Firebase auth",
 		},
 		servers: [{ url: `http://localhost:${PORT}` }],
 	},
 	apis: ["./src/routes/*.ts"],
 });
 
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: CORS_ORIGIN }));
+app.use(express.json({ limit: "5mb" }));
 
 app.get("/", (_req, res) => {
 	res.json({ name: "NoteDeck API", status: "ok" });
 });
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use("/api/auth", authRouter);
-app.use("/api/notes", notesRouter);
+
+// Uploaded images are served publicly — an <img> tag cannot send an auth
+// header; filenames are unguessable UUIDs.
+app.use("/api/images", express.static(uploadsDir));
+
+app.use("/api/folders", requireAuth, foldersRouter);
+app.use("/api/pages", requireAuth, pagesRouter);
+app.use("/api/images", requireAuth, imagesRouter);
+
+// JSON error handler — Express 5 forwards async route rejections here.
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+	if (err instanceof MulterError) {
+		return res.status(400).json({ error: err.message });
+	}
+	console.error(err);
+	res.status(500).json({ error: "Internal server error" });
+});
 
 app.listen(PORT, () => {
 	console.log(`NoteDeck backend running on http://localhost:${PORT}`);

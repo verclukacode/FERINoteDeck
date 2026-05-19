@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
+import { authErrorMessage } from "../features/auth/firebaseError.js";
 
 export default function LoginPage() {
 	const { login } = useAuth();
@@ -23,7 +24,7 @@ export default function LoginPage() {
 			await login(email, password);
 			navigate("/", { replace: true });
 		} catch (err) {
-			setError(err.message);
+			setError(authErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
@@ -44,10 +45,14 @@ export default function LoginPage() {
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-title">
+						<label
+							htmlFor="login-email"
+							className="text-sm font-medium text-title"
+						>
 							Email adress
 						</label>
 						<input
+							id="login-email"
 							type="email"
 							placeholder="example@email.com"
 							value={email}
@@ -57,8 +62,14 @@ export default function LoginPage() {
 					</div>
 
 					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-title">Password</label>
+						<label
+							htmlFor="login-password"
+							className="text-sm font-medium text-title"
+						>
+							Password
+						</label>
 						<input
+							id="login-password"
 							type="password"
 							placeholder="NoPassword123"
 							value={password}

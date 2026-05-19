@@ -36,14 +36,18 @@ export function NotesProvider({ children }) {
 
 	useEffect(() => {
 		let active = true;
-		Promise.all([service.listFolders(), service.listAllPages()]).then(
-			([f, p]) => {
+		Promise.all([service.listFolders(), service.listAllPages()])
+			.then(([f, p]) => {
 				if (!active) return;
 				setFolders(f);
 				setPages(p);
 				setLoading(false);
-			},
-		);
+			})
+			.catch((err) => {
+				if (!active) return;
+				console.error("Failed to load notes:", err);
+				setLoading(false);
+			});
 		return () => {
 			active = false;
 		};
@@ -209,7 +213,6 @@ export function NotesProvider({ children }) {
 			selectedPageId,
 			loading,
 			accountOpen,
-			setAccountOpen,
 			addFolder,
 			editFolder,
 			removeFolder,

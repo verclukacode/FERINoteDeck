@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "../../../components/Icon.jsx";
+import { uploadImage } from "../../../services/notesService.js";
 import SelectionToolbar from "./SelectionToolbar.jsx";
 import { SQUIGGLE } from "./dividerShape.js";
 import {
@@ -34,7 +35,7 @@ const TYPE_CLASS = {
 	task: "text-title",
 };
 
-const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 function hasFormatting(content) {
 	return (
@@ -208,16 +209,19 @@ export default function EditorBlock({
 		document.execCommand("insertText", false, text);
 	};
 
-	const handleImageFile = (e) => {
+	const handleImageFile = async (e) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		if (file.size > MAX_IMAGE_BYTES) {
-			alert("Image is too large — please pick one under 1.5 MB.");
+			alert("Image is too large — please pick one under 5 MB.");
 			return;
 		}
-		const reader = new FileReader();
-		reader.onload = () => onUpdate({ imageUrl: String(reader.result) });
-		reader.readAsDataURL(file);
+		try {
+			const { url } = await uploadImage(file);
+			onUpdate({ imageUrl: url });
+		} catch {
+			alert("Image upload failed.");
+		}
 	};
 
 	const Tag = block.type === "h1" ? "h1" : block.type === "h2" ? "h2" : "div";

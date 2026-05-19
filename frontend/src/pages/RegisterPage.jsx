@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
+import { authErrorMessage } from "../features/auth/firebaseError.js";
 
 export default function RegisterPage() {
 	const { register } = useAuth();
@@ -28,7 +29,7 @@ export default function RegisterPage() {
 			await register(email, password);
 			navigate("/", { replace: true });
 		} catch (err) {
-			setError(err.message);
+			setError(authErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
@@ -49,10 +50,14 @@ export default function RegisterPage() {
 
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-title">
+						<label
+							htmlFor="register-email"
+							className="text-sm font-medium text-title"
+						>
 							Email adress
 						</label>
 						<input
+							id="register-email"
 							type="email"
 							placeholder="example@email.com"
 							value={email}
@@ -62,8 +67,14 @@ export default function RegisterPage() {
 					</div>
 
 					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-title">Password</label>
+						<label
+							htmlFor="register-password"
+							className="text-sm font-medium text-title"
+						>
+							Password
+						</label>
 						<input
+							id="register-password"
 							type="password"
 							placeholder="NoPassword123"
 							value={password}
@@ -73,10 +84,14 @@ export default function RegisterPage() {
 					</div>
 
 					<div className="flex flex-col gap-1">
-						<label className="text-sm font-medium text-title">
+						<label
+							htmlFor="register-confirm"
+							className="text-sm font-medium text-title"
+						>
 							Password again
 						</label>
 						<input
+							id="register-confirm"
 							type="password"
 							placeholder="NoPassword123"
 							value={confirm}

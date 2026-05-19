@@ -1,57 +1,36 @@
 import {
-	createContext,
-	useCallback,
-	useContext,
-	useMemo,
-	useState,
-} from "react";
-import * as authService from "../../services/authService.js";
+	createUserWithEmailAndPassword,
+	onAuthStateChanged,
+	signInWithEmailAndPassword,
+	signOut,
+} from "firebase/auth";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { auth } from "../../lib/firebase.js";
 
 const AuthContext = createContext(null);
 
-const TOKEN_KEY = "notedeck.token";
-const USER_KEY = "notedeck.user";
-
 export function AuthProvider({ children }) {
-	const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
-	const [user, setUser] = useState(() => {
-		const stored = localStorage.getItem(USER_KEY);
-		return stored ? JSON.parse(stored) : null;
-	});
+	const [user, setUser] = useState(null);
+	const [loading, setLoading] = useState(true);
 
-	const persist = useCallback((data) => {
-		localStorage.setItem(TOKEN_KEY, data.token);
-		localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-		setToken(data.token);
-		setUser(data.user);
-	}, []);
-
-	const login = useCallback(
-		async (email, password) => {
-			const data = await authService.login(email, password);
-			persist(data);
-		},
-		[persist],
-	);
-
-	const register = useCallback(
-		async (email, password) => {
-			const data = await authService.register(email, password);
-			persist(data);
-		},
-		[persist],
-	);
-
-	const logout = useCallback(() => {
-		localStorage.removeItem(TOKEN_KEY);
-		localStorage.removeItem(USER_KEY);
-		setToken(null);
-		setUser(null);
+	useEffect(() => {
+		return onAuthStateChanged(auth, (u) => {
+			setUser(u);
+			setLoading(false);
+		});
 	}, []);
 
 	const value = useMemo(
-		() => ({ token, user, login, register, logout }),
-		[token, user, login, register, logout],
+		() => ({
+			user,
+			loading,
+			login: (email, password) =>
+				signInWithEmailAndPassword(auth, email, password),
+			register: (email, password) =>
+				createUserWithEmailAndPassword(auth, email, password),
+			logout: () => signOut(auth),
+		}),
+		[user, loading],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

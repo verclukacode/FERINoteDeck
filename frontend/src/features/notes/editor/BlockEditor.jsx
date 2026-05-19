@@ -11,7 +11,13 @@ import {
 	arrayMove,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
 import BlockPreview from "./BlockPreview.jsx";
 import EditorBlock from "./EditorBlock.jsx";
 import SlashMenu from "./SlashMenu.jsx";
@@ -29,7 +35,7 @@ const TEXT_BEARING = new Set([
 ]);
 const isList = (type) => LIST_TYPES.includes(type);
 
-export default function BlockEditor({ page, onChange }) {
+export default function BlockEditor({ page, onChange, onDirtyChange, ref }) {
 	const [blocks, setBlocks] = useState(() =>
 		ensureTrailingBlock(parse(page.content)),
 	);
@@ -38,7 +44,7 @@ export default function BlockEditor({ page, onChange }) {
 	const [activeId, setActiveId] = useState(null);
 	const blockRefs = useRef({});
 	const blocksRef = useRef(blocks);
-	const firstRun = useRef(true);
+	const dirtyRef = useRef(false);
 	blocksRef.current = blocks;
 
 	const registerRef = useCallback((id, el) => {
@@ -61,28 +67,45 @@ export default function BlockEditor({ page, onChange }) {
 		});
 	}, []);
 
-	// Debounced save: blocks -> markdown -> context.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: blocks triggers the save; the body reads blocksRef
+	// Reset the dirty flag whenever a new page is opened.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount per page
 	useEffect(() => {
-		if (firstRun.current) {
-			firstRun.current = false;
-			return;
-		}
-		const timer = setTimeout(() => {
-			onChange(page.id, serialize(blocksRef.current));
-		}, 500);
-		return () => clearTimeout(timer);
-	}, [blocks, page.id, onChange]);
+		onDirtyChange?.(false);
+	}, []);
 
-	// Flush on unmount so switching pages persists immediately.
+	const save = useCallback(async () => {
+		await onChange(page.id, serialize(blocksRef.current));
+		dirtyRef.current = false;
+		onDirtyChange?.(false);
+	}, [onChange, page.id, onDirtyChange]);
+
+	useImperativeHandle(ref, () => ({ save }), [save]);
+
+	// Auto-save every 30s while there are unsaved changes.
 	useEffect(() => {
-		return () => onChange(page.id, serialize(blocksRef.current));
+		const timer = setInterval(() => {
+			if (dirtyRef.current) save();
+		}, 30000);
+		return () => clearInterval(timer);
+	}, [save]);
+
+	// Flush unsaved changes when leaving the page (e.g. opening another note).
+	useEffect(() => {
+		return () => {
+			if (dirtyRef.current) {
+				onChange(page.id, serialize(blocksRef.current));
+			}
+		};
 	}, [page.id, onChange]);
 
 	const apply = (next) => {
 		const normalized = ensureTrailingBlock(next);
 		blocksRef.current = normalized;
 		setBlocks(normalized);
+		if (!dirtyRef.current) {
+			dirtyRef.current = true;
+			onDirtyChange?.(true);
+		}
 	};
 
 	const updateBlock = (id, patch) => {
