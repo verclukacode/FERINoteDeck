@@ -1,6 +1,7 @@
 import {
 	createUserWithEmailAndPassword,
 	onAuthStateChanged,
+	sendEmailVerification,
 	signInWithEmailAndPassword,
 	signOut,
 } from "firebase/auth";
@@ -26,8 +27,13 @@ export function AuthProvider({ children }) {
 			loading,
 			login: (email, password) =>
 				signInWithEmailAndPassword(auth, email, password),
-			register: (email, password) =>
-				createUserWithEmailAndPassword(auth, email, password),
+			register: async (email, password) => {
+				const cred = await createUserWithEmailAndPassword(auth, email, password);
+				await sendEmailVerification(cred.user);
+				return cred;
+			},
+			resendVerification: () => sendEmailVerification(auth.currentUser),
+			reloadUser: () => auth.currentUser?.reload(),
 			logout: () => signOut(auth),
 		}),
 		[user, loading],
