@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "../../../components/Icon.jsx";
+import Lightbox from "../../../components/Lightbox.jsx";
 import { uploadImage } from "../../../services/notesService.js";
 import SelectionToolbar from "./SelectionToolbar.jsx";
 import { SQUIGGLE } from "./dividerShape.js";
@@ -70,10 +71,14 @@ export default function EditorBlock({
 	onAutoFormat,
 	onFocusChange,
 	onOpenMenu,
+	onPasteBlocks,
+	depth = 0,
+	selected = false,
 }) {
 	const ref = useRef(null);
 	const gripDownPos = useRef(null);
 	const [toolbar, setToolbar] = useState(null);
+	const [showLightbox, setShowLightbox] = useState(false);
 	const isInline = INLINE.has(block.type);
 
 	const {
@@ -99,11 +104,11 @@ export default function EditorBlock({
 	useEffect(() => {
 		const el = ref.current;
 		if (!el || document.activeElement === el) return;
-		if (isInline || HEADINGS.has(block.type)) {
-			const html = isInline ? contentToHtml(block.content) : "";
-			if (isInline) {
-				if (el.innerHTML !== html) el.innerHTML = html;
-			} else if (el.textContent !== block.content) {
+		if (isInline) {
+			const html = contentToHtml(block.content);
+			if (el.innerHTML !== html) el.innerHTML = html;
+		} else if (HEADINGS.has(block.type) || block.type === "image") {
+			if (el.textContent !== block.content) {
 				el.textContent = block.content;
 			}
 		}
@@ -204,8 +209,16 @@ export default function EditorBlock({
 	};
 
 	const handlePaste = (e) => {
+		const text = e.clipboardData.getData("text/plain");
+		if (!text) return;
+		// Multi-line clipboard or our own sentinel-wrapped markdown → insert as
+		// a sequence of blocks instead of squashing it into one line.
+		if (text.includes("\n") || text.includes("<<<NoteDeckMD>>>")) {
+			e.preventDefault();
+			onPasteBlocks?.(text);
+			return;
+		}
 		e.preventDefault();
-		const text = e.clipboardData.getData("text/plain").replace(/\n/g, " ");
 		document.execCommand("insertText", false, text);
 	};
 
@@ -298,11 +311,18 @@ export default function EditorBlock({
 		inner = (
 			<div className="group/img my-2">
 				<div className="relative inline-block">
-					<img
-						src={block.imageUrl}
-						alt={block.content}
-						className="max-h-[420px] rounded-xl"
-					/>
+					<button
+						type="button"
+						onClick={() => setShowLightbox(true)}
+						className="block cursor-zoom-in"
+						aria-label="Open image"
+					>
+						<img
+							src={block.imageUrl}
+							alt={block.content}
+							className="max-h-[420px] rounded-[22.5px] border-[2.5px] border-border-soft"
+						/>
+					</button>
 					<button
 						type="button"
 						onClick={() => onUpdate({ imageUrl: "" })}
@@ -322,6 +342,13 @@ export default function EditorBlock({
 					onKeyDown={handleKeyDown}
 					className="mt-1 text-sm text-body outline-none"
 				/>
+				{showLightbox && (
+					<Lightbox
+						src={block.imageUrl}
+						alt={block.content}
+						onClose={() => setShowLightbox(false)}
+					/>
+				)}
 			</div>
 		);
 	} else if (block.type === "bullet") {
@@ -365,12 +392,16 @@ export default function EditorBlock({
 	return (
 		<div
 			ref={setSortableRef}
+			data-block-id={block.id}
 			style={{
 				transform: isDragging ? undefined : CSS.Transform.toString(transform),
 				transition,
 				opacity: isDragging ? 0.4 : 1,
+				marginLeft: depth > 0 ? depth * 24 : undefined,
 			}}
-			className="group relative"
+			className={`group relative ${
+				depth > 0 ? "border-l-[2.5px] border-border-soft pl-3" : ""
+			} ${selected ? "bg-folder-blue/10" : ""}`}
 		>
 			{/* Grip: tap (no movement) opens the menu, drag reorders the block.
 			    dnd-kit suppresses onClick on a drag handle, so a tap is detected
