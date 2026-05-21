@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AccountModal from "../features/notes/AccountModal.jsx";
 import FlashcardsPlaceholder from "../features/notes/FlashcardsPlaceholder.jsx";
 import NotePanel from "../features/notes/NotePanel.jsx";
@@ -6,7 +8,14 @@ import Sidebar from "../features/notes/Sidebar.jsx";
 import { VIEW } from "../lib/constants.js";
 
 function NotesWorkspace() {
-	const { view, loading, accountOpen, setAccountOpen } = useNotes();
+	const { view, loading, accountOpen, setAccountOpen, username } = useNotes();
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!loading && !username) {
+			navigate("/choose-username", { replace: true });
+		}
+	}, [loading, username, navigate]);
 
 	return (
 		<div className="flex h-full gap-4 bg-bg p-4">

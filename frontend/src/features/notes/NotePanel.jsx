@@ -52,7 +52,7 @@ export default function NotePanel() {
 						type="button"
 						disabled={!dirty}
 						onClick={() => editorRef.current?.save()}
-						className={`flex h-[45px] items-center rounded-full border-[2.5px] px-5 text-xl font-semibold ${
+						className={`flex h-[45px] items-center rounded-full border-[2.5px] px-5 text-[15px] font-semibold ${
 							dirty
 								? "border-folder-blue/15 bg-folder-blue/15 text-folder-blue"
 								: "cursor-default border-border-soft bg-bg text-body/40"
@@ -68,7 +68,7 @@ export default function NotePanel() {
 					</button>
 					<button
 						type="button"
-						className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-folder-purple/15 bg-folder-purple/15 px-5 text-xl font-semibold text-folder-purple"
+						className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-folder-purple/15 bg-folder-purple/15 px-5 text-[15px] font-semibold text-folder-purple"
 					>
 						<Icon name="flashcards" size={20} />
 						Create Flashcards

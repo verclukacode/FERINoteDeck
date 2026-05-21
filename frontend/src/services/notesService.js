@@ -80,6 +80,14 @@ export function setPresetAvatar(avatarUrl) {
 	return apiRequest("/users/me", { method: "PATCH", body: { avatarUrl } });
 }
 
+export function setUsername(username) {
+	return apiRequest("/users/me", { method: "PATCH", body: { username } });
+}
+
+export function checkUsername(username) {
+	return apiRequest(`/users/check-username/${encodeURIComponent(username)}`);
+}
+
 export async function uploadAvatar(file) {
 	const headers = await authHeader();
 	const form = new FormData();

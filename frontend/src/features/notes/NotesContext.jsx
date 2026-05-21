@@ -31,6 +31,7 @@ export function NotesProvider({ children }) {
 	const [loading, setLoading] = useState(true);
 	const [accountOpen, setAccountOpen] = useState(false);
 	const [avatarUrl, setAvatarUrl] = useState(null);
+	const [username, setUsername] = useState("");
 
 	const pagesRef = useRef(pages);
 	pagesRef.current = pages;
@@ -43,6 +44,7 @@ export function NotesProvider({ children }) {
 				setFolders(f);
 				setPages(p);
 				setAvatarUrl(me?.avatarUrl ?? null);
+				setUsername(me?.username ?? "");
 				setLoading(false);
 			})
 			.catch((err) => {
@@ -197,6 +199,8 @@ export function NotesProvider({ children }) {
 			setAccountOpen,
 			avatarUrl,
 			setAvatarUrl,
+			username,
+			setUsername,
 			setView,
 			addFolder,
 			editFolder,
@@ -218,6 +222,7 @@ export function NotesProvider({ children }) {
 			loading,
 			accountOpen,
 			avatarUrl,
+			username,
 			addFolder,
 			editFolder,
 			removeFolder,

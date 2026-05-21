@@ -18,7 +18,7 @@ export default function ViewToggle() {
 						key={opt.value}
 						type="button"
 						onClick={() => setView(opt.value)}
-						className={`flex h-full items-center rounded-full px-5 font-semibold transition-colors ${
+						className={`flex h-full items-center rounded-full px-5 font-semibold outline-none transition-colors ${
 							active ? "bg-bg-secondary text-title" : "text-body"
 						}`}
 					>

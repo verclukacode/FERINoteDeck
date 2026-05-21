@@ -5,7 +5,7 @@ import { useNotes } from "./NotesContext.jsx";
 
 export default function UserProfileRow() {
 	const { user } = useAuth();
-	const { setAccountOpen, avatarUrl } = useNotes();
+	const { setAccountOpen, avatarUrl, username } = useNotes();
 
 	return (
 		<button
@@ -21,7 +21,7 @@ export default function UserProfileRow() {
 				/>
 			</div>
 			<span className="min-w-0 flex-1 truncate text-left font-medium text-title">
-				{user?.email ?? ""}
+				{username || (user?.email?.split("@")[0] ?? "")}
 			</span>
 			<Icon name="chevron" size={14} className="shrink-0 rotate-90 text-body" />
 		</button>

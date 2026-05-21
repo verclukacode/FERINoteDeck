@@ -4,7 +4,7 @@ import DuoButton from "../../components/DuoButton.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { authErrorMessage } from "../auth/firebaseError.js";
-import { setPresetAvatar, uploadAvatar } from "../../services/notesService.js";
+import { checkUsername as checkUsernameService, setPresetAvatar, setUsername as setUsernameService, uploadAvatar } from "../../services/notesService.js";
 import { useNotes } from "./NotesContext.jsx";
 import userProfilePic from "../../assets/userProfilePic.svg";
 import pencilIcon from "../../assets/pencil.svg";
@@ -349,9 +349,100 @@ function ChangeProfilePicPanel({ currentAvatar, onSave, onBack }) {
 	);
 }
 
+function ChangeUsernamePanel({ onBack }) {
+	const { username, setUsername: setCtxUsername } = useNotes();
+	const [value, setValue] = useState(username ?? "");
+	const [status, setStatus] = useState("idle");
+	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [success, setSuccess] = useState(false);
+	const debounceRef = useRef(null);
+
+	const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+
+	useEffect(() => {
+		if (!value || value === username) { setStatus("idle"); return; }
+		if (!USERNAME_RE.test(value)) { setStatus("invalid"); return; }
+		setStatus("checking");
+		clearTimeout(debounceRef.current);
+		debounceRef.current = setTimeout(async () => {
+			try {
+				const res = await checkUsernameService(value);
+				setStatus(res.available ? "available" : "taken");
+			} catch { setStatus("idle"); }
+		}, 500);
+		return () => clearTimeout(debounceRef.current);
+	}, [value, username]);
+
+	async function handleSubmit(e) {
+		e.preventDefault();
+		if (status !== "available") return;
+		setError("");
+		setLoading(true);
+		try {
+			await setUsernameService(value);
+			setCtxUsername(value.toLowerCase());
+			setSuccess(true);
+		} catch (err) {
+			setError(authErrorMessage(err));
+		} finally {
+			setLoading(false);
+		}
+	}
+
+	const hint = {
+		idle: null,
+		checking: { text: "Checking…", color: "text-body" },
+		available: { text: "✓ Available", color: "text-green-500" },
+		taken: { text: "Already taken", color: "text-folder-red" },
+		invalid: { text: "3–20 characters, letters, numbers, underscores only.", color: "text-folder-red" },
+	}[status];
+
+	if (success) {
+		return (
+			<div className="flex flex-col gap-4">
+				<SuccessState title="Username updated!" description="Your new username is now active." />
+				<DuoButton type="button" onClick={onBack} className="h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf]">
+					Back to account
+				</DuoButton>
+			</div>
+		);
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className="flex flex-col gap-3">
+			<BackButton onClick={onBack} />
+			<h3 className="text-lg font-bold text-title">Change username</h3>
+			<div className="flex flex-col gap-1">
+				<div className="relative">
+					<span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-body">@</span>
+					<input
+						type="text"
+						value={value}
+						onChange={(e) => setValue(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+						placeholder="new_username"
+						maxLength={20}
+						autoFocus
+						className="w-full rounded-full bg-bg-secondary py-3 pl-8 pr-4 text-sm text-title placeholder:text-body/50 outline-none"
+					/>
+				</div>
+				{hint && <p className={`pl-2 text-xs ${hint.color}`}>{hint.text}</p>}
+			</div>
+			{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+			<DuoButton
+				type="submit"
+				disabled={loading || status !== "available"}
+				className="mt-2 h-[45px] w-full bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
+			>
+				{loading ? "Saving…" : "Save username"}
+			</DuoButton>
+		</form>
+	);
+}
+
 export default function AccountModal({ onClose }) {
 	const { user, logout } = useAuth();
-	const { avatarUrl, setAvatarUrl } = useNotes();
+	const { avatarUrl, setAvatarUrl, username } = useNotes();
 	const navigate = useNavigate();
 	const [copied, setCopied] = useState(false);
 	const [panel, setPanel] = useState(null);
@@ -366,7 +457,7 @@ export default function AccountModal({ onClose }) {
 	}, [onClose, panel]);
 
 	function handleCopy() {
-		navigator.clipboard.writeText(user?.email ?? "");
+		navigator.clipboard.writeText(username);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 1500);
 	}
@@ -394,7 +485,9 @@ export default function AccountModal({ onClose }) {
 					<Icon name="xmark" size={14} />
 				</button>
 
-				{panel === "email" ? (
+				{panel === "username" ? (
+					<ChangeUsernamePanel onBack={() => setPanel(null)} />
+				) : panel === "email" ? (
 					<ChangeEmailPanel onBack={() => setPanel(null)} />
 				) : panel === "password" ? (
 					<ChangePasswordPanel onBack={() => setPanel(null)} />
@@ -435,16 +528,16 @@ export default function AccountModal({ onClose }) {
 
 						<div className="mb-3 h-px bg-border-soft" />
 
-						{/* Email display */}
+						{/* Username display */}
 						<div className="mb-3 flex items-center justify-between rounded-2xl border border-border-soft px-4 py-3">
 							<div>
-								<p className="text-xs text-body">Email address</p>
-								<p className="font-semibold text-title">{user?.email ?? ""}</p>
+								<p className="text-xs text-body">Username</p>
+								<p className="font-semibold text-title">{username}</p>
 							</div>
 							<button
 								type="button"
 								onClick={handleCopy}
-								title="Copy email"
+								title="Copy username"
 								className="flex h-8 w-8 items-center justify-center rounded-xl bg-bg-secondary text-body hover:bg-border-soft"
 							>
 								{copied ? <CheckIcon /> : <CopyIcon />}
@@ -453,9 +546,9 @@ export default function AccountModal({ onClose }) {
 
 						{/* Action rows */}
 						<div className="flex flex-col gap-2 mb-4">
+							<Row icon={<PersonIcon size={18} />} label="Change username" onClick={() => setPanel("username")} />
 							<Row icon={<MailIcon />} label="Change email" onClick={() => setPanel("email")} />
 							<Row icon={<LockIcon />} label="Change password" onClick={() => setPanel("password")} />
-							<Row icon={<PersonIcon size={18} />} label="Change profile picture" onClick={() => setPanel("avatar")} />
 						</div>
 
 						{/* Sign out */}
