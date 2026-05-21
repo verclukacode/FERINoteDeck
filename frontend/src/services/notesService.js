@@ -72,6 +72,28 @@ export function savePages(pages) {
 	return apiRequest("/pages/order", { method: "PUT", body: { pages } });
 }
 
+export function getMe() {
+	return apiRequest("/users/me");
+}
+
+export function setPresetAvatar(avatarUrl) {
+	return apiRequest("/users/me", { method: "PATCH", body: { avatarUrl } });
+}
+
+export async function uploadAvatar(file) {
+	const headers = await authHeader();
+	const form = new FormData();
+	form.append("avatar", file);
+	const res = await fetch(`${BASE}/users/me/avatar`, {
+		method: "POST",
+		headers,
+		body: form,
+	});
+	const data = await res.json().catch(() => null);
+	if (!res.ok) throw new Error(data?.error ?? "Upload failed");
+	return data;
+}
+
 // Upload an image file; returns { url } to embed in note markdown.
 export async function uploadImage(file) {
 	const headers = await authHeader();

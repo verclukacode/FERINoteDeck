@@ -30,17 +30,19 @@ export function NotesProvider({ children }) {
 	const [selectedPageId, setSelectedPageId] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [accountOpen, setAccountOpen] = useState(false);
+	const [avatarUrl, setAvatarUrl] = useState(null);
 
 	const pagesRef = useRef(pages);
 	pagesRef.current = pages;
 
 	useEffect(() => {
 		let active = true;
-		Promise.all([service.listFolders(), service.listAllPages()])
-			.then(([f, p]) => {
+		Promise.all([service.listFolders(), service.listAllPages(), service.getMe()])
+			.then(([f, p, me]) => {
 				if (!active) return;
 				setFolders(f);
 				setPages(p);
+				setAvatarUrl(me?.avatarUrl ?? null);
 				setLoading(false);
 			})
 			.catch((err) => {
@@ -193,6 +195,8 @@ export function NotesProvider({ children }) {
 			loading,
 			accountOpen,
 			setAccountOpen,
+			avatarUrl,
+			setAvatarUrl,
 			setView,
 			addFolder,
 			editFolder,
@@ -213,6 +217,7 @@ export function NotesProvider({ children }) {
 			selectedPageId,
 			loading,
 			accountOpen,
+			avatarUrl,
 			addFolder,
 			editFolder,
 			removeFolder,

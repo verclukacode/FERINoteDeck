@@ -1,12 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DuoButton from "../../components/DuoButton.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { authErrorMessage } from "../auth/firebaseError.js";
+import { setPresetAvatar, uploadAvatar } from "../../services/notesService.js";
+import { useNotes } from "./NotesContext.jsx";
 import userProfilePic from "../../assets/userProfilePic.svg";
 import pencilIcon from "../../assets/pencil.svg";
 import arrowIcon from "../../assets/arrow.svg";
+
+const PRESET_AVATARS = [
+	{ url: null, label: "Default" },
+	{ url: "/avatars/boy.profile.pic.png", label: "Boy" },
+	{ url: "/avatars/girl.profile.pic.png", label: "Girl" },
+];
 
 function Row({ icon, label, onClick }) {
 	return (
@@ -251,11 +259,105 @@ function ChangePasswordPanel({ onBack }) {
 	);
 }
 
+function ChangeProfilePicPanel({ currentAvatar, onSave, onBack }) {
+	const fileInputRef = useRef(null);
+	const [selected, setSelected] = useState(currentAvatar);
+	const [uploading, setUploading] = useState(false);
+	const [error, setError] = useState("");
+
+	async function handlePreset(url) {
+		setSelected(url);
+		setError("");
+		try {
+			const user = await setPresetAvatar(url);
+			onSave(user.avatarUrl);
+		} catch {
+			setError("Failed to save. Please try again.");
+		}
+	}
+
+	async function handleFileChange(e) {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setUploading(true);
+		setError("");
+		try {
+			const user = await uploadAvatar(file);
+			setSelected(user.avatarUrl);
+			onSave(user.avatarUrl);
+		} catch {
+			setError("Upload failed. Please try again.");
+		} finally {
+			setUploading(false);
+		}
+	}
+
+	return (
+		<div className="flex flex-col gap-4">
+			<BackButton onClick={onBack} />
+			<h3 className="text-lg font-bold text-title">Change profile picture</h3>
+
+			<div className="grid grid-cols-3 gap-3">
+				{PRESET_AVATARS.map(({ url, label }) => {
+					const isSelected = selected === url;
+					return (
+						<button
+							key={label}
+							type="button"
+							onClick={() => handlePreset(url)}
+							className="relative overflow-hidden rounded-full border-[2.5px] transition-colors"
+							style={{ borderColor: isSelected ? "#4a9cf5" : "rgba(0,0,0,0.08)" }}
+						>
+							<img
+								src={url ?? userProfilePic}
+								alt={label}
+								className="aspect-square w-full object-cover"
+							/>
+							{isSelected && (
+								<div className="absolute bottom-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-folder-blue">
+									<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+										<polyline points="20 6 9 17 4 12" />
+									</svg>
+								</div>
+							)}
+						</button>
+					);
+				})}
+			</div>
+
+			{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+
+			<div className="flex flex-col gap-2">
+				<p className="text-xs font-medium text-body">Or upload your own</p>
+				<DuoButton
+					type="button"
+					onClick={() => fileInputRef.current?.click()}
+					disabled={uploading}
+					className="h-[45px] w-full bg-bg-secondary text-title shadow-[0_2.5px_0_rgba(0,0,0,0.1)] disabled:opacity-60"
+				>
+					{uploading ? "Uploading…" : "Upload image"}
+				</DuoButton>
+				<input
+					ref={fileInputRef}
+					type="file"
+					accept="image/*"
+					className="hidden"
+					onChange={handleFileChange}
+				/>
+			</div>
+		</div>
+	);
+}
+
 export default function AccountModal({ onClose }) {
 	const { user, logout } = useAuth();
+	const { avatarUrl, setAvatarUrl } = useNotes();
 	const navigate = useNavigate();
 	const [copied, setCopied] = useState(false);
 	const [panel, setPanel] = useState(null);
+
+	useEffect(() => {
+	}, []);
 
 	useEffect(() => {
 		const onKey = (e) => e.key === "Escape" && (panel ? setPanel(null) : onClose());
@@ -296,15 +398,28 @@ export default function AccountModal({ onClose }) {
 					<ChangeEmailPanel onBack={() => setPanel(null)} />
 				) : panel === "password" ? (
 					<ChangePasswordPanel onBack={() => setPanel(null)} />
+				) : panel === "avatar" ? (
+					<ChangeProfilePicPanel
+						currentAvatar={avatarUrl}
+						onSave={(url) => { setAvatarUrl(url); setPanel(null); }}
+						onBack={() => setPanel(null)}
+					/>
 				) : (
 					<>
 						{/* Avatar */}
 						<div className="mb-4 flex flex-col items-center gap-2">
 							<div className="relative inline-block">
-								<img src={userProfilePic} width={80} height={80} alt="Profile picture" />
+								<img
+									src={avatarUrl ?? userProfilePic}
+									width={80}
+									height={80}
+									alt="Profile picture"
+									className="h-20 w-20 rounded-full object-cover"
+								/>
 								<button
 									type="button"
 									aria-label="Edit profile picture"
+									onClick={() => setPanel("avatar")}
 									className="absolute -bottom-1 -right-1"
 								>
 									<img src={pencilIcon} width={28} height={28} alt="" />
@@ -340,7 +455,7 @@ export default function AccountModal({ onClose }) {
 						<div className="flex flex-col gap-2 mb-4">
 							<Row icon={<MailIcon />} label="Change email" onClick={() => setPanel("email")} />
 							<Row icon={<LockIcon />} label="Change password" onClick={() => setPanel("password")} />
-							<Row icon={<PersonIcon size={18} />} label="Change profile picture" />
+							<Row icon={<PersonIcon size={18} />} label="Change profile picture" onClick={() => setPanel("avatar")} />
 						</div>
 
 						{/* Sign out */}

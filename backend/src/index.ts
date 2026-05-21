@@ -14,6 +14,7 @@ import { requireAuth } from "./middleware/requireAuth";
 import foldersRouter from "./routes/folders";
 import imagesRouter, { uploadsDir } from "./routes/images";
 import pagesRouter from "./routes/pages";
+import usersRouter from "./routes/users";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,6 +51,7 @@ app.use("/api/images", express.static(uploadsDir));
 app.use("/api/folders", requireAuth, foldersRouter);
 app.use("/api/pages", requireAuth, pagesRouter);
 app.use("/api/images", requireAuth, imagesRouter);
+app.use("/api/users", requireAuth, usersRouter);
 
 // JSON error handler — Express 5 forwards async route rejections here.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
