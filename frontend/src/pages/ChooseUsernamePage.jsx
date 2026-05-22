@@ -17,7 +17,7 @@ export default function ChooseUsernamePage() {
 		}).catch(() => {});
 	}, [navigate]);
 
-	const [status, setStatus] = useState("idle"); // idle | checking | available | taken | invalid
+	const [status, setStatus] = useState("idle"); // idle | checking | available | taken | invalid | error
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 	const debounceRef = useRef(null);
@@ -37,7 +37,7 @@ export default function ChooseUsernamePage() {
 				const res = await checkUsername(value);
 				setStatus(res.available ? "available" : "taken");
 			} catch {
-				setStatus("invalid");
+				setStatus("error");
 			}
 		}, 500);
 
@@ -65,6 +65,7 @@ export default function ChooseUsernamePage() {
 		available: { text: "✓ Available", color: "text-green-500" },
 		taken: { text: "Already taken", color: "text-folder-red" },
 		invalid: { text: "3–20 characters, letters, numbers, underscores only.", color: "text-folder-red" },
+		error: { text: "Couldn't check that username. Try again.", color: "text-folder-red" },
 	}[status];
 
 	return (
