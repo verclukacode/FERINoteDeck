@@ -1,10 +1,14 @@
 import { useResizableWidth } from "../../hooks/useResizableWidth.js";
+import { VIEW } from "../../lib/constants.js";
+import DeckList from "../flashcards/DeckList.jsx";
 import AddFolderButton from "./AddFolderButton.jsx";
 import FolderList from "./FolderList.jsx";
+import { useNotes } from "./NotesContext.jsx";
 import SidebarHeader from "./SidebarHeader.jsx";
 import UserProfileRow from "./UserProfileRow.jsx";
 
 export default function Sidebar() {
+	const { view } = useNotes();
 	const { width, ref, startResize } = useResizableWidth({
 		initial: 428,
 		min: 360,
@@ -20,8 +24,14 @@ export default function Sidebar() {
 		>
 			<SidebarHeader />
 			<div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
-				<FolderList />
-				<AddFolderButton />
+				{view === VIEW.FLASHCARDS ? (
+					<DeckList />
+				) : (
+					<>
+						<FolderList />
+						<AddFolderButton />
+					</>
+				)}
 			</div>
 			<UserProfileRow />
 			<button
