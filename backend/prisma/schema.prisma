@@ -13,8 +13,11 @@ model User {
   username  String?  @unique
   avatarUrl String?
   createdAt DateTime @default(now())
-  folders   Folder[]
-  pages     Page[]
+  folders          Folder[]
+  pages            Page[]
+  flashcardFolders FlashcardFolder[]
+  decks            Deck[]
+  flashCards       FlashCard[]
 }
 
 model Folder {
@@ -46,4 +49,52 @@ model Page {
 
   @@index([userId])
   @@index([folderId])
+}
+
+model FlashcardFolder {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  color     String   @default("blue")
+  collapsed Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decks     Deck[]
+
+  @@index([userId])
+}
+
+model Deck {
+  id        String          @id @default(uuid())
+  userId    String
+  folderId  String
+  name      String
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder    FlashcardFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  cards     FlashCard[]
+
+  @@index([userId])
+  @@index([folderId])
+}
+
+model FlashCard {
+  id        String   @id @default(uuid())
+  userId    String
+  deckId    String
+  type      String   @default("rate")
+  question  String   @db.Text
+  answer    String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deckId])
 }

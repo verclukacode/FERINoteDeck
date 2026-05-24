@@ -11,6 +11,9 @@ import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import "./lib/firebase";
 import { requireAuth } from "./middleware/requireAuth";
+import cardsRouter from "./routes/cards";
+import decksRouter from "./routes/decks";
+import flashcardFoldersRouter from "./routes/flashcard-folders";
 import foldersRouter from "./routes/folders";
 import imagesRouter, { uploadsDir } from "./routes/images";
 import pagesRouter from "./routes/pages";
@@ -52,6 +55,9 @@ app.use("/api/folders", requireAuth, foldersRouter);
 app.use("/api/pages", requireAuth, pagesRouter);
 app.use("/api/images", requireAuth, imagesRouter);
 app.use("/api/users", requireAuth, usersRouter);
+app.use("/api/flashcard-folders", requireAuth, flashcardFoldersRouter);
+app.use("/api/decks", requireAuth, decksRouter);
+app.use("/api/cards", requireAuth, cardsRouter);
 
 // JSON error handler — Express 5 forwards async route rejections here.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

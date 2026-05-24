@@ -2,129 +2,75 @@ import {
 	createContext,
 	useCallback,
 	useContext,
+	useEffect,
 	useMemo,
 	useState,
 } from "react";
+import {
+	createCard,
+	createDeck,
+	createFlashcardFolder,
+	deleteCard,
+	deleteDeck,
+	deleteFlashcardFolder,
+	listCards,
+	listDecks,
+	listFlashcardFolders,
+	updateCard,
+	updateDeck,
+	updateFlashcardFolder,
+} from "../../services/flashcardsService.js";
 
-// In-memory only — no backend/persistence yet. Seeded with sample data that
-// mirrors the Figma reference so the UI has something to show on first load.
 const FlashcardsContext = createContext(null);
 
-const uid = () => crypto.randomUUID();
-
-function seed() {
-	const geo = uid();
-	const mat = uid();
-	const slo = uid();
-	const ang = uid();
-
-	const folders = [
-		{ id: mat, name: "Matematika", color: "blue", collapsed: true },
-		{ id: slo, name: "Slovenščina", color: "green", collapsed: true },
-		{ id: geo, name: "Geografija", color: "pink", collapsed: false },
-		{ id: ang, name: "Angleščina", color: "orange", collapsed: true },
-	];
-
-	const tektonika = uid();
-	const pasovi = uid();
-	const prebivalstvo = uid();
-	const urbanizacija = uid();
-
-	const decks = [
-		{ id: tektonika, folderId: geo, name: "Tektonske plošče in relief" },
-		{ id: pasovi, folderId: geo, name: "Toplotni pasovi" },
-		{
-			id: prebivalstvo,
-			folderId: geo,
-			name: "Prebivalstvo in demografija v Evropi",
-		},
-		{ id: urbanizacija, folderId: geo, name: "Urbanizacija" },
-	];
-
-	const cards = [
-		{
-			id: uid(),
-			deckId: pasovi,
-			type: "rate",
-			question: "Kateri so glavni toplotni pasovi na Zemlji?",
-			answer: "Tropski (vroči), zmerni in polarni (mrzli) pas.",
-		},
-		{
-			id: uid(),
-			deckId: pasovi,
-			type: "rate",
-			question: "Kje leži tropski pas?",
-			answer: "Med povratnikoma, okoli ekvatorja.",
-		},
-		{
-			id: uid(),
-			deckId: pasovi,
-			type: "rate",
-			question: "Zakaj je na polih najhladneje?",
-			answer: "Sončni žarki padajo zelo poševno, zato je obsevanje šibko.",
-		},
-		{
-			id: uid(),
-			deckId: pasovi,
-			type: "rate",
-			question: "Kateri toplotni pas ima štiri letne čase?",
-			answer: "Zmerni toplotni pas.",
-		},
-	];
-
-	return {
-		folders,
-		decks,
-		cards,
-		selectedDeckId: pasovi,
-		selectedCardId: cards[0].id,
-	};
-}
-
 export function FlashcardsProvider({ children }) {
-	const initial = useMemo(seed, []);
-	const [folders, setFolders] = useState(initial.folders);
-	const [decks, setDecks] = useState(initial.decks);
-	const [cards, setCards] = useState(initial.cards);
-	const [selectedDeckId, setSelectedDeckId] = useState(initial.selectedDeckId);
-	const [selectedCardId, setSelectedCardId] = useState(initial.selectedCardId);
+	const [folders, setFolders] = useState([]);
+	const [decks, setDecks] = useState([]);
+	const [cards, setCards] = useState([]);
+	const [selectedDeckId, setSelectedDeckId] = useState(null);
+	const [selectedCardId, setSelectedCardId] = useState(null);
+	const [loading, setLoading] = useState(true);
 
-	const addFolder = useCallback(() => {
-		const folder = {
-			id: uid(),
-			name: "New folder",
-			color: "blue",
-			collapsed: false,
-		};
+	useEffect(() => {
+		Promise.all([listFlashcardFolders(), listDecks(), listCards()])
+			.then(([f, d, c]) => {
+				setFolders(f);
+				setDecks(d);
+				setCards(c);
+			})
+			.finally(() => setLoading(false));
+	}, []);
+
+	const addFolder = useCallback(async () => {
+		const folder = await createFlashcardFolder({ name: "New folder", color: "blue" });
 		setFolders((prev) => [...prev, folder]);
 	}, []);
 
-	const toggleFolder = useCallback((id) => {
+	const toggleFolder = useCallback(async (id) => {
 		setFolders((prev) =>
 			prev.map((f) => (f.id === id ? { ...f, collapsed: !f.collapsed } : f)),
 		);
-	}, []);
+		const folder = folders.find((f) => f.id === id);
+		if (folder) {
+			await updateFlashcardFolder(id, { collapsed: !folder.collapsed });
+		}
+	}, [folders]);
 
-	const renameFolder = useCallback((id, name) => {
+	const renameFolder = useCallback(async (id, name) => {
 		setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
+		await updateFlashcardFolder(id, { name });
 	}, []);
 
-	const removeFolder = useCallback(
-		(id) => {
-			setFolders((prev) => prev.filter((f) => f.id !== id));
-			setDecks((prev) => prev.filter((d) => d.folderId !== id));
-			setCards((prev) => {
-				const removedDeckIds = decks
-					.filter((d) => d.folderId === id)
-					.map((d) => d.id);
-				return prev.filter((c) => !removedDeckIds.includes(c.deckId));
-			});
-		},
-		[decks],
-	);
+	const removeFolder = useCallback(async (id) => {
+		const removedDeckIds = decks.filter((d) => d.folderId === id).map((d) => d.id);
+		setFolders((prev) => prev.filter((f) => f.id !== id));
+		setDecks((prev) => prev.filter((d) => d.folderId !== id));
+		setCards((prev) => prev.filter((c) => !removedDeckIds.includes(c.deckId)));
+		await deleteFlashcardFolder(id);
+	}, [decks]);
 
-	const addDeck = useCallback((folderId) => {
-		const deck = { id: uid(), folderId, name: "New deck" };
+	const addDeck = useCallback(async (folderId) => {
+		const deck = await createDeck({ folderId, name: "New deck" });
 		setDecks((prev) => [...prev, deck]);
 		setFolders((prev) =>
 			prev.map((f) => (f.id === folderId ? { ...f, collapsed: false } : f)),
@@ -133,14 +79,16 @@ export function FlashcardsProvider({ children }) {
 		setSelectedCardId(null);
 	}, []);
 
-	const renameDeck = useCallback((id, name) => {
+	const renameDeck = useCallback(async (id, name) => {
 		setDecks((prev) => prev.map((d) => (d.id === id ? { ...d, name } : d)));
+		await updateDeck(id, { name });
 	}, []);
 
-	const removeDeck = useCallback((id) => {
+	const removeDeck = useCallback(async (id) => {
 		setDecks((prev) => prev.filter((d) => d.id !== id));
 		setCards((prev) => prev.filter((c) => c.deckId !== id));
 		setSelectedDeckId((cur) => (cur === id ? null : cur));
+		await deleteDeck(id);
 	}, []);
 
 	const selectDeck = useCallback(
@@ -152,19 +100,21 @@ export function FlashcardsProvider({ children }) {
 		[cards],
 	);
 
-	const addCard = useCallback((deckId) => {
-		const card = { id: uid(), deckId, type: "rate", question: "", answer: "" };
+	const addCard = useCallback(async (deckId) => {
+		const card = await createCard({ deckId, type: "rate", question: "", answer: "" });
 		setCards((prev) => [...prev, card]);
 		setSelectedCardId(card.id);
 	}, []);
 
-	const updateCard = useCallback((id, patch) => {
+	const updateCardLocal = useCallback(async (id, patch) => {
 		setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+		await updateCard(id, patch);
 	}, []);
 
-	const removeCard = useCallback((id) => {
+	const removeCard = useCallback(async (id) => {
 		setCards((prev) => prev.filter((c) => c.id !== id));
 		setSelectedCardId((cur) => (cur === id ? null : cur));
+		await deleteCard(id);
 	}, []);
 
 	const selectCard = useCallback((id) => setSelectedCardId(id), []);
@@ -179,6 +129,7 @@ export function FlashcardsProvider({ children }) {
 			selectedDeck: decks.find((d) => d.id === selectedDeckId) ?? null,
 			selectedCard: cards.find((c) => c.id === selectedCardId) ?? null,
 			deckCards: cards.filter((c) => c.deckId === selectedDeckId),
+			loading,
 			addFolder,
 			toggleFolder,
 			renameFolder,
@@ -188,7 +139,7 @@ export function FlashcardsProvider({ children }) {
 			removeDeck,
 			selectDeck,
 			addCard,
-			updateCard,
+			updateCard: updateCardLocal,
 			removeCard,
 			selectCard,
 		}),
@@ -198,6 +149,7 @@ export function FlashcardsProvider({ children }) {
 			cards,
 			selectedDeckId,
 			selectedCardId,
+			loading,
 			addFolder,
 			toggleFolder,
 			renameFolder,
@@ -207,7 +159,7 @@ export function FlashcardsProvider({ children }) {
 			removeDeck,
 			selectDeck,
 			addCard,
-			updateCard,
+			updateCardLocal,
 			removeCard,
 			selectCard,
 		],

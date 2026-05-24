@@ -2,7 +2,11 @@ import DeckFolderItem from "./DeckFolderItem.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 
 export default function DeckList() {
-	const { folders, addFolder } = useFlashcards();
+	const { folders, addFolder, loading } = useFlashcards();
+
+	if (loading) {
+		return <div className="flex flex-1 items-center justify-center text-body">Loading…</div>;
+	}
 
 	return (
 		<>
