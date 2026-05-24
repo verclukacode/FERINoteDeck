@@ -4,6 +4,7 @@ import ContextMenu from "../../components/ContextMenu.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useContextMenu } from "../../hooks/useContextMenu.js";
 import { folderHex } from "../../lib/constants.js";
+import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 
 function DeckRow({ deck }) {
@@ -64,6 +65,7 @@ function DeckRow({ deck }) {
 export default function DeckFolderItem({ folder }) {
 	const { decks, toggleFolder, addDeck, removeFolder } = useFlashcards();
 	const { menu, open, close } = useContextMenu();
+	const [editing, setEditing] = useState(false);
 	const [confirming, setConfirming] = useState(false);
 	const folderDecks = decks.filter((d) => d.folderId === folder.id);
 
@@ -130,6 +132,14 @@ export default function DeckFolderItem({ folder }) {
 					y={menu.y}
 					items={[
 						{
+							label: "Edit folder",
+							icon: "folder",
+							onClick: () => {
+								setEditing(true);
+								close();
+							},
+						},
+						{
 							label: "Delete folder",
 							icon: "trash",
 							danger: true,
@@ -140,6 +150,10 @@ export default function DeckFolderItem({ folder }) {
 						},
 					]}
 				/>
+			)}
+
+			{editing && (
+				<FlashcardFolderModal folder={folder} onClose={() => setEditing(false)} />
 			)}
 
 			{confirming && (

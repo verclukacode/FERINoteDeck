@@ -61,6 +61,11 @@ export function FlashcardsProvider({ children }) {
 		await updateFlashcardFolder(id, { name });
 	}, []);
 
+	const editFolder = useCallback(async (id, patch) => {
+		setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+		await updateFlashcardFolder(id, patch);
+	}, []);
+
 	const removeFolder = useCallback(async (id) => {
 		const removedDeckIds = decks.filter((d) => d.folderId === id).map((d) => d.id);
 		setFolders((prev) => prev.filter((f) => f.id !== id));
@@ -133,6 +138,7 @@ export function FlashcardsProvider({ children }) {
 			addFolder,
 			toggleFolder,
 			renameFolder,
+			editFolder,
 			removeFolder,
 			addDeck,
 			renameDeck,
@@ -153,6 +159,7 @@ export function FlashcardsProvider({ children }) {
 			addFolder,
 			toggleFolder,
 			renameFolder,
+			editFolder,
 			removeFolder,
 			addDeck,
 			renameDeck,
