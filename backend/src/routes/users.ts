@@ -67,7 +67,7 @@ router.patch("/me", async (req: Request, res: Response) => {
 });
 
 router.get("/check-username/:username", async (req: Request, res: Response) => {
-	const { username } = req.params;
+	const username = String(req.params.username);
 	if (!USERNAME_RE.test(username)) {
 		return res.json({
 			available: false,
