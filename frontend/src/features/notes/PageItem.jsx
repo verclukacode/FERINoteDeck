@@ -49,7 +49,7 @@ export default function PageItem({ page, selected, onSelect }) {
 				{...listeners}
 				className={`flex w-full items-center gap-3 rounded-[14px] px-4 py-2 text-left ${
 					selected
-						? "bg-folder-blue/10 font-semibold text-folder-blue"
+						? "font-semibold text-title underline"
 						: "font-medium text-body hover:bg-bg-secondary"
 				}`}
 			>

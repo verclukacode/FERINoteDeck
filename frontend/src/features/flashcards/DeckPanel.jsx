@@ -105,9 +105,9 @@ export default function DeckPanel() {
 				<button
 					type="button"
 					onClick={() => addCard(selectedDeck.id)}
-					className="min-h-[62px] w-full rounded-[22.5px] border-[2.5px] border-dashed border-body/40 font-semibold text-body"
+					className="min-h-[62px] w-full rounded-[22.5px] border-2 border-dashed border-body/40 font-semibold text-title"
 				>
-					Add question
+					Add flashcard
 				</button>
 			</div>
 
