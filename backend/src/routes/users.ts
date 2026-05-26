@@ -95,11 +95,30 @@ const INT_SETTING_LIMITS: Record<string, { min: number; max: number }> = {
 	newDayStartsAtHour: { min: 0, max: 23 },
 };
 
+/**
+ * @openapi
+ * /api/users/me/study-settings:
+ *   get:
+ *     summary: Get the user's study settings (created with defaults on first read)
+ *     tags: [Users]
+ *     responses:
+ *       200: { description: The study settings }
+ */
 router.get("/me/study-settings", async (req: Request, res: Response) => {
 	const settings = await getOrCreateStudySettings(req.user?.uid ?? "");
 	res.json(settings);
 });
 
+/**
+ * @openapi
+ * /api/users/me/study-settings:
+ *   patch:
+ *     summary: Update the user's study settings (SM-2 defaults)
+ *     tags: [Users]
+ *     responses:
+ *       200: { description: The updated settings }
+ *       400: { description: Invalid setting value }
+ */
 router.patch("/me/study-settings", async (req: Request, res: Response) => {
 	const body = req.body as Record<string, unknown>;
 	const data: Record<string, number | number[]> = {};
