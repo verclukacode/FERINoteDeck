@@ -33,7 +33,7 @@ Yarn 4 (via Corepack); `.yarnrc.yml` pins `nodeLinker: node-modules` so Vite/Sto
 
 ## Architecture
 
-- **Backend** (`backend/src/index.ts`) — Express, persists to **MySQL via Prisma** (`backend/prisma/schema.prisma`, client singleton `src/lib/prisma.ts`). Routers: `routes/folders.ts` at `/api/folders`, `routes/pages.ts` at `/api/pages`, `routes/images.ts` at `/api/images` — all behind the `requireAuth` middleware. Uploaded images are stored as files under `backend/uploads/` and served statically.
+- **Backend** (`backend/src/index.ts`) — Express, persists to **MySQL via Prisma** (`backend/prisma/schema.prisma`, client singleton `src/lib/prisma.ts`). Routers (all behind `requireAuth`): `routes/folders.ts` (`/api/folders`), `routes/pages.ts` (`/api/pages`), `routes/images.ts` (`/api/images`), `routes/users.ts` (`/api/users` — profile, avatar, study-settings), and the flashcards routers `routes/flashcard-folders.ts`, `routes/decks.ts`, `routes/cards.ts`. Uploaded images are stored as files under `backend/uploads/` and served statically. Spaced-repetition scheduling lives in `src/lib/srs.ts`; `src/lib/serialize.ts` converts `BigInt` (unix-ms) fields for JSON.
 - **Auth** is **Firebase Authentication**: the frontend signs in with the Firebase JS SDK; the backend verifies the Firebase ID token with `firebase-admin` (`src/lib/firebase.ts`, `src/middleware/requireAuth.ts`), which also upserts the MySQL `User` row.
 - **Setup**: full local setup (MySQL, Prisma, Firebase) is in `backend/docs/SETUP.md`.
 - **Frontend** is a feature-organized React app (react-router). Routes: `/` (notes UI, behind `ProtectedRoute`), `/login`, `/register`. Entry `frontend/src/main.jsx` → `routes/router.jsx`. See `frontend/ARCHITECTURE.md` for the full `src/` layout.

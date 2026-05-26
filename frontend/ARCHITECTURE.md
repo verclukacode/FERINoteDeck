@@ -1,8 +1,8 @@
 # Frontend architecture
 
-NoteDeck frontend — Vite + React 19, Tailwind v4, react-router. Feature-organized so the app
-can grow (flashcards, auth, a markdown editor are all planned). The notes feature currently
-runs on **dummy data** behind a swappable service layer.
+NoteDeck frontend — Vite + React 19, Tailwind v4, react-router. Feature-organized: notes
+(block editor), flashcards (Anki-style spaced repetition), and Firebase auth are all built.
+Data is persisted to MySQL via the backend, behind a swappable service layer.
 
 ## Directory layout (`src/`)
 
@@ -22,12 +22,17 @@ features/notes/       everything specific to the notes feature
   FolderList / FolderItem / PageList / PageItem
   FolderPreview / PagePreview   static rows for the drag overlay/placeholder
   AddFolderButton / FolderModal / AccountModal
-  NotePanel / FlashcardsPlaceholder
+  NotePanel
   editor/             block-based note editor (see "Note editor" below)
+features/flashcards/  spaced-repetition flashcards (see frontend/docs/flashcards.md)
+  FlashcardsContext.jsx   state provider + useFlashcards() hook
+  DeckList / DeckFolderItem / DeckPanel / CardDetails
+  StudySession.jsx        full-screen Anki-style study overlay
 components/            shared, feature-agnostic UI
                        Icon, Modal, Pill, ContextMenu, ConfirmDialog, DuoButton
 services/
-  notesService.js     API-shaped facade — fetch() to the backend
+  notesService.js       API-shaped facade — fetch() to the backend
+  flashcardsService.js  same, for folders/decks/cards/queue/answer/settings
 hooks/                reusable hooks — useContextMenu, useResizableWidth
 lib/                  constants.js (tokens, enums), id.js, firebase.js
 assets/               Logo.png, icons/*.svg
@@ -61,8 +66,9 @@ gates `/` on `user`. `notesService` reads the ID token straight from the Firebas
 `view`, `selectedPageId`, `loading`. It loads data via the service on mount and exposes action
 callbacks (`addFolder`, `editFolder`, `removeFolder`, `toggleCollapsed`, `addPage`,
 `renamePage`, `updatePageContent`, `removePage`, `selectPage`, `setView`, `handleDndOver`,
-`handleDndEnd`). Consume it with `useNotes()`. A future flashcards feature should get its own
-context under `features/flashcards/`.
+`handleDndEnd`). Consume it with `useNotes()`. The `view` toggle (notes/flashcards) lives here;
+flashcards have their own `FlashcardsContext` under `features/flashcards/` (see
+`frontend/docs/flashcards.md`).
 
 ## Note editor
 
@@ -127,4 +133,3 @@ SVGs live in `assets/icons/` with `fill="currentColor"` so they recolor via CSS 
 
 - All files `.jsx`. Minimal comments — only where intent is non-obvious.
 - Lint/format: Biome (repo root `biome.json`) — tabs, double quotes, import sorting.
-- Not built yet: flashcards logic.
