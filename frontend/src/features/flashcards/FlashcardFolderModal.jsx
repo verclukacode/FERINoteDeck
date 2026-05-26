@@ -4,21 +4,26 @@ import Modal from "../../components/Modal.jsx";
 import { DEFAULT_FOLDER_COLOR, FOLDER_COLORS } from "../../lib/constants.js";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 
+// Mount only while open so create/edit start from fresh state.
 export default function FlashcardFolderModal({ folder, onClose }) {
-	const { editFolder } = useFlashcards();
-	const [name, setName] = useState(folder.name);
-	const [color, setColor] = useState(folder.color ?? DEFAULT_FOLDER_COLOR);
+	const { addFolder, editFolder } = useFlashcards();
+	const isEdit = Boolean(folder);
+	const [name, setName] = useState(folder?.name ?? "");
+	const [color, setColor] = useState(folder?.color ?? DEFAULT_FOLDER_COLOR);
 
 	const submit = (e) => {
 		e.preventDefault();
-		editFolder(folder.id, { name, color });
+		if (isEdit) editFolder(folder.id, { name, color });
+		else addFolder({ name, color });
 		onClose();
 	};
 
 	return (
 		<Modal open onClose={onClose}>
 			<form onSubmit={submit}>
-				<h2 className="px-1 text-3xl font-bold text-title">Edit folder</h2>
+				<h2 className="px-1 text-3xl font-bold text-title">
+					{isEdit ? "Edit folder" : "New folder"}
+				</h2>
 
 				<label
 					htmlFor="folder-name"
@@ -61,7 +66,7 @@ export default function FlashcardFolderModal({ folder, onClose }) {
 					type="submit"
 					className="mt-8 h-[45px] w-full bg-body text-bg shadow-[0_2.5px_0_#5b5b5b]"
 				>
-					Save
+					{isEdit ? "Save" : "Create"}
 				</DuoButton>
 				<button
 					type="button"

@@ -54,6 +54,31 @@ router.post("/", async (req: Request, res: Response) => {
 
 /**
  * @openapi
+ * /api/flashcard-folders/order:
+ *   put:
+ *     summary: Reorder flashcard folders
+ *     tags: [FlashcardFolders]
+ *     responses:
+ *       204: { description: Reordered }
+ */
+router.put("/order", async (req: Request, res: Response) => {
+	const { orderedIds } = req.body as { orderedIds?: unknown };
+	if (!Array.isArray(orderedIds)) {
+		return res.status(400).json({ error: "orderedIds must be an array" });
+	}
+	await prisma.$transaction(
+		orderedIds.map((id, order) =>
+			prisma.flashcardFolder.updateMany({
+				where: { id: String(id), userId: req.user?.uid ?? "" },
+				data: { order },
+			}),
+		),
+	);
+	res.status(204).end();
+});
+
+/**
+ * @openapi
  * /api/flashcard-folders/{id}:
  *   patch:
  *     summary: Update a flashcard folder (name, color, collapsed)

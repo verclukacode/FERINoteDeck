@@ -58,6 +58,42 @@ router.post("/", async (req: Request, res: Response) => {
 
 /**
  * @openapi
+ * /api/decks/order:
+ *   put:
+ *     summary: Bulk-save deck order and folder membership (after drag-and-drop)
+ *     tags: [Decks]
+ *     responses:
+ *       204: { description: Saved }
+ *       400: { description: Unknown folder referenced }
+ */
+router.put("/order", async (req: Request, res: Response) => {
+	const { decks } = req.body as {
+		decks?: Array<{ id: string; folderId: string; order: number }>;
+	};
+	if (!Array.isArray(decks)) {
+		return res.status(400).json({ error: "decks must be an array" });
+	}
+	const folderIds = [...new Set(decks.map((d) => d.folderId))];
+	const owned = await prisma.flashcardFolder.findMany({
+		where: { id: { in: folderIds }, userId: req.user?.uid ?? "" },
+		select: { id: true },
+	});
+	if (owned.length !== folderIds.length) {
+		return res.status(400).json({ error: "Unknown folder referenced" });
+	}
+	await prisma.$transaction(
+		decks.map((d) =>
+			prisma.deck.updateMany({
+				where: { id: d.id, userId: req.user?.uid ?? "" },
+				data: { folderId: d.folderId, order: d.order },
+			}),
+		),
+	);
+	res.status(204).end();
+});
+
+/**
+ * @openapi
  * /api/decks/{id}:
  *   patch:
  *     summary: Rename a deck
@@ -78,7 +114,9 @@ router.patch("/:id", async (req: Request, res: Response) => {
 	if (result.count === 0) {
 		return res.status(404).json({ error: "Deck not found" });
 	}
-	const deck = await prisma.deck.findUnique({ where: { id: String(req.params.id) } });
+	const deck = await prisma.deck.findUnique({
+		where: { id: String(req.params.id) },
+	});
 	res.json(deck);
 });
 

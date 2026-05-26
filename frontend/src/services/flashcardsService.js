@@ -27,15 +27,28 @@ export function listFlashcardFolders() {
 }
 
 export function createFlashcardFolder({ name, color }) {
-	return apiRequest("/flashcard-folders", { method: "POST", body: { name, color } });
+	return apiRequest("/flashcard-folders", {
+		method: "POST",
+		body: { name, color },
+	});
 }
 
 export function updateFlashcardFolder(id, patch) {
-	return apiRequest(`/flashcard-folders/${id}`, { method: "PATCH", body: patch });
+	return apiRequest(`/flashcard-folders/${id}`, {
+		method: "PATCH",
+		body: patch,
+	});
 }
 
 export function deleteFlashcardFolder(id) {
 	return apiRequest(`/flashcard-folders/${id}`, { method: "DELETE" });
+}
+
+export function reorderFlashcardFolders(orderedIds) {
+	return apiRequest("/flashcard-folders/order", {
+		method: "PUT",
+		body: { orderedIds },
+	});
 }
 
 // Decks
@@ -55,13 +68,20 @@ export function deleteDeck(id) {
 	return apiRequest(`/decks/${id}`, { method: "DELETE" });
 }
 
+export function saveDecks(decks) {
+	return apiRequest("/decks/order", { method: "PUT", body: { decks } });
+}
+
 // Cards
 export function listCards() {
 	return apiRequest("/cards");
 }
 
 export function createCard({ deckId, type, question, answer }) {
-	return apiRequest("/cards", { method: "POST", body: { deckId, type, question, answer } });
+	return apiRequest("/cards", {
+		method: "POST",
+		body: { deckId, type, question, answer },
+	});
 }
 
 export function updateCard(id, patch) {
