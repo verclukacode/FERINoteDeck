@@ -125,11 +125,21 @@ mysql -u notedeck -pnotedeck notedeck -e "SELECT title FROM Page;"
 erDiagram
     User ||--o{ Folder : owns
     User ||--o{ Page : owns
+    User ||--o{ FlashcardFolder : owns
+    User ||--o{ Deck : owns
+    User ||--o{ FlashCard : owns
+    User ||--o{ Review : owns
+    User ||--o| StudySettings : has
     Folder ||--o{ Page : contains
+    FlashcardFolder ||--o{ Deck : contains
+    Deck ||--o{ FlashCard : contains
+    FlashCard ||--o{ Review : logs
 
     User {
         string id PK "Firebase UID"
         string email
+        string username "unique, nullable"
+        string avatarUrl "nullable"
         datetime createdAt
     }
     Folder {
@@ -139,8 +149,6 @@ erDiagram
         string color
         int order
         boolean collapsed
-        datetime createdAt
-        datetime updatedAt
     }
     Page {
         string id PK "uuid"
@@ -149,26 +157,106 @@ erDiagram
         string title
         longtext content
         int order
-        datetime createdAt
-        datetime updatedAt
+    }
+    FlashcardFolder {
+        string id PK "uuid"
+        string userId FK
+        string name
+        string color
+        boolean collapsed
+        int order
+    }
+    Deck {
+        string id PK "uuid"
+        string userId FK
+        string folderId FK
+        string name
+        int order
+    }
+    FlashCard {
+        string id PK "uuid"
+        string userId FK
+        string deckId FK
+        string type "rate | boolean | input"
+        text question
+        text answer
+        int order
+        string state "new|learning|review|relearning"
+        bigint due "unix ms, nullable"
+        bigint intervalSec
+        int ease "permille"
+        int reps
+        int lapses
+        int learningStep
+        bigint lastReviewedAt "unix ms, nullable"
+    }
+    Review {
+        string id PK "uuid"
+        string userId FK
+        string cardId FK
+        string deckId
+        bigint reviewedAt "unix ms"
+        int grade "1-4"
+        string prevState
+        string newState
+        bigint prevIntervalSec
+        bigint newIntervalSec
+        int prevEase
+        int newEase
+        bigint prevDue "nullable"
+        bigint newDue
+        int elapsedMs "nullable"
+    }
+    StudySettings {
+        string id PK "uuid"
+        string userId FK "unique"
+        int newCardsPerDay
+        int maxReviewsPerDay
+        json learningStepsSec
+        json relearningStepsSec
+        int graduatingIntervalDays
+        int easyIntervalDays
+        int startingEase "permille"
+        int easyBonusPermille
+        int hardMultiplierPermille
+        int intervalModifierPermille
+        int maxIntervalDays
+        int newDayStartsAtHour
     }
 ```
 
-- Deleting a `User` cascades to their folders and pages; deleting a `Folder` cascades to its
-  pages.
+- **Cascade deletes**: deleting a `User` removes all their rows; deleting a `Folder`
+  removes its pages; deleting a `FlashcardFolder` → its decks → their cards; deleting a
+  `Deck` removes its cards; deleting a `FlashCard` removes its `Review` rows.
 - `Page.content` is the note body as one markdown string (the block editor's
   `<<<NoteDeckMD>>>` format).
-- **Images are not in the database** — they upload to `POST /api/images`, are stored as files
-  under `backend/uploads/<uid>/` (gitignored), and are referenced by URL inside `Page.content`.
+- **Flashcard scheduling** (the `FlashCard` SM-2 fields, `Review` revlog, `StudySettings`)
+  is documented in `frontend/docs/flashcards.md`. All scheduling timestamps are **unix
+  milliseconds** stored as `BigInt`; durations are seconds; ease is permille (2500 = 2.5×).
+- **Images / avatars are not in the database** — they upload to `POST /api/images` /
+  `POST /api/users/me/avatar`, are stored as files under `backend/uploads/<uid>/`
+  (gitignored), and referenced by URL (in `Page.content` / `User.avatarUrl`).
 
 ---
 
 ## 7. API overview
 
-All `/api/folders`, `/api/pages` and `/api/images` routes require an
-`Authorization: Bearer <Firebase ID token>` header (verified by `firebase-admin`); requests
-are scoped to the authenticated user.
+All `/api/*` routes require an `Authorization: Bearer <Firebase ID token>` header
+(verified by `firebase-admin`); requests are scoped to the authenticated user. Interactive
+docs are at `http://localhost:3001/api-docs` (Swagger, generated from `@openapi` JSDoc).
 
+Notes:
 - `GET/POST /api/folders`, `PATCH/DELETE /api/folders/:id`, `PUT /api/folders/order`
 - `GET/POST /api/pages`, `GET/PATCH/DELETE /api/pages/:id`, `PUT /api/pages/order`
 - `POST /api/images` — image upload (multipart); files served from `GET /api/images/...`
+
+Flashcards:
+- `GET/POST /api/flashcard-folders`, `PATCH/DELETE /api/flashcard-folders/:id`, `PUT /api/flashcard-folders/order`
+- `GET/POST /api/decks`, `PATCH/DELETE /api/decks/:id`, `PUT /api/decks/order`
+- `GET /api/decks/:id/queue` — due study queue + counts (daily limits); `POST /api/decks/:id/reset`
+- `GET/POST /api/cards`, `PATCH/DELETE /api/cards/:id`
+- `POST /api/cards/:id/answer` — grade a card (SM-2 + revlog); `POST /api/cards/:id/reset`
+
+Account:
+- `GET/PATCH /api/users/me`, `GET /api/users/check-username/:username`, `POST /api/users/me/avatar`
+- `GET/PATCH /api/users/me/study-settings` — spaced-repetition defaults
