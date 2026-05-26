@@ -1,5 +1,11 @@
 import { type Request, type Response, Router } from "express";
 import { prisma } from "../lib/prisma";
+import { serialize } from "../lib/serialize";
+import { type Grade, schedule, settingsToScheduler } from "../lib/srs";
+import {
+	RESET_CARD_FIELDS,
+	getOrCreateStudySettings,
+} from "../lib/studySettings";
 
 /**
  * @openapi
@@ -23,7 +29,7 @@ router.get("/", async (req: Request, res: Response) => {
 		where: { userId: req.user?.uid ?? "" },
 		orderBy: { order: "asc" },
 	});
-	res.json(cards);
+	res.json(serialize(cards));
 });
 
 /**
@@ -60,7 +66,7 @@ router.post("/", async (req: Request, res: Response) => {
 			order,
 		},
 	});
-	res.status(201).json(card);
+	res.status(201).json(serialize(card));
 });
 
 /**
@@ -91,8 +97,114 @@ router.patch("/:id", async (req: Request, res: Response) => {
 	if (result.count === 0) {
 		return res.status(404).json({ error: "Card not found" });
 	}
-	const card = await prisma.flashCard.findUnique({ where: { id: String(req.params.id) } });
-	res.json(card);
+	const card = await prisma.flashCard.findUnique({
+		where: { id: String(req.params.id) },
+	});
+	res.json(serialize(card));
+});
+
+/**
+ * @openapi
+ * /api/cards/{id}/answer:
+ *   post:
+ *     summary: Grade a card in study (SM-2), persist scheduling + a revlog row
+ *     tags: [Cards]
+ *     responses:
+ *       200: { description: The updated card }
+ *       400: { description: Invalid grade }
+ *       404: { description: Card not found }
+ */
+router.post("/:id/answer", async (req: Request, res: Response) => {
+	const { grade, elapsedMs } = req.body as {
+		grade?: number;
+		elapsedMs?: number;
+	};
+	if (grade !== 1 && grade !== 2 && grade !== 3 && grade !== 4) {
+		return res.status(400).json({ error: "grade must be 1, 2, 3 or 4" });
+	}
+	const userId = req.user?.uid ?? "";
+	const card = await prisma.flashCard.findFirst({
+		where: { id: String(req.params.id), userId },
+	});
+	if (!card) {
+		return res.status(404).json({ error: "Card not found" });
+	}
+
+	const settings = await getOrCreateStudySettings(userId);
+	const now = Date.now();
+	const next = schedule(
+		{
+			state: card.state as "new" | "learning" | "review" | "relearning",
+			intervalSec: Number(card.intervalSec),
+			ease: card.ease,
+			reps: card.reps,
+			lapses: card.lapses,
+			learningStep: card.learningStep,
+		},
+		grade as Grade,
+		settingsToScheduler(settings),
+		now,
+	);
+
+	const [updated] = await prisma.$transaction([
+		prisma.flashCard.update({
+			where: { id: card.id },
+			data: {
+				state: next.state,
+				due: BigInt(next.due),
+				intervalSec: BigInt(next.intervalSec),
+				ease: next.ease,
+				reps: next.reps,
+				lapses: next.lapses,
+				learningStep: next.learningStep,
+				lastReviewedAt: BigInt(now),
+			},
+		}),
+		prisma.review.create({
+			data: {
+				userId,
+				cardId: card.id,
+				deckId: card.deckId,
+				reviewedAt: BigInt(now),
+				grade,
+				prevState: card.state,
+				newState: next.state,
+				prevIntervalSec: card.intervalSec,
+				newIntervalSec: BigInt(next.intervalSec),
+				prevEase: card.ease,
+				newEase: next.ease,
+				prevDue: card.due,
+				newDue: BigInt(next.due),
+				elapsedMs: typeof elapsedMs === "number" ? Math.round(elapsedMs) : null,
+			},
+		}),
+	]);
+
+	res.json(serialize(updated));
+});
+
+/**
+ * @openapi
+ * /api/cards/{id}/reset:
+ *   post:
+ *     summary: Reset a card's study progress back to new (keeps revlog)
+ *     tags: [Cards]
+ *     responses:
+ *       200: { description: The reset card }
+ *       404: { description: Card not found }
+ */
+router.post("/:id/reset", async (req: Request, res: Response) => {
+	const result = await prisma.flashCard.updateMany({
+		where: { id: String(req.params.id), userId: req.user?.uid ?? "" },
+		data: RESET_CARD_FIELDS,
+	});
+	if (result.count === 0) {
+		return res.status(404).json({ error: "Card not found" });
+	}
+	const card = await prisma.flashCard.findUnique({
+		where: { id: String(req.params.id) },
+	});
+	res.json(serialize(card));
 });
 
 /**

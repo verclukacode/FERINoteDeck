@@ -72,6 +72,15 @@ export function saveDecks(decks) {
 	return apiRequest("/decks/order", { method: "PUT", body: { decks } });
 }
 
+// Due study queue for a deck: { counts: {new, learning, review}, cards: [...] }
+export function getDeckQueue(deckId) {
+	return apiRequest(`/decks/${deckId}/queue`);
+}
+
+export function resetDeck(id) {
+	return apiRequest(`/decks/${id}/reset`, { method: "POST" });
+}
+
 // Cards
 export function listCards() {
 	return apiRequest("/cards");
@@ -90,4 +99,28 @@ export function updateCard(id, patch) {
 
 export function deleteCard(id) {
 	return apiRequest(`/cards/${id}`, { method: "DELETE" });
+}
+
+// Grade a card during study (1=Again 2=Hard 3=Good 4=Easy). Returns updated card.
+export function answerCard(id, grade, elapsedMs) {
+	return apiRequest(`/cards/${id}/answer`, {
+		method: "POST",
+		body: { grade, elapsedMs },
+	});
+}
+
+export function resetCard(id) {
+	return apiRequest(`/cards/${id}/reset`, { method: "POST" });
+}
+
+// Study settings (profile-wide Anki defaults)
+export function getStudySettings() {
+	return apiRequest("/users/me/study-settings");
+}
+
+export function updateStudySettings(patch) {
+	return apiRequest("/users/me/study-settings", {
+		method: "PATCH",
+		body: patch,
+	});
 }

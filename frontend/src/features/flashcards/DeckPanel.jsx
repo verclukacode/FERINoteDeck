@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "../../components/Icon.jsx";
+import { getDeckQueue } from "../../services/flashcardsService.js";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 import StudySession from "./StudySession.jsx";
 
@@ -57,6 +58,28 @@ export default function DeckPanel() {
 		renameDeck,
 	} = useFlashcards();
 	const [studying, setStudying] = useState(false);
+	const [dueCount, setDueCount] = useState(null);
+
+	const deckId = selectedDeck?.id;
+	// Re-fetch the due count when the deck changes, after a study session closes,
+	// and when card states change (add/delete/reset). `statesSig` is only a
+	// re-run trigger, hence not read inside the effect.
+	const statesSig = deckCards.map((c) => `${c.id}:${c.state}`).join("|");
+	// biome-ignore lint/correctness/useExhaustiveDependencies: statesSig intentionally re-triggers the count fetch
+	useEffect(() => {
+		if (!deckId || studying) return;
+		let active = true;
+		getDeckQueue(deckId)
+			.then((data) => {
+				if (!active) return;
+				const c = data?.counts ?? { new: 0, learning: 0, review: 0 };
+				setDueCount(c.new + c.learning + c.review);
+			})
+			.catch(() => active && setDueCount(0));
+		return () => {
+			active = false;
+		};
+	}, [deckId, studying, statesSig]);
 
 	if (!selectedDeck) {
 		return (
@@ -83,12 +106,12 @@ export default function DeckPanel() {
 				</button>
 				<button
 					type="button"
-					disabled={deckCards.length === 0}
+					disabled={!dueCount}
 					onClick={() => setStudying(true)}
 					className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-folder-pink/30 bg-folder-pink/15 px-5 text-[15px] font-semibold text-folder-pink disabled:opacity-40"
 				>
 					<Icon name="study-hat" size={20} />
-					Study {deckCards.length}
+					Study {dueCount ?? 0}
 				</button>
 			</div>
 
@@ -112,7 +135,10 @@ export default function DeckPanel() {
 			</div>
 
 			{studying && (
-				<StudySession cards={deckCards} onClose={() => setStudying(false)} />
+				<StudySession
+					deckId={selectedDeck.id}
+					onClose={() => setStudying(false)}
+				/>
 			)}
 		</main>
 	);

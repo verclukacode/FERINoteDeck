@@ -1,17 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DuoButton from "../../components/DuoButton.jsx";
 import Icon from "../../components/Icon.jsx";
+import { answerCard, getDeckQueue } from "../../services/flashcardsService.js";
 
 const norm = (s) => (s ?? "").trim().toLowerCase();
 
-function Stats({ remaining, bad, revised }) {
+// Grades: 1=Again 2=Hard 3=Good 4=Easy.
+const GRADE = { again: 1, hard: 2, good: 3, easy: 4 };
+
+// A learning/relearning card whose next step is sooner than this is re-shown
+// later in the same session (Anki re-queues short steps); longer ones are done.
+const REQUEUE_THRESHOLD_MS = 20 * 60 * 1000;
+const REQUEUE_GAP = 3;
+
+function Stats({ counts }) {
 	return (
 		<div className="pt-7 text-center text-[17px] font-medium text-title">
-			<span className="font-bold text-folder-blue">{remaining}</span> New
+			<span className="font-bold text-folder-blue">{counts.new}</span> New
 			<span className="text-body"> | </span>
-			<span className="font-bold text-folder-orange">{bad}</span> Bad
+			<span className="font-bold text-folder-orange">{counts.learning}</span>{" "}
+			Learning
 			<span className="text-body"> | </span>
-			<span className="font-bold text-folder-green">{revised}</span> Revised
+			<span className="font-bold text-folder-green">{counts.review}</span>{" "}
+			Review
 		</div>
 	);
 }
@@ -28,13 +39,47 @@ function PromptCard({ children, height = "h-[480px]" }) {
 	);
 }
 
-export default function StudySession({ cards, onClose }) {
-	const [index, setIndex] = useState(0);
-	const [phase, setPhase] = useState("front"); // front | reveal | result | finish
-	const [bad, setBad] = useState(0);
-	const [revised, setRevised] = useState(0);
+function liveCounts(queue) {
+	let nw = 0;
+	let learning = 0;
+	let review = 0;
+	for (const c of queue) {
+		if (c.state === "new") nw++;
+		else if (c.state === "learning" || c.state === "relearning") learning++;
+		else review++;
+	}
+	return { new: nw, learning, review };
+}
+
+export default function StudySession({ deckId, onClose }) {
+	const [queue, setQueue] = useState([]);
+	const [phase, setPhase] = useState("loading"); // loading | front | reveal | result | finish | error
 	const [input, setInput] = useState("");
 	const [result, setResult] = useState(null); // "correct" | "wrong"
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState("");
+	const frontShownAt = useRef(Date.now());
+
+	// Load the due queue for this deck.
+	useEffect(() => {
+		let active = true;
+		getDeckQueue(deckId)
+			.then((data) => {
+				if (!active) return;
+				const cards = data?.cards ?? [];
+				setQueue(cards);
+				frontShownAt.current = Date.now();
+				setPhase(cards.length ? "front" : "finish");
+			})
+			.catch((e) => {
+				if (!active) return;
+				setError(e?.message ?? "Failed to load study queue");
+				setPhase("error");
+			});
+		return () => {
+			active = false;
+		};
+	}, [deckId]);
 
 	useEffect(() => {
 		const onKey = (e) => e.key === "Escape" && onClose();
@@ -42,25 +87,39 @@ export default function StudySession({ cards, onClose }) {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [onClose]);
 
-	const card = cards[index];
-	const answered = bad + revised;
-	const remaining = cards.length - answered;
+	const card = queue[0];
+	const counts = liveCounts(queue);
 
-	function advance() {
-		setInput("");
-		setResult(null);
-		if (index + 1 >= cards.length) {
-			setPhase("finish");
-		} else {
-			setIndex((i) => i + 1);
-			setPhase("front");
+	async function answer(grade) {
+		if (!card || submitting) return;
+		setSubmitting(true);
+		setError("");
+		try {
+			const updated = await answerCard(
+				card.id,
+				grade,
+				Date.now() - frontShownAt.current,
+			);
+			const shortStep =
+				(updated.state === "learning" || updated.state === "relearning") &&
+				updated.due != null &&
+				updated.due - Date.now() < REQUEUE_THRESHOLD_MS;
+
+			let next = queue.slice(1);
+			if (shortStep) {
+				const pos = Math.min(REQUEUE_GAP, next.length);
+				next = [...next.slice(0, pos), updated, ...next.slice(pos)];
+			}
+			setQueue(next);
+			setInput("");
+			setResult(null);
+			frontShownAt.current = Date.now();
+			setPhase(next.length ? "front" : "finish");
+		} catch (e) {
+			setError(e?.message ?? "Failed to save answer");
+		} finally {
+			setSubmitting(false);
 		}
-	}
-
-	function grade(good) {
-		if (good) setRevised((n) => n + 1);
-		else setBad((n) => n + 1);
-		advance();
 	}
 
 	function submitInput() {
@@ -95,9 +154,24 @@ export default function StudySession({ cards, onClose }) {
 				<Icon name="xmark" size={16} />
 			</button>
 
-			<Stats remaining={remaining} bad={bad} revised={revised} />
+			{phase !== "loading" && phase !== "error" && <Stats counts={counts} />}
 
-			{phase === "finish" ? (
+			{phase === "loading" ? (
+				<div className="flex flex-1 items-center justify-center text-body">
+					Loading…
+				</div>
+			) : phase === "error" ? (
+				<div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center text-body">
+					<p>{error}</p>
+					<DuoButton
+						type="button"
+						onClick={onClose}
+						className="h-[52px] w-[388px] max-w-[90vw] bg-bg text-title shadow-[0_2.5px_0_rgba(0,0,0,0.12)]"
+					>
+						Close
+					</DuoButton>
+				</div>
+			) : phase === "finish" ? (
 				<>
 					<div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
 						<Icon name="party" size={64} className="text-white" />
@@ -138,8 +212,11 @@ export default function StudySession({ cards, onClose }) {
 					<div className="flex justify-center px-4 pb-12">
 						<DuoButton
 							type="button"
-							onClick={() => grade(result === "correct")}
-							className="h-[52px] w-[388px] max-w-[90vw] bg-bg text-title shadow-[0_2.5px_0_rgba(0,0,0,0.12)]"
+							disabled={submitting}
+							onClick={() =>
+								answer(result === "correct" ? GRADE.good : GRADE.again)
+							}
+							className="h-[52px] w-[388px] max-w-[90vw] bg-bg text-title shadow-[0_2.5px_0_rgba(0,0,0,0.12)] disabled:opacity-60"
 						>
 							Next
 						</DuoButton>
@@ -155,15 +232,17 @@ export default function StudySession({ cards, onClose }) {
 							<>
 								<DuoButton
 									type="button"
-									onClick={() => grade(false)}
-									className="h-[50px] w-[200px] max-w-[40vw] bg-folder-red text-white shadow-[0_2.5px_0_#d95a5a]"
+									disabled={submitting}
+									onClick={() => answer(GRADE.again)}
+									className="h-[50px] w-[200px] max-w-[40vw] bg-folder-red text-white shadow-[0_2.5px_0_#d95a5a] disabled:opacity-60"
 								>
 									Wrong
 								</DuoButton>
 								<DuoButton
 									type="button"
-									onClick={() => grade(true)}
-									className="h-[50px] w-[200px] max-w-[40vw] bg-folder-green text-white shadow-[0_2.5px_0_#25b89a]"
+									disabled={submitting}
+									onClick={() => answer(GRADE.good)}
+									className="h-[50px] w-[200px] max-w-[40vw] bg-folder-green text-white shadow-[0_2.5px_0_#25b89a] disabled:opacity-60"
 								>
 									Correct
 								</DuoButton>
@@ -172,29 +251,33 @@ export default function StudySession({ cards, onClose }) {
 							<>
 								<DuoButton
 									type="button"
-									onClick={() => grade(false)}
-									className="h-[50px] min-w-[120px] bg-folder-red text-white shadow-[0_2.5px_0_#d95a5a]"
+									disabled={submitting}
+									onClick={() => answer(GRADE.again)}
+									className="h-[50px] min-w-[120px] bg-folder-red text-white shadow-[0_2.5px_0_#d95a5a] disabled:opacity-60"
 								>
 									Bad
 								</DuoButton>
 								<DuoButton
 									type="button"
-									onClick={() => grade(false)}
-									className="h-[50px] min-w-[120px] bg-folder-orange text-white shadow-[0_2.5px_0_#d9824f]"
+									disabled={submitting}
+									onClick={() => answer(GRADE.hard)}
+									className="h-[50px] min-w-[120px] bg-folder-orange text-white shadow-[0_2.5px_0_#d9824f] disabled:opacity-60"
 								>
 									Meh
 								</DuoButton>
 								<DuoButton
 									type="button"
-									onClick={() => grade(true)}
-									className="h-[50px] min-w-[120px] bg-folder-green text-white shadow-[0_2.5px_0_#25b89a]"
+									disabled={submitting}
+									onClick={() => answer(GRADE.good)}
+									className="h-[50px] min-w-[120px] bg-folder-green text-white shadow-[0_2.5px_0_#25b89a] disabled:opacity-60"
 								>
 									Good
 								</DuoButton>
 								<DuoButton
 									type="button"
-									onClick={() => grade(true)}
-									className="h-[50px] min-w-[120px] bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf]"
+									disabled={submitting}
+									onClick={() => answer(GRADE.easy)}
+									className="h-[50px] min-w-[120px] bg-folder-blue text-white shadow-[0_2.5px_0_#3e86cf] disabled:opacity-60"
 								>
 									Amazing
 								</DuoButton>
@@ -243,6 +326,10 @@ export default function StudySession({ cards, onClose }) {
 						</DuoButton>
 					</div>
 				</>
+			)}
+
+			{error && phase !== "error" && (
+				<p className="pb-4 text-center text-sm text-folder-red">{error}</p>
 			)}
 		</div>
 	);

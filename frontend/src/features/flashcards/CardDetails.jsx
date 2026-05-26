@@ -13,7 +13,7 @@ const typeLabel = (value) =>
 	CARD_TYPES.find((t) => t.value === value)?.label ?? CARD_TYPES[0].label;
 
 export default function CardDetails() {
-	const { selectedCard, updateCard, removeCard } = useFlashcards();
+	const { selectedCard, updateCard, removeCard, resetCard } = useFlashcards();
 	const [draft, setDraft] = useState({
 		question: "",
 		answer: "",
@@ -21,6 +21,7 @@ export default function CardDetails() {
 	});
 	const [typeOpen, setTypeOpen] = useState(false);
 	const [confirming, setConfirming] = useState(false);
+	const [resetting, setResetting] = useState(false);
 
 	// Buffer edits locally so the store only updates when "Save" is pressed.
 	// Resets whenever the selected card changes (switch card or after a save).
@@ -154,7 +155,14 @@ export default function CardDetails() {
 						</div>
 					</div>
 
-					<div className="flex justify-end border-t-2 border-folder-blue/30 px-6 py-4">
+					<div className="flex items-center justify-between border-t-2 border-folder-blue/30 px-6 py-4">
+						<button
+							type="button"
+							onClick={() => setResetting(true)}
+							className="flex h-[50px] items-center rounded-full border-[2.5px] border-black/10 bg-bg px-5 text-[15px] font-semibold text-title"
+						>
+							Reset progress
+						</button>
 						<button
 							type="button"
 							onClick={() => setConfirming(true)}
@@ -180,6 +188,19 @@ export default function CardDetails() {
 						setConfirming(false);
 					}}
 					onCancel={() => setConfirming(false)}
+				/>
+			)}
+
+			{resetting && selectedCard && (
+				<ConfirmDialog
+					title="Reset card?"
+					message="Its study progress will be cleared and it becomes a new card again."
+					confirmLabel="Reset"
+					onConfirm={() => {
+						resetCard(selectedCard.id);
+						setResetting(false);
+					}}
+					onCancel={() => setResetting(false)}
 				/>
 			)}
 		</aside>

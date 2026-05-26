@@ -16,9 +16,10 @@ import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 
 function DeckRow({ deck }) {
-	const { selectedDeckId, selectDeck, removeDeck } = useFlashcards();
+	const { selectedDeckId, selectDeck, removeDeck, resetDeck } = useFlashcards();
 	const { menu, open, close } = useContextMenu();
 	const [confirming, setConfirming] = useState(false);
+	const [resetting, setResetting] = useState(false);
 	const selected = deck.id === selectedDeckId;
 	const {
 		attributes,
@@ -68,6 +69,14 @@ function DeckRow({ deck }) {
 					y={menu.y}
 					items={[
 						{
+							label: "Reset deck",
+							icon: "study-hat",
+							onClick: () => {
+								setResetting(true);
+								close();
+							},
+						},
+						{
 							label: "Delete deck",
 							icon: "trash",
 							danger: true,
@@ -89,6 +98,19 @@ function DeckRow({ deck }) {
 						setConfirming(false);
 					}}
 					onCancel={() => setConfirming(false)}
+				/>
+			)}
+
+			{resetting && (
+				<ConfirmDialog
+					title="Reset deck?"
+					message={`Study progress for all cards in "${deck.name}" will be cleared.`}
+					confirmLabel="Reset"
+					onConfirm={() => {
+						resetDeck(deck.id);
+						setResetting(false);
+					}}
+					onCancel={() => setResetting(false)}
 				/>
 			)}
 		</>

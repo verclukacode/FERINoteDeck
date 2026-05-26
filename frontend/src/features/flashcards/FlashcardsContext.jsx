@@ -19,6 +19,8 @@ import {
 	listDecks,
 	listFlashcardFolders,
 	reorderFlashcardFolders,
+	resetCard as resetCardService,
+	resetDeck as resetDeckService,
 	saveDecks,
 	updateCard,
 	updateDeck,
@@ -26,6 +28,18 @@ import {
 } from "../../services/flashcardsService.js";
 
 const FlashcardsContext = createContext(null);
+
+// Local mirror of the server-side card reset ("Forget"): back to a new card.
+const RESET_CARD = {
+	state: "new",
+	due: null,
+	intervalSec: 0,
+	ease: 2500,
+	reps: 0,
+	lapses: 0,
+	learningStep: 0,
+	lastReviewedAt: null,
+};
 
 // Recompute the per-folder `order` field from current array position.
 function withDeckOrder(decks) {
@@ -158,6 +172,22 @@ export function FlashcardsProvider({ children }) {
 
 	const selectCard = useCallback((id) => setSelectedCardId(id), []);
 
+	// Reset a card's study progress back to new ("Forget").
+	const resetCard = useCallback(async (id) => {
+		setCards((prev) =>
+			prev.map((c) => (c.id === id ? { ...c, ...RESET_CARD } : c)),
+		);
+		await resetCardService(id);
+	}, []);
+
+	// Reset every card in a deck back to new.
+	const resetDeck = useCallback(async (deckId) => {
+		setCards((prev) =>
+			prev.map((c) => (c.deckId === deckId ? { ...c, ...RESET_CARD } : c)),
+		);
+		await resetDeckService(deckId);
+	}, []);
+
 	// Live cross-folder move while a deck is dragged over another folder.
 	const handleDndOver = useCallback(
 		({ activeId, activeType, overId, overType }) => {
@@ -250,6 +280,8 @@ export function FlashcardsProvider({ children }) {
 			updateCard: updateCardLocal,
 			removeCard,
 			selectCard,
+			resetCard,
+			resetDeck,
 			handleDndOver,
 			handleDndEnd,
 		}),
@@ -273,6 +305,8 @@ export function FlashcardsProvider({ children }) {
 			updateCardLocal,
 			removeCard,
 			selectCard,
+			resetCard,
+			resetDeck,
 			handleDndOver,
 			handleDndEnd,
 		],
