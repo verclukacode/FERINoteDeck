@@ -117,17 +117,34 @@ router.get("/:id", async (req: Request, res: Response) => {
  * @openapi
  * /api/pages/{id}:
  *   patch:
- *     summary: Update a page (title and/or content)
+ *     summary: Update a page — title, content, or marketplace share (isPublic, publicDescription)
  *     tags: [Pages]
  *     responses:
  *       200: { description: The updated page }
  *       404: { description: Page not found }
  */
 router.patch("/:id", async (req: Request, res: Response) => {
-	const { title, content } = req.body as { title?: string; content?: string };
-	const data: { title?: string; content?: string } = {};
+	const { title, content, isPublic, publicDescription } = req.body as {
+		title?: string;
+		content?: string;
+		isPublic?: boolean;
+		publicDescription?: string | null;
+	};
+	const data: {
+		title?: string;
+		content?: string;
+		isPublic?: boolean;
+		publicDescription?: string | null;
+		publishedAt?: Date | null;
+	} = {};
 	if (title !== undefined) data.title = title;
 	if (content !== undefined) data.content = content;
+	if (publicDescription !== undefined)
+		data.publicDescription = publicDescription;
+	if (isPublic !== undefined) {
+		data.isPublic = isPublic;
+		data.publishedAt = isPublic ? new Date() : null;
+	}
 
 	const result = await prisma.page.updateMany({
 		where: { id: String(req.params.id), userId: req.user?.uid ?? "" },

@@ -3,7 +3,7 @@ import Icon from "../../components/Icon.jsx";
 import Pill from "../../components/Pill.jsx";
 import ViewToggle from "./ViewToggle.jsx";
 
-export default function SidebarHeader() {
+export default function SidebarHeader({ onOpenMarketplace, onOpenSearch }) {
 	return (
 		<div className="flex flex-col">
 			<div className="flex h-[88px] items-center gap-3 border-b-2 border-border-soft px-5">
@@ -19,12 +19,16 @@ export default function SidebarHeader() {
 				<Pill className="h-[45px] px-2">
 					<button
 						type="button"
+						onClick={onOpenMarketplace}
+						aria-label="Open marketplace"
 						className="flex h-9 w-9 items-center justify-center text-title"
 					>
 						<Icon name="store" size={18} />
 					</button>
 					<button
 						type="button"
+						onClick={onOpenSearch}
+						aria-label="Search"
 						className="flex h-9 w-9 items-center justify-center text-title"
 					>
 						<Icon name="search" size={18} />

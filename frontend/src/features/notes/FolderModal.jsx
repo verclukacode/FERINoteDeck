@@ -5,16 +5,20 @@ import { DEFAULT_FOLDER_COLOR, FOLDER_COLORS } from "../../lib/constants.js";
 import { useNotes } from "./NotesContext.jsx";
 
 // Mount only while open so create/edit start from fresh state.
-export default function FolderModal({ folder, onClose }) {
+export default function FolderModal({ folder, onClose, onCreated }) {
 	const { addFolder, editFolder } = useNotes();
 	const isEdit = Boolean(folder);
 	const [name, setName] = useState(folder?.name ?? "");
 	const [color, setColor] = useState(folder?.color ?? DEFAULT_FOLDER_COLOR);
 
-	const submit = (e) => {
+	const submit = async (e) => {
 		e.preventDefault();
-		if (isEdit) editFolder(folder.id, { name, color });
-		else addFolder({ name, color });
+		if (isEdit) {
+			await editFolder(folder.id, { name, color });
+		} else {
+			const created = await addFolder({ name, color });
+			onCreated?.(created);
+		}
 		onClose();
 	};
 

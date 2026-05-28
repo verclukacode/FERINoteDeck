@@ -55,6 +55,9 @@ export default function PageItem({ page, selected, onSelect }) {
 			>
 				<Icon name="document" size={20} />
 				<span className="truncate">{page.title}</span>
+				{page.isPublic && (
+					<Icon name="store" size={14} className="shrink-0 text-folder-blue" />
+				)}
 			</button>
 
 			{menu && (

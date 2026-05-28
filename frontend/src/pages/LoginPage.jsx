@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import DuoButton from "../components/DuoButton.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
 import { authErrorMessage } from "../features/auth/firebaseError.js";
+import { postAuthDest } from "../lib/postAuthDest.js";
 
 function ForgotPasswordForm({ onBack }) {
 	const [resetEmail, setResetEmail] = useState("");
@@ -24,12 +25,16 @@ function ForgotPasswordForm({ onBack }) {
 		<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 			{submitted ? (
 				<p className="text-sm text-body text-center py-2">
-					If an account exists for <span className="font-semibold text-title">{resetEmail}</span>,
-					a reset link will be sent to that address.
+					If an account exists for{" "}
+					<span className="font-semibold text-title">{resetEmail}</span>, a
+					reset link will be sent to that address.
 				</p>
 			) : (
 				<div className="flex flex-col gap-1">
-					<label htmlFor="forgot-email" className="text-sm font-medium text-title">
+					<label
+						htmlFor="forgot-email"
+						className="text-sm font-medium text-title"
+					>
 						Email address
 					</label>
 					<input
@@ -69,6 +74,7 @@ function ForgotPasswordForm({ onBack }) {
 export default function LoginPage() {
 	const { login } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
@@ -85,7 +91,7 @@ export default function LoginPage() {
 		setLoading(true);
 		try {
 			await login(email, password);
-			navigate("/", { replace: true });
+			navigate(postAuthDest(location), { replace: true });
 		} catch (err) {
 			setError(authErrorMessage(err));
 		} finally {
@@ -100,7 +106,9 @@ export default function LoginPage() {
 					<AppLogo />
 					<div>
 						<p className="text-sm text-body leading-tight">Welcome to</p>
-						<p className="text-2xl font-bold text-title leading-tight">NoteDeck</p>
+						<p className="text-2xl font-bold text-title leading-tight">
+							NoteDeck
+						</p>
 					</div>
 				</div>
 
@@ -109,7 +117,10 @@ export default function LoginPage() {
 				) : (
 					<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 						<div className="flex flex-col gap-1">
-							<label htmlFor="login-email" className="text-sm font-medium text-title">
+							<label
+								htmlFor="login-email"
+								className="text-sm font-medium text-title"
+							>
 								Email address
 							</label>
 							<input
@@ -123,7 +134,10 @@ export default function LoginPage() {
 						</div>
 
 						<div className="flex flex-col gap-1">
-							<label htmlFor="login-password" className="text-sm font-medium text-title">
+							<label
+								htmlFor="login-password"
+								className="text-sm font-medium text-title"
+							>
 								Password
 							</label>
 							<input
@@ -136,7 +150,9 @@ export default function LoginPage() {
 							/>
 						</div>
 
-						{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+						{error && (
+							<p className="text-sm text-folder-red text-center">{error}</p>
+						)}
 
 						<div className="mt-4 flex flex-col items-center gap-2">
 							<DuoButton
@@ -153,7 +169,11 @@ export default function LoginPage() {
 							>
 								Forgot password
 							</button>
-							<Link to="/register" className="text-sm font-semibold text-folder-blue py-1">
+							<Link
+								to="/register"
+								state={location.state}
+								className="text-sm font-semibold text-folder-blue py-1"
+							>
 								Sign up
 							</Link>
 						</div>

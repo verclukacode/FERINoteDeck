@@ -16,7 +16,9 @@ import decksRouter from "./routes/decks";
 import flashcardFoldersRouter from "./routes/flashcard-folders";
 import foldersRouter from "./routes/folders";
 import imagesRouter, { uploadsDir } from "./routes/images";
+import marketplaceRouter from "./routes/marketplace";
 import pagesRouter from "./routes/pages";
+import searchRouter from "./routes/search";
 import usersRouter from "./routes/users";
 
 const app = express();
@@ -58,6 +60,8 @@ app.use("/api/users", requireAuth, usersRouter);
 app.use("/api/flashcard-folders", requireAuth, flashcardFoldersRouter);
 app.use("/api/decks", requireAuth, decksRouter);
 app.use("/api/cards", requireAuth, cardsRouter);
+app.use("/api/marketplace", requireAuth, marketplaceRouter);
+app.use("/api/search", requireAuth, searchRouter);
 
 // JSON error handler — Express 5 forwards async route rejections here.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

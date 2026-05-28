@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import Icon from "../../components/Icon.jsx";
+import ShareModal from "../../components/ShareModal.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import BlockEditor from "./editor/BlockEditor.jsx";
 
@@ -27,9 +28,11 @@ function TitleField({ page, onRename }) {
 }
 
 export default function NotePanel() {
-	const { selectedPage, renamePage, updatePageContent } = useNotes();
+	const { selectedPage, renamePage, updatePageContent, updatePageShare } =
+		useNotes();
 	const editorRef = useRef(null);
 	const [dirty, setDirty] = useState(false);
+	const [sharing, setSharing] = useState(false);
 
 	if (!selectedPage) {
 		return (
@@ -62,6 +65,8 @@ export default function NotePanel() {
 					</button>
 					<button
 						type="button"
+						onClick={() => setSharing(true)}
+						aria-label="Share note"
 						className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
 					>
 						<Icon name="paperplane" size={20} />
@@ -84,6 +89,15 @@ export default function NotePanel() {
 					onDirtyChange={setDirty}
 				/>
 			</div>
+
+			{sharing && (
+				<ShareModal
+					kind="note"
+					item={selectedPage}
+					onSave={(patch) => updatePageShare(selectedPage.id, patch)}
+					onClose={() => setSharing(false)}
+				/>
+			)}
 		</div>
 	);
 }

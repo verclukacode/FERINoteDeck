@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import DuoButton from "../components/DuoButton.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
+import { postAuthDest } from "../lib/postAuthDest.js";
 
 export default function VerifyEmailPage() {
 	const { user, logout, resendVerification, reloadUser } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [resent, setResent] = useState(false);
 	const [resending, setResending] = useState(false);
 	const [checking, setChecking] = useState(false);
@@ -27,7 +29,7 @@ export default function VerifyEmailPage() {
 		setNotVerified(false);
 		await reloadUser();
 		if (user.emailVerified) {
-			navigate("/", { replace: true });
+			navigate(postAuthDest(location), { replace: true });
 		} else {
 			setNotVerified(true);
 		}
@@ -46,7 +48,9 @@ export default function VerifyEmailPage() {
 					<AppLogo />
 					<div>
 						<p className="text-sm text-body leading-tight">Welcome to</p>
-						<p className="text-2xl font-bold text-title leading-tight">NoteDeck</p>
+						<p className="text-2xl font-bold text-title leading-tight">
+							NoteDeck
+						</p>
 					</div>
 				</div>
 

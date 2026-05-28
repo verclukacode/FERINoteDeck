@@ -61,6 +61,9 @@ function DeckRow({ deck }) {
 			>
 				<Icon name="flashcards" size={20} />
 				<span className="truncate">{deck.name}</span>
+				{deck.isPublic && (
+					<Icon name="store" size={14} className="shrink-0 text-folder-blue" />
+				)}
 			</button>
 
 			{menu && (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Icon from "../../components/Icon.jsx";
+import ShareModal from "../../components/ShareModal.jsx";
 import { getDeckQueue } from "../../services/flashcardsService.js";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 import StudySession from "./StudySession.jsx";
@@ -56,8 +57,10 @@ export default function DeckPanel() {
 		selectCard,
 		addCard,
 		renameDeck,
+		updateDeckShare,
 	} = useFlashcards();
 	const [studying, setStudying] = useState(false);
+	const [sharing, setSharing] = useState(false);
 	const [dueCount, setDueCount] = useState(null);
 
 	const deckId = selectedDeck?.id;
@@ -99,6 +102,7 @@ export default function DeckPanel() {
 				/>
 				<button
 					type="button"
+					onClick={() => setSharing(true)}
 					className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
 					aria-label="Share deck"
 				>
@@ -138,6 +142,15 @@ export default function DeckPanel() {
 				<StudySession
 					deckId={selectedDeck.id}
 					onClose={() => setStudying(false)}
+				/>
+			)}
+
+			{sharing && (
+				<ShareModal
+					kind="deck"
+					item={selectedDeck}
+					onSave={(patch) => updateDeckShare(selectedDeck.id, patch)}
+					onClose={() => setSharing(false)}
 				/>
 			)}
 		</main>

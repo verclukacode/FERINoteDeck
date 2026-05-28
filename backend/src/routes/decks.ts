@@ -231,16 +231,31 @@ router.post("/:id/reset", async (req: Request, res: Response) => {
  * @openapi
  * /api/decks/{id}:
  *   patch:
- *     summary: Rename a deck
+ *     summary: Update a deck — name, or marketplace share (isPublic, publicDescription)
  *     tags: [Decks]
  *     responses:
  *       200: { description: The updated deck }
  *       404: { description: Deck not found }
  */
 router.patch("/:id", async (req: Request, res: Response) => {
-	const { name } = req.body as { name?: string };
-	const data: { name?: string } = {};
+	const { name, isPublic, publicDescription } = req.body as {
+		name?: string;
+		isPublic?: boolean;
+		publicDescription?: string | null;
+	};
+	const data: {
+		name?: string;
+		isPublic?: boolean;
+		publicDescription?: string | null;
+		publishedAt?: Date | null;
+	} = {};
 	if (name !== undefined) data.name = name;
+	if (publicDescription !== undefined)
+		data.publicDescription = publicDescription;
+	if (isPublic !== undefined) {
+		data.isPublic = isPublic;
+		data.publishedAt = isPublic ? new Date() : null;
+	}
 
 	const result = await prisma.deck.updateMany({
 		where: { id: String(req.params.id), userId: req.user?.uid ?? "" },

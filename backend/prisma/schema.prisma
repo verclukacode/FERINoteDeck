@@ -46,11 +46,18 @@ model Page {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  // Marketplace sharing (see frontend/docs/marketplace if added).
+  isPublic          Boolean   @default(false)
+  publicDescription String?   @db.Text
+  publishedAt       DateTime? // set/cleared on isPublic transitions; drives recency sort
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([folderId])
+  @@index([isPublic, publishedAt])
 }
 
 model FlashcardFolder {
@@ -69,19 +76,26 @@ model FlashcardFolder {
 }
 
 model Deck {
-  id        String          @id @default(uuid())
+  id        String   @id @default(uuid())
   userId    String
   folderId  String
   name      String
-  order     Int             @default(0)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folder    FlashcardFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  cards     FlashCard[]
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Marketplace sharing.
+  isPublic          Boolean   @default(false)
+  publicDescription String?   @db.Text
+  publishedAt       DateTime?
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder FlashcardFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  cards  FlashCard[]
 
   @@index([userId])
   @@index([folderId])
+  @@index([isPublic, publishedAt])
 }
 
 model FlashCard {

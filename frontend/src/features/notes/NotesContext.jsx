@@ -38,7 +38,11 @@ export function NotesProvider({ children }) {
 
 	useEffect(() => {
 		let active = true;
-		Promise.all([service.listFolders(), service.listAllPages(), service.getMe()])
+		Promise.all([
+			service.listFolders(),
+			service.listAllPages(),
+			service.getMe(),
+		])
 			.then(([f, p, me]) => {
 				if (!active) return;
 				setFolders(f);
@@ -60,6 +64,7 @@ export function NotesProvider({ children }) {
 	const addFolder = useCallback(async ({ name, color }) => {
 		const folder = await service.createFolder({ name, color });
 		setFolders((prev) => [...prev, folder]);
+		return folder;
 	}, []);
 
 	const removeFolder = useCallback(
@@ -118,6 +123,25 @@ export function NotesProvider({ children }) {
 	}, []);
 
 	const selectPage = useCallback((id) => setSelectedPageId(id), []);
+
+	// Marketplace sharing. Patch shape: { isPublic, publicDescription }.
+	const updatePageShare = useCallback(async (id, patch) => {
+		const updated = await service.updatePage(id, patch);
+		setPages((prev) =>
+			prev.map((p) => (p.id === id ? { ...p, ...updated } : p)),
+		);
+	}, []);
+
+	// Append a page cloned from the marketplace and reveal it.
+	const addPageFromClone = useCallback((page) => {
+		setPages((prev) => [...prev, page]);
+		setFolders((prev) =>
+			prev.map((f) =>
+				f.id === page.folderId ? { ...f, collapsed: false } : f,
+			),
+		);
+		setSelectedPageId(page.id);
+	}, []);
 
 	// Live cross-folder move while a page is dragged over another folder.
 	const handleDndOver = useCallback(
@@ -211,6 +235,8 @@ export function NotesProvider({ children }) {
 			updatePageContent,
 			removePage,
 			selectPage,
+			updatePageShare,
+			addPageFromClone,
 			handleDndOver,
 			handleDndEnd,
 		}),
@@ -232,6 +258,8 @@ export function NotesProvider({ children }) {
 			updatePageContent,
 			removePage,
 			selectPage,
+			updatePageShare,
+			addPageFromClone,
 			handleDndOver,
 			handleDndEnd,
 		],

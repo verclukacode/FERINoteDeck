@@ -1,21 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import DuoButton from "../components/DuoButton.jsx";
+import { postAuthDest } from "../lib/postAuthDest.js";
 import { checkUsername, getMe, setUsername } from "../services/notesService.js";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
 export default function ChooseUsernamePage() {
 	const navigate = useNavigate();
+	const location = useLocation();
+	const dest = postAuthDest(location);
 	const [value, setValue] = useState("");
 
 	// If user already has a username, skip this page
 	useEffect(() => {
-		getMe().then((me) => {
-			if (me?.username) navigate("/", { replace: true });
-		}).catch(() => {});
-	}, [navigate]);
+		getMe()
+			.then((me) => {
+				if (me?.username) navigate(dest, { replace: true });
+			})
+			.catch(() => {});
+	}, [navigate, dest]);
 
 	const [status, setStatus] = useState("idle"); // idle | checking | available | taken | invalid | error
 	const [error, setError] = useState("");
@@ -23,7 +28,10 @@ export default function ChooseUsernamePage() {
 	const debounceRef = useRef(null);
 
 	useEffect(() => {
-		if (!value) { setStatus("idle"); return; }
+		if (!value) {
+			setStatus("idle");
+			return;
+		}
 
 		if (!USERNAME_RE.test(value)) {
 			setStatus("invalid");
@@ -51,7 +59,7 @@ export default function ChooseUsernamePage() {
 		setLoading(true);
 		try {
 			await setUsername(value);
-			navigate("/", { replace: true });
+			navigate(dest, { replace: true });
 		} catch (err) {
 			setError(err.message ?? "Something went wrong.");
 		} finally {
@@ -64,8 +72,14 @@ export default function ChooseUsernamePage() {
 		checking: { text: "Checking…", color: "text-body" },
 		available: { text: "✓ Available", color: "text-green-500" },
 		taken: { text: "Already taken", color: "text-folder-red" },
-		invalid: { text: "3–20 characters, letters, numbers, underscores only.", color: "text-folder-red" },
-		error: { text: "Couldn't check that username. Try again.", color: "text-folder-red" },
+		invalid: {
+			text: "3–20 characters, letters, numbers, underscores only.",
+			color: "text-folder-red",
+		},
+		error: {
+			text: "Couldn't check that username. Try again.",
+			color: "text-folder-red",
+		},
 	}[status];
 
 	return (
@@ -75,7 +89,9 @@ export default function ChooseUsernamePage() {
 					<AppLogo />
 					<div>
 						<p className="text-sm text-body leading-tight">Welcome to</p>
-						<p className="text-2xl font-bold text-title leading-tight">NoteDeck</p>
+						<p className="text-2xl font-bold text-title leading-tight">
+							NoteDeck
+						</p>
 					</div>
 				</div>
 
@@ -89,21 +105,31 @@ export default function ChooseUsernamePage() {
 				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
 					<div className="flex flex-col gap-1">
 						<div className="relative">
-							<span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-body">@</span>
+							<span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-medium text-body">
+								@
+							</span>
 							<input
 								type="text"
 								value={value}
-								onChange={(e) => setValue(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+								onChange={(e) =>
+									setValue(
+										e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+									)
+								}
 								placeholder="your_username"
 								maxLength={20}
 								autoFocus
 								className="w-full rounded-full bg-bg py-3 pl-8 pr-4 text-sm text-title placeholder:text-body/50 outline-none"
 							/>
 						</div>
-						{hint && <p className={`pl-2 text-xs ${hint.color}`}>{hint.text}</p>}
+						{hint && (
+							<p className={`pl-2 text-xs ${hint.color}`}>{hint.text}</p>
+						)}
 					</div>
 
-					{error && <p className="text-sm text-folder-red text-center">{error}</p>}
+					{error && (
+						<p className="text-sm text-folder-red text-center">{error}</p>
+					)}
 
 					<DuoButton
 						type="submit"

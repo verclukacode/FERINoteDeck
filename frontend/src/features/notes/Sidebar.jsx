@@ -7,7 +7,7 @@ import { useNotes } from "./NotesContext.jsx";
 import SidebarHeader from "./SidebarHeader.jsx";
 import UserProfileRow from "./UserProfileRow.jsx";
 
-export default function Sidebar() {
+export default function Sidebar({ onOpenMarketplace, onOpenSearch }) {
 	const { view } = useNotes();
 	const { width, ref, startResize } = useResizableWidth({
 		initial: 428,
@@ -22,7 +22,10 @@ export default function Sidebar() {
 			style={{ width }}
 			className="relative flex shrink-0 flex-col overflow-hidden rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary"
 		>
-			<SidebarHeader />
+			<SidebarHeader
+				onOpenMarketplace={onOpenMarketplace}
+				onOpenSearch={onOpenSearch}
+			/>
 			<div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
 				{view === VIEW.FLASHCARDS ? (
 					<DeckList />

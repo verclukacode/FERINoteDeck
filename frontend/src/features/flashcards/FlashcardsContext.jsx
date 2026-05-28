@@ -75,6 +75,7 @@ export function FlashcardsProvider({ children }) {
 	const addFolder = useCallback(async ({ name, color }) => {
 		const folder = await createFlashcardFolder({ name, color });
 		setFolders((prev) => [...prev, folder]);
+		return folder;
 	}, []);
 
 	const toggleFolder = useCallback(
@@ -130,6 +131,27 @@ export function FlashcardsProvider({ children }) {
 	const renameDeck = useCallback(async (id, name) => {
 		setDecks((prev) => prev.map((d) => (d.id === id ? { ...d, name } : d)));
 		await updateDeck(id, { name });
+	}, []);
+
+	// Marketplace sharing. Patch shape: { isPublic, publicDescription }.
+	const updateDeckShare = useCallback(async (id, patch) => {
+		const updated = await updateDeck(id, patch);
+		setDecks((prev) =>
+			prev.map((d) => (d.id === id ? { ...d, ...updated } : d)),
+		);
+	}, []);
+
+	// Append a deck + its cards cloned from the marketplace and reveal it.
+	const addDeckFromClone = useCallback(({ deck, cards: clonedCards = [] }) => {
+		setDecks((prev) => [...prev, deck]);
+		setCards((prev) => [...prev, ...clonedCards]);
+		setFolders((prev) =>
+			prev.map((f) =>
+				f.id === deck.folderId ? { ...f, collapsed: false } : f,
+			),
+		);
+		setSelectedDeckId(deck.id);
+		setSelectedCardId(clonedCards[0]?.id ?? null);
 	}, []);
 
 	const removeDeck = useCallback(async (id) => {
@@ -274,6 +296,8 @@ export function FlashcardsProvider({ children }) {
 			removeFolder,
 			addDeck,
 			renameDeck,
+			updateDeckShare,
+			addDeckFromClone,
 			removeDeck,
 			selectDeck,
 			addCard,
@@ -299,6 +323,8 @@ export function FlashcardsProvider({ children }) {
 			removeFolder,
 			addDeck,
 			renameDeck,
+			updateDeckShare,
+			addDeckFromClone,
 			removeDeck,
 			selectDeck,
 			addCard,

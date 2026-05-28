@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import AppLogo from "../components/AppLogo.jsx";
 import DuoButton from "../components/DuoButton.jsx";
 import { useAuth } from "../features/auth/AuthContext.jsx";
 import { authErrorMessage } from "../features/auth/firebaseError.js";
+import { postAuthDest } from "../lib/postAuthDest.js";
 
 export default function RegisterPage() {
 	const { register } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirm, setConfirm] = useState("");
@@ -28,7 +30,7 @@ export default function RegisterPage() {
 		setLoading(true);
 		try {
 			await register(email, password);
-			navigate("/", { replace: true });
+			navigate(postAuthDest(location), { replace: true });
 		} catch (err) {
 			setError(authErrorMessage(err));
 		} finally {
@@ -113,7 +115,11 @@ export default function RegisterPage() {
 						>
 							{loading ? "Signing up…" : "Sign up"}
 						</DuoButton>
-						<Link to="/login" className="text-sm font-medium text-folder-blue">
+						<Link
+							to="/login"
+							state={location.state}
+							className="text-sm font-medium text-folder-blue"
+						>
 							Already have an account
 						</Link>
 					</div>
