@@ -75,7 +75,7 @@ FERINoteDeck/
 │       ├── index.ts           # Express app + Swagger + route mounting
 │       ├── lib/               # prisma client, firebase, srs (SM-2), serialize
 │       ├── middleware/        # requireAuth (Firebase token)
-│       └── routes/            # folders, pages, images, users, flashcard-folders, decks, cards
+│       └── routes/            # folders, pages, images, users, flashcard-folders, decks, cards, marketplace, search
 └── frontend/
     ├── ARCHITECTURE.md        # frontend src/ layout
     ├── docs/                  # editor.md, flashcards.md
@@ -84,7 +84,9 @@ FERINoteDeck/
         ├── pages/             # NotesPage, Login, Register, …
         ├── features/notes/    # sidebar, folders/pages, block editor, account modal
         ├── features/flashcards/   # decks, cards, study session (spaced repetition)
-        └── services/          # notesService.js, flashcardsService.js
+        ├── features/marketplace/  # browse, preview, clone public notes/decks
+        ├── features/search/   # cross-feature search modal
+        └── services/          # notesService.js, flashcardsService.js, marketplaceService.js, searchService.js
 ```
 
 ## API
@@ -96,6 +98,9 @@ Browse the full, live spec at **`/api-docs`** (Swagger). Route groups:
 - **Notes**: `/folders`, `/pages`, `/images`
 - **Flashcards**: `/flashcard-folders`, `/decks` (incl. `/decks/:id/queue`),
   `/cards` (incl. `/cards/:id/answer`, `/cards/:id/reset`)
+- **Marketplace**: `/marketplace` (search public notes + decks), `/marketplace/notes/:id`,
+  `/marketplace/decks/:id`, `/marketplace/*/clone`
+- **Search**: `/search?q=` (cross-feature, relevance-sorted, scoped to the caller)
 - **Account**: `/users/me`, `/users/me/avatar`, `/users/me/study-settings`
 
 Data is persisted in MySQL (see the ER diagram in [backend/docs/SETUP.md](backend/docs/SETUP.md)).
@@ -106,6 +111,8 @@ Data is persisted in MySQL (see the ER diagram in [backend/docs/SETUP.md](backen
 - [frontend/ARCHITECTURE.md](frontend/ARCHITECTURE.md) — frontend structure & data flow
 - [frontend/docs/editor.md](frontend/docs/editor.md) — the block-based note editor
 - [frontend/docs/flashcards.md](frontend/docs/flashcards.md) — flashcards & SM-2 spaced repetition
+- [frontend/docs/marketplace.md](frontend/docs/marketplace.md) — sharing + marketplace + clone flow
+- [frontend/docs/search.md](frontend/docs/search.md) — cross-feature search + relevance scoring
 
 ## Configuration
 

@@ -28,11 +28,19 @@ features/flashcards/  spaced-repetition flashcards (see frontend/docs/flashcards
   FlashcardsContext.jsx   state provider + useFlashcards() hook
   DeckList / DeckFolderItem / DeckPanel / CardDetails
   StudySession.jsx        full-screen Anki-style study overlay
+features/marketplace/ public share + clone flow (see frontend/docs/marketplace.md)
+  MarketplaceModal / MarketplaceCard / MarketplacePreview / NoteReadView
+  CloneFolderPickerDialog.jsx  destination picker (with inline "new folder")
+  marketplaceLink.js           build / parse `?market=kind:id` deep links
+features/search/      cross-feature search (see frontend/docs/search.md)
+  SearchModal.jsx       Spotlight-style overlay; switches view + selects on pick
 components/            shared, feature-agnostic UI
-                       Icon, Modal, Pill, ContextMenu, ConfirmDialog, DuoButton
+                       Icon, Modal, Pill, ContextMenu, ConfirmDialog, DuoButton, ShareModal
 services/
-  notesService.js       API-shaped facade — fetch() to the backend
-  flashcardsService.js  same, for folders/decks/cards/queue/answer/settings
+  notesService.js        API-shaped facade — fetch() to the backend
+  flashcardsService.js   same, for folders/decks/cards/queue/answer/settings
+  marketplaceService.js  list/get/clone for shared notes & decks
+  searchService.js       relevance-sorted hits across notes/decks/cards
 hooks/                reusable hooks — useContextMenu, useResizableWidth
 lib/                  constants.js (tokens, enums), id.js, firebase.js
 assets/               Logo.png, icons/*.svg

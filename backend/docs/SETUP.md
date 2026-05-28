@@ -157,6 +157,9 @@ erDiagram
         string title
         longtext content
         int order
+        boolean isPublic "marketplace"
+        text publicDescription "nullable"
+        datetime publishedAt "nullable"
     }
     FlashcardFolder {
         string id PK "uuid"
@@ -172,6 +175,9 @@ erDiagram
         string folderId FK
         string name
         int order
+        boolean isPublic "marketplace"
+        text publicDescription "nullable"
+        datetime publishedAt "nullable"
     }
     FlashCard {
         string id PK "uuid"
@@ -236,6 +242,10 @@ erDiagram
 - **Images / avatars are not in the database** — they upload to `POST /api/images` /
   `POST /api/users/me/avatar`, are stored as files under `backend/uploads/<uid>/`
   (gitignored), and referenced by URL (in `Page.content` / `User.avatarUrl`).
+- **Marketplace sharing** is denormalised on `Page` and `Deck` (`isPublic`,
+  `publicDescription`, `publishedAt`) — see `frontend/docs/marketplace.md`. Cloning a
+  public note/deck creates an independent row owned by the cloner; unsharing the source
+  hides the listing but does not affect existing clones.
 
 ---
 
@@ -260,3 +270,13 @@ Flashcards:
 Account:
 - `GET/PATCH /api/users/me`, `GET /api/users/check-username/:username`, `POST /api/users/me/avatar`
 - `GET/PATCH /api/users/me/study-settings` — spaced-repetition defaults
+
+Marketplace (public notes + decks):
+- `PATCH /api/pages/:id` / `PATCH /api/decks/:id` also accept `{ isPublic, publicDescription }` to publish/unpublish
+- `GET /api/marketplace?q=&kind=note|deck|all&offset=&limit=` — paginated mixed listing
+- `GET /api/marketplace/notes/:id` / `/decks/:id` — fetch a public item for preview
+- `POST /api/marketplace/notes/:id/clone` / `/decks/:id/clone` — clone into a folder you own
+
+Search:
+- `GET /api/search?q=` — mixed, relevance-sorted matches across the caller's notes
+  (title + content), decks (name), and cards (question + answer). See `frontend/docs/search.md`.
