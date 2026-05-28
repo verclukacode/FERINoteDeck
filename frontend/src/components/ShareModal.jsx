@@ -199,7 +199,8 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 						Send this note directly to a colleague — they can view and edit it.
 					</p>
 					<div className="mt-3 flex gap-2">
-						<div className="relative min-w-0 flex-1">
+						<div className="relative min-w-0 flex-1 flex items-center rounded-2xl bg-bg-secondary px-4">
+							<span className="shrink-0 text-sm font-medium text-body">@</span>
 							<input
 								type="text"
 								value={inviteUsername}
@@ -209,7 +210,7 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 								}}
 								onKeyDown={(e) => e.key === "Enter" && handleSendInvite()}
 								placeholder="Username…"
-								className="w-full rounded-2xl bg-bg-secondary px-4 py-3 pr-8 text-sm text-title outline-none placeholder:text-body/50"
+								className="min-w-0 flex-1 bg-transparent py-3 pr-8 text-sm text-title outline-none placeholder:text-body/50"
 							/>
 							{usernameState === "found" && (
 								<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-folder-green">
