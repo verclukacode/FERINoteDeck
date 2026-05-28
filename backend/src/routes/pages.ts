@@ -95,6 +95,35 @@ router.put("/order", async (req: Request, res: Response) => {
 
 /**
  * @openapi
+ * /api/pages/shared:
+ *   get:
+ *     summary: List pages shared with the current user (accepted invites)
+ *     tags: [Pages]
+ *     responses:
+ *       200: { description: Array of shared pages with owner info }
+ */
+router.get("/shared", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+
+	const invites = await prisma.noteInvite.findMany({
+		where: { recipientId: uid, status: "accepted" },
+		include: {
+			page: true,
+			sender: { select: { username: true, avatarUrl: true, email: true } },
+		},
+	});
+
+	const pages = invites.map((inv) => ({
+		...inv.page,
+		_shared: true,
+		_owner: inv.sender,
+	}));
+
+	res.json(pages);
+});
+
+/**
+ * @openapi
  * /api/pages/{id}:
  *   get:
  *     summary: Get a single page
@@ -104,8 +133,18 @@ router.put("/order", async (req: Request, res: Response) => {
  *       404: { description: Page not found }
  */
 router.get("/:id", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const pageId = String(req.params.id);
+
+	// Own page or shared via accepted invite
 	const page = await prisma.page.findFirst({
-		where: { id: String(req.params.id), userId: req.user?.uid ?? "" },
+		where: {
+			id: pageId,
+			OR: [
+				{ userId: uid },
+				{ invites: { some: { recipientId: uid, status: "accepted" } } },
+			],
+		},
 	});
 	if (!page) {
 		return res.status(404).json({ error: "Page not found" });
@@ -146,16 +185,39 @@ router.patch("/:id", async (req: Request, res: Response) => {
 		data.publishedAt = isPublic ? new Date() : null;
 	}
 
+	const uid = req.user?.uid ?? "";
+	const pageId = String(req.params.id);
+
+	// Allow edit if owner OR has accepted invite (collaboration).
+	// Shared editors cannot change marketplace fields — only owner can.
+	const isOwner = await prisma.page.findFirst({
+		where: { id: pageId, userId: uid },
+		select: { id: true },
+	});
+	if (!isOwner) {
+		const invite = await prisma.noteInvite.findFirst({
+			where: { pageId, recipientId: uid, status: "accepted" },
+		});
+		if (!invite) {
+			return res.status(404).json({ error: "Page not found" });
+		}
+		// Collaborators can only edit title and content
+		const collabData: { title?: string; content?: string } = {};
+		if (title !== undefined) collabData.title = title;
+		if (content !== undefined) collabData.content = content;
+		await prisma.page.update({ where: { id: pageId }, data: collabData });
+		const page = await prisma.page.findUnique({ where: { id: pageId } });
+		return res.json(page);
+	}
+
 	const result = await prisma.page.updateMany({
-		where: { id: String(req.params.id), userId: req.user?.uid ?? "" },
+		where: { id: pageId, userId: uid },
 		data,
 	});
 	if (result.count === 0) {
 		return res.status(404).json({ error: "Page not found" });
 	}
-	const page = await prisma.page.findUnique({
-		where: { id: String(req.params.id) },
-	});
+	const page = await prisma.page.findUnique({ where: { id: pageId } });
 	res.json(page);
 });
 

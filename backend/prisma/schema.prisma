@@ -8,11 +8,11 @@ datasource db {
 }
 
 model User {
-  id        String   @id // Firebase UID
-  email     String
-  username  String?  @unique
-  avatarUrl String?
-  createdAt DateTime @default(now())
+  id               String          @id // Firebase UID
+  email            String
+  username         String?         @unique
+  avatarUrl        String?
+  createdAt        DateTime        @default(now())
   folders          Folder[]
   pages            Page[]
   flashcardFolders FlashcardFolder[]
@@ -20,6 +20,8 @@ model User {
   flashCards       FlashCard[]
   reviews          Review[]
   studySettings    StudySettings?
+  sentInvites      NoteInvite[]    @relation("SentInvites")
+  receivedInvites  NoteInvite[]    @relation("ReceivedInvites")
 }
 
 model Folder {
@@ -38,26 +40,23 @@ model Folder {
 }
 
 model Page {
-  id        String   @id @default(uuid())
-  userId    String
-  folderId  String
-  title     String
-  content   String   @db.LongText
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Marketplace sharing (see frontend/docs/marketplace if added).
+  id                String    @id @default(uuid())
+  userId            String
+  folderId          String
+  title             String
+  content           String    @db.LongText
+  order             Int       @default(0)
   isPublic          Boolean   @default(false)
   publicDescription String?   @db.Text
-  publishedAt       DateTime? // set/cleared on isPublic transitions; drives recency sort
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folder Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  publishedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder            Folder      @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  invites           NoteInvite[]
 
   @@index([userId])
   @@index([folderId])
-  @@index([isPublic, publishedAt])
 }
 
 model FlashcardFolder {
@@ -76,67 +75,58 @@ model FlashcardFolder {
 }
 
 model Deck {
-  id        String   @id @default(uuid())
-  userId    String
-  folderId  String
-  name      String
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Marketplace sharing.
-  isPublic          Boolean   @default(false)
-  publicDescription String?   @db.Text
+  id                String          @id @default(uuid())
+  userId            String
+  folderId          String
+  name              String
+  order             Int             @default(0)
+  isPublic          Boolean         @default(false)
+  publicDescription String?         @db.Text
   publishedAt       DateTime?
-
-  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folder FlashcardFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  cards  FlashCard[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder            FlashcardFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  cards             FlashCard[]
+  reviews           Review[]
 
   @@index([userId])
   @@index([folderId])
-  @@index([isPublic, publishedAt])
 }
 
 model FlashCard {
-  id        String   @id @default(uuid())
-  userId    String
-  deckId    String
-  type      String   @default("rate")
-  question  String   @db.Text
-  answer    String   @db.Text
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // SM-2 spaced-repetition scheduling. All timestamps are unix ms (BigInt);
-  // durations are seconds. See backend/src/lib/srs.ts.
-  state          String  @default("new") // new | learning | review | relearning
-  due            BigInt? // unix ms; null for new cards (queue orders new by `order`)
-  intervalSec    BigInt  @default(0) // current interval, seconds
-  ease           Int     @default(2500) // permille, floor 1300
-  reps           Int     @default(0)
-  lapses         Int     @default(0)
-  learningStep   Int     @default(0)
-  lastReviewedAt BigInt? // unix ms
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deck    Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
-  reviews Review[]
+  id             String    @id @default(uuid())
+  userId         String
+  deckId         String
+  type           String    @default("rate")
+  question       String    @db.Text
+  answer         String    @db.Text
+  order          Int       @default(0)
+  state          String    @default("new")
+  due            BigInt?
+  intervalSec    BigInt    @default(0)
+  ease           Int       @default(2500)
+  reps           Int       @default(0)
+  lapses         Int       @default(0)
+  learningStep   Int       @default(0)
+  lastReviewedAt BigInt?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deck           Deck      @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviews        Review[]
 
   @@index([userId])
   @@index([deckId])
-  @@index([deckId, due])
 }
 
-// One row per answer (revlog). Timestamps unix ms; durations seconds.
 model Review {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   userId          String
   cardId          String
   deckId          String
-  reviewedAt      BigInt // unix ms
-  grade           Int // 1=Again 2=Hard 3=Good 4=Easy
+  reviewedAt      BigInt
+  grade           Int
   prevState       String
   newState        String
   prevIntervalSec BigInt
@@ -148,19 +138,19 @@ model Review {
   elapsedMs       Int?
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   card            FlashCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  deck            Deck      @relation(fields: [deckId], references: [id], onDelete: Cascade)
 
-  @@index([userId, reviewedAt])
-  @@index([deckId, reviewedAt])
+  @@index([userId])
   @@index([cardId])
+  @@index([deckId])
 }
 
-// Per-user, profile-wide study defaults (no per-deck overrides).
 model StudySettings {
   id                       String @id @default(uuid())
   userId                   String @unique
   newCardsPerDay           Int    @default(20)
   maxReviewsPerDay         Int    @default(200)
-  learningStepsSec         Json   @default("[60, 600]")
+  learningStepsSec         Json   @default("[60,600]")
   relearningStepsSec       Json   @default("[600]")
   graduatingIntervalDays   Int    @default(1)
   easyIntervalDays         Int    @default(4)
@@ -171,4 +161,22 @@ model StudySettings {
   maxIntervalDays          Int    @default(36500)
   newDayStartsAtHour       Int    @default(4)
   user                     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NoteInvite {
+  id          String   @id @default(uuid())
+  senderId    String
+  recipientId String
+  pageId      String
+  status      String   @default("pending") // pending, accepted, declined
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sender      User     @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("ReceivedInvites", fields: [recipientId], references: [id], onDelete: Cascade)
+  page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, pageId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([pageId])
 }

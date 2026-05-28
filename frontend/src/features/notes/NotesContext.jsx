@@ -10,6 +10,11 @@ import {
 } from "react";
 import { VIEW } from "../../lib/constants.js";
 import * as service from "../../services/notesService.js";
+import {
+	getInvites,
+	listSharedPages,
+	respondInvite,
+} from "../../services/notesService.js";
 
 const NotesContext = createContext(null);
 
@@ -32,6 +37,8 @@ export function NotesProvider({ children }) {
 	const [accountOpen, setAccountOpen] = useState(false);
 	const [avatarUrl, setAvatarUrl] = useState(null);
 	const [username, setUsername] = useState("");
+	const [sharedPages, setSharedPages] = useState([]);
+	const [pendingInvites, setPendingInvites] = useState([]);
 
 	const pagesRef = useRef(pages);
 	pagesRef.current = pages;
@@ -42,13 +49,17 @@ export function NotesProvider({ children }) {
 			service.listFolders(),
 			service.listAllPages(),
 			service.getMe(),
+			listSharedPages(),
+			getInvites(),
 		])
-			.then(([f, p, me]) => {
+			.then(([f, p, me, shared, invites]) => {
 				if (!active) return;
 				setFolders(f);
 				setPages(p);
 				setAvatarUrl(me?.avatarUrl ?? null);
 				setUsername(me?.username ?? "");
+				setSharedPages(shared ?? []);
+				setPendingInvites(invites ?? []);
 				setLoading(false);
 			})
 			.catch((err) => {
@@ -114,6 +125,7 @@ export function NotesProvider({ children }) {
 	const updatePageContent = useCallback(async (id, content) => {
 		await service.updatePage(id, { content });
 		setPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
+		setSharedPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
 	}, []);
 
 	const removePage = useCallback(async (id) => {
@@ -123,6 +135,18 @@ export function NotesProvider({ children }) {
 	}, []);
 
 	const selectPage = useCallback((id) => setSelectedPageId(id), []);
+
+	const acceptInvite = useCallback(async (inviteId) => {
+		await respondInvite(inviteId, "accept");
+		setPendingInvites((prev) => prev.filter((i) => i.id !== inviteId));
+		const shared = await listSharedPages();
+		setSharedPages(shared ?? []);
+	}, []);
+
+	const declineInvite = useCallback(async (inviteId) => {
+		await respondInvite(inviteId, "decline");
+		setPendingInvites((prev) => prev.filter((i) => i.id !== inviteId));
+	}, []);
 
 	// Marketplace sharing. Patch shape: { isPublic, publicDescription }.
 	const updatePageShare = useCallback(async (id, patch) => {
@@ -215,9 +239,14 @@ export function NotesProvider({ children }) {
 		() => ({
 			folders,
 			pages,
+			sharedPages,
+			pendingInvites,
 			view,
 			selectedPageId,
-			selectedPage: pages.find((p) => p.id === selectedPageId) ?? null,
+			selectedPage:
+				pages.find((p) => p.id === selectedPageId) ??
+				sharedPages.find((p) => p.id === selectedPageId) ??
+				null,
 			loading,
 			accountOpen,
 			setAccountOpen,
@@ -237,12 +266,16 @@ export function NotesProvider({ children }) {
 			selectPage,
 			updatePageShare,
 			addPageFromClone,
+			acceptInvite,
+			declineInvite,
 			handleDndOver,
 			handleDndEnd,
 		}),
 		[
 			folders,
 			pages,
+			sharedPages,
+			pendingInvites,
 			view,
 			selectedPageId,
 			loading,
@@ -260,6 +293,8 @@ export function NotesProvider({ children }) {
 			selectPage,
 			updatePageShare,
 			addPageFromClone,
+			acceptInvite,
+			declineInvite,
 			handleDndOver,
 			handleDndEnd,
 		],

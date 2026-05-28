@@ -3,6 +3,7 @@ import { auth } from "../lib/firebase.js";
 const BASE = "/api";
 
 async function authHeader() {
+	await auth.authStateReady();
 	const token = await auth.currentUser?.getIdToken();
 	return token ? { Authorization: `Bearer ${token}` } : {};
 }

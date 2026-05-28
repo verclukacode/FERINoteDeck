@@ -5,6 +5,7 @@ import { auth } from "../lib/firebase.js";
 const BASE = "/api";
 
 async function authHeader() {
+	await auth.authStateReady();
 	const token = await auth.currentUser?.getIdToken();
 	return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -100,6 +101,24 @@ export async function uploadAvatar(file) {
 	const data = await res.json().catch(() => null);
 	if (!res.ok) throw new Error(data?.error ?? "Upload failed");
 	return data;
+}
+
+// Direct sharing / collaboration invites
+
+export function sendInvite(pageId, username) {
+	return apiRequest("/invites", { method: "POST", body: { pageId, username } });
+}
+
+export function getInvites() {
+	return apiRequest("/invites");
+}
+
+export function respondInvite(inviteId, action) {
+	return apiRequest(`/invites/${inviteId}`, { method: "PATCH", body: { action } });
+}
+
+export function listSharedPages() {
+	return apiRequest("/pages/shared");
 }
 
 // Upload an image file; returns { url } to embed in note markdown.

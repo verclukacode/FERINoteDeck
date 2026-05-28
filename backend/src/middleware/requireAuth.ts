@@ -25,8 +25,9 @@ export async function requireAuth(
 		});
 		req.user = { uid, email };
 		next();
-	} catch (err) {
-		console.error("Auth verification failed:", err);
+	} catch (err: unknown) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.error("[requireAuth] FAILED:", msg);
 		res.status(401).json({ error: "Invalid auth token" });
 	}
 }
