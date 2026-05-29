@@ -1,13 +1,28 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
+import { promises as fsp } from "node:fs";
 import path from "node:path";
 import { type Request, type Response, Router } from "express";
 import multer from "multer";
+import {
+	ALLOWED_IMAGE_EXTS,
+	isAllowedImageUrl,
+	verifyImageMagicBytes,
+} from "../lib/imageValidation";
 import { prisma } from "../lib/prisma";
 import { getOrCreateStudySettings } from "../lib/studySettings";
 import { uploadsDir } from "./images";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+
+// Same rationale as routes/images.ts: SVG and other non-raster types are out
+// (SVG can carry script, polyglot files defeat the mimetype check).
+const ALLOWED_MIMETYPES = new Set([
+	"image/png",
+	"image/jpeg",
+	"image/gif",
+	"image/webp",
+]);
 
 const storage = multer.diskStorage({
 	destination: (req, _file, cb) => {
@@ -16,15 +31,22 @@ const storage = multer.diskStorage({
 		cb(null, dir);
 	},
 	filename: (_req, file, cb) => {
-		const ext = path.extname(file.originalname).toLowerCase() || ".png";
-		cb(null, `avatar-${crypto.randomUUID()}${ext}`);
+		const ext = path.extname(file.originalname).toLowerCase();
+		const safeExt = ALLOWED_IMAGE_EXTS.includes(ext) ? ext : ".png";
+		cb(null, `avatar-${crypto.randomUUID()}${safeExt}`);
 	},
 });
 
 const upload = multer({
 	storage,
 	limits: { fileSize: 5 * 1024 * 1024 },
-	fileFilter: (_req, file, cb) => cb(null, file.mimetype.startsWith("image/")),
+	fileFilter: (_req, file, cb) => {
+		if (!ALLOWED_MIMETYPES.has(file.mimetype)) {
+			cb(null, false);
+			return;
+		}
+		cb(null, true);
+	},
 });
 
 const router = Router();
@@ -44,7 +66,17 @@ router.patch("/me", async (req: Request, res: Response) => {
 	};
 	const data: { avatarUrl?: string | null; username?: string } = {};
 
-	if ("avatarUrl" in req.body) data.avatarUrl = avatarUrl ?? null;
+	if ("avatarUrl" in req.body) {
+		// Reject arbitrary external URLs — a user could otherwise set their
+		// avatar to e.g. https://attacker.com/track.gif and every marketplace
+		// viewer leaks their IP / user-agent to that server.
+		if (avatarUrl != null && !isAllowedImageUrl(avatarUrl)) {
+			return res
+				.status(400)
+				.json({ error: "avatarUrl must be a preset or an uploaded image" });
+		}
+		data.avatarUrl = avatarUrl ?? null;
+	}
 
 	if (username !== undefined) {
 		if (!USERNAME_RE.test(username)) {
@@ -163,7 +195,14 @@ router.post(
 	upload.single("avatar"),
 	async (req: Request, res: Response) => {
 		if (!req.file) {
-			return res.status(400).json({ error: "No image uploaded" });
+			return res
+				.status(400)
+				.json({ error: "No image uploaded (only PNG, JPEG, GIF, WEBP)" });
+		}
+		const ok = await verifyImageMagicBytes(req.file.path);
+		if (!ok) {
+			await fsp.unlink(req.file.path).catch(() => {});
+			return res.status(400).json({ error: "File is not a valid image" });
 		}
 		const avatarUrl = `/api/images/${req.user?.uid ?? ""}/${req.file.filename}`;
 		const user = await prisma.user.update({

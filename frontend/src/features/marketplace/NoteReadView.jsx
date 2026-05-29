@@ -45,7 +45,16 @@ function Block({ block, numberIndex }) {
 	}
 
 	if (block.type === "image") {
-		return block.imageUrl ? (
+		// Defence-in-depth: even though the backend already rejects publishing
+		// notes with non-local image URLs, drop anything that isn't a preset or
+		// an upload of ours so a public marketplace listing can never silently
+		// fetch from an attacker-controlled host (IP/UA tracking).
+		const safe =
+			typeof block.imageUrl === "string" &&
+			(block.imageUrl.startsWith("/api/images/") ||
+				block.imageUrl.startsWith("/avatars/"));
+		if (!safe) return null;
+		return (
 			<div className="my-2">
 				<img
 					src={block.imageUrl}
@@ -56,7 +65,7 @@ function Block({ block, numberIndex }) {
 					<p className="mt-1 text-sm text-body">{block.caption}</p>
 				)}
 			</div>
-		) : null;
+		);
 	}
 
 	if (block.type === "bullet") {

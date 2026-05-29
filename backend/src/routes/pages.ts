@@ -1,4 +1,5 @@
 import { type Request, type Response, Router } from "express";
+import { extractImageUrls, isAllowedImageUrl } from "../lib/imageValidation";
 import { prisma } from "../lib/prisma";
 
 /**
@@ -208,6 +209,27 @@ router.patch("/:id", async (req: Request, res: Response) => {
 		await prisma.page.update({ where: { id: pageId }, data: collabData });
 		const page = await prisma.page.findUnique({ where: { id: pageId } });
 		return res.json(page);
+	}
+
+	// If this update will leave the note in the public marketplace, ensure no
+	// `![](url)` block points at an external host. External image URLs in
+	// public notes are read by every previewer and act as web beacons
+	// (IP / user-agent tracking, no JS needed).
+	const existing = await prisma.page.findUnique({
+		where: { id: pageId },
+		select: { isPublic: true, content: true },
+	});
+	const willBePublic = data.isPublic ?? existing?.isPublic ?? false;
+	const finalContent = data.content ?? existing?.content ?? "";
+	if (willBePublic) {
+		for (const url of extractImageUrls(finalContent)) {
+			if (!isAllowedImageUrl(url)) {
+				return res.status(400).json({
+					error:
+						"Public notes can't contain external images — upload them first.",
+				});
+			}
+		}
 	}
 
 	const result = await prisma.page.updateMany({

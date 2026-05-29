@@ -4802,6 +4802,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"helmet@npm:^8.2.0":
+  version: 8.2.0
+  resolution: "helmet@npm:8.2.0"
+  checksum: 10c0/3aff1bb04123866a573eaafd7df4a5dc21b649c8fe6b39e1fb0e586f7be35709bf6003d72eed35c8deefd74573dff47d19409943cf2816125cc9597a8205a882
+  languageName: node
+  linkType: hard
+
 "hermes-estree@npm:0.25.1":
   version: 0.25.1
   resolution: "hermes-estree@npm:0.25.1"
@@ -5708,6 +5715,7 @@ __metadata:
     dotenv: "npm:^17.4.2"
     express: "npm:^5.2.1"
     firebase-admin: "npm:^13.10.0"
+    helmet: "npm:^8.2.0"
     multer: "npm:^2.1.1"
     prisma: "npm:^6"
     swagger-jsdoc: "npm:^6.2.8"
