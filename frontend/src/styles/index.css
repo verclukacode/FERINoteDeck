@@ -46,3 +46,19 @@ select {
 	color: color-mix(in srgb, var(--color-body) 45%, transparent);
 	pointer-events: none;
 }
+
+/* Auto-detected URLs in note content (emitted by editor/inlineFormat.js as
+ * <a target="_blank" rel="noopener noreferrer">). Styled for both the block
+ * editor and the read-only marketplace preview. In the editor the link only
+ * navigates on Cmd/Ctrl+click; the cursor stays a text caret so the user
+ * realises they're inside an editable block. */
+a[target="_blank"][rel*="noopener"] {
+	color: var(--color-folder-blue);
+	text-decoration: underline;
+}
+[contenteditable] a[target="_blank"][rel*="noopener"] {
+	cursor: text;
+}
+[contenteditable] a[target="_blank"][rel*="noopener"]:hover {
+	text-decoration: underline;
+}
