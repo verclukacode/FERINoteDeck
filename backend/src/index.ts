@@ -6,6 +6,7 @@ import express, {
 	type Request,
 	type Response,
 } from "express";
+import helmet from "helmet";
 import { MulterError } from "multer";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
@@ -43,6 +44,19 @@ const swaggerSpec = swaggerJsdoc({
 	apis: ["./src/routes/*.ts"],
 });
 
+// Security headers. CSP and COEP are disabled — CSP needs careful tuning per
+// route (Swagger UI + frontend), and COEP would block the frontend at :5173
+// from loading our images at :3001. CORP must be `cross-origin` for the same
+// reason. We pin `referrer-policy: no-referrer` so embedded `<img>` fetches
+// don't leak which marketplace listing the viewer is on.
+app.use(
+	helmet({
+		contentSecurityPolicy: false,
+		crossOriginEmbedderPolicy: false,
+		crossOriginResourcePolicy: { policy: "cross-origin" },
+		referrerPolicy: { policy: "no-referrer" },
+	}),
+);
 app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json({ limit: "5mb" }));
 
@@ -53,8 +67,19 @@ app.get("/", (_req, res) => {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Uploaded images are served publicly — an <img> tag cannot send an auth
-// header; filenames are unguessable UUIDs.
-app.use("/api/images", express.static(uploadsDir));
+// header; filenames are unguessable UUIDs. Force `nosniff` so a polyglot file
+// that smuggled HTML/JS into a .png can't be content-sniffed and executed,
+// and `Content-Disposition: inline` so any non-image bytes that do somehow
+// slip through render as a download rather than as the active document.
+app.use(
+	"/api/images",
+	express.static(uploadsDir, {
+		setHeaders: (res) => {
+			res.setHeader("X-Content-Type-Options", "nosniff");
+			res.setHeader("Content-Disposition", "inline");
+		},
+	}),
+);
 
 app.use("/api/folders", requireAuth, foldersRouter);
 app.use("/api/pages", requireAuth, pagesRouter);

@@ -194,20 +194,23 @@ export function FlashcardsProvider({ children }) {
 
 	const selectCard = useCallback((id) => setSelectedCardId(id), []);
 
-	// Reset a card's study progress back to new ("Forget").
+	// Reset a card's study progress back to new ("Forget"). Await the backend
+	// before updating local state so DeckPanel's queue refetch (triggered by
+	// `statesSig` changing) runs *after* the reset has been persisted —
+	// otherwise the refetch races the write and the Study count stays stale.
 	const resetCard = useCallback(async (id) => {
+		await resetCardService(id);
 		setCards((prev) =>
 			prev.map((c) => (c.id === id ? { ...c, ...RESET_CARD } : c)),
 		);
-		await resetCardService(id);
 	}, []);
 
-	// Reset every card in a deck back to new.
+	// Reset every card in a deck back to new. Same ordering as resetCard.
 	const resetDeck = useCallback(async (deckId) => {
+		await resetDeckService(deckId);
 		setCards((prev) =>
 			prev.map((c) => (c.deckId === deckId ? { ...c, ...RESET_CARD } : c)),
 		);
-		await resetDeckService(deckId);
 	}, []);
 
 	// Live cross-folder move while a deck is dragged over another folder.
