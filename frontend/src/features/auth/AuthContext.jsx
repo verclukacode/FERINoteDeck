@@ -32,19 +32,29 @@ export function AuthProvider({ children }) {
 			login: (email, password) =>
 				signInWithEmailAndPassword(auth, email, password),
 			register: async (email, password) => {
-				const cred = await createUserWithEmailAndPassword(auth, email, password);
+				const cred = await createUserWithEmailAndPassword(
+					auth,
+					email,
+					password,
+				);
 				await sendEmailVerification(cred.user);
 				return cred;
 			},
 			resendVerification: () => sendEmailVerification(auth.currentUser),
 			reloadUser: () => auth.currentUser?.reload(),
 			changeEmail: async (newEmail, password) => {
-				const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
+				const credential = EmailAuthProvider.credential(
+					auth.currentUser.email,
+					password,
+				);
 				await reauthenticateWithCredential(auth.currentUser, credential);
 				await verifyBeforeUpdateEmail(auth.currentUser, newEmail);
 			},
 			changePassword: async (currentPassword, newPassword) => {
-				const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+				const credential = EmailAuthProvider.credential(
+					auth.currentUser.email,
+					currentPassword,
+				);
 				await reauthenticateWithCredential(auth.currentUser, credential);
 				await updatePassword(auth.currentUser, newPassword);
 			},

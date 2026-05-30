@@ -1,4 +1,5 @@
 import bell from "../assets/icons/bell.svg?raw";
+import calendar from "../assets/icons/calendar.svg?raw";
 import checkbox from "../assets/icons/checkbox.svg?raw";
 import checkmark from "../assets/icons/checkmark.svg?raw";
 import chevron from "../assets/icons/chevron.svg?raw";
@@ -24,6 +25,7 @@ import xmark from "../assets/icons/xmark.svg?raw";
 
 const ICONS = {
 	bell,
+	calendar,
 	checkbox,
 	checkmark,
 	chevron,

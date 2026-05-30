@@ -11,6 +11,8 @@ import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import "./lib/firebase";
 import { requireAuth } from "./middleware/requireAuth";
+import calendarEventsRouter from "./routes/calendar-events";
+import calendarTagsRouter from "./routes/calendar-tags";
 import cardsRouter from "./routes/cards";
 import decksRouter from "./routes/decks";
 import flashcardFoldersRouter from "./routes/flashcard-folders";
@@ -64,6 +66,8 @@ app.use("/api/cards", requireAuth, cardsRouter);
 app.use("/api/invites", requireAuth, invitesRouter);
 app.use("/api/marketplace", requireAuth, marketplaceRouter);
 app.use("/api/search", requireAuth, searchRouter);
+app.use("/api/calendar-tags", requireAuth, calendarTagsRouter);
+app.use("/api/calendar-events", requireAuth, calendarEventsRouter);
 
 // JSON error handler — Express 5 forwards async route rejections here.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {

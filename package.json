@@ -1,14 +1,17 @@
 {
 	"name": "notedeck",
 	"private": true,
-	"workspaces": [
-		"backend",
-		"frontend"
-	],
+	"workspaces": ["backend", "frontend"],
 	"scripts": {
+		"predev": "yarn db:up",
 		"dev": "concurrently -n be,fe,sb -c blue,green,magenta \"yarn workspace notedeck-backend dev\" \"yarn workspace notedeck-frontend dev\" \"yarn workspace notedeck-frontend storybook\"",
 		"build": "yarn workspace notedeck-backend build && yarn workspace notedeck-frontend build",
-		"lint": "biome check ."
+		"lint": "biome check .",
+		"setup": "yarn install && cp -n backend/.env.example backend/.env; yarn db:ready && yarn workspace notedeck-backend prisma:push",
+		"db:up": "docker compose -f db/docker-compose.yml up -d",
+		"db:ready": "docker compose -f db/docker-compose.yml up -d --wait",
+		"db:down": "docker compose -f db/docker-compose.yml down",
+		"db:logs": "docker compose -f db/docker-compose.yml logs -f db"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",

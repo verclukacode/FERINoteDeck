@@ -12,7 +12,7 @@ scheduler. Accounts are handled with Firebase Authentication.
 | Layer | Technology |
 |---|---|
 | Backend | Node.js, Express 5, TypeScript, tsx |
-| Database | MySQL via Prisma |
+| Database | MySQL 8 via Prisma (Docker Compose in `db/`) |
 | Auth | Firebase Authentication (`firebase-admin` verifies ID tokens) |
 | Frontend | React 19, Vite, Tailwind CSS v4, react-router |
 | Component docs | Storybook 10 (React + Vite) |

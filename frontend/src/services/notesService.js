@@ -114,7 +114,10 @@ export function getInvites() {
 }
 
 export function respondInvite(inviteId, action) {
-	return apiRequest(`/invites/${inviteId}`, { method: "PATCH", body: { action } });
+	return apiRequest(`/invites/${inviteId}`, {
+		method: "PATCH",
+		body: { action },
+	});
 }
 
 export function listSharedPages() {

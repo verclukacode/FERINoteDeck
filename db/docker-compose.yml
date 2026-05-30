@@ -1,0 +1,20 @@
+services:
+  db:
+    image: mysql:8
+    container_name: notedeck-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: notedeck
+      MYSQL_USER: notedeck
+      MYSQL_PASSWORD: notedeck
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "notedeck", "-pnotedeck" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s

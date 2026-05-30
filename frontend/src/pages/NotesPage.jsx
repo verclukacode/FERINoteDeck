@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { CalendarProvider } from "../features/calendar/CalendarContext.jsx";
+import CalendarToasts from "../features/calendar/CalendarToasts.jsx";
 import { FlashcardsProvider } from "../features/flashcards/FlashcardsContext.jsx";
 import FlashcardsView from "../features/flashcards/FlashcardsView.jsx";
 import MarketplaceModal from "../features/marketplace/MarketplaceModal.jsx";
@@ -80,6 +82,7 @@ function NotesWorkspace() {
 				/>
 			)}
 			{searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
+			<CalendarToasts />
 		</div>
 	);
 }
@@ -88,7 +91,9 @@ export default function NotesPage() {
 	return (
 		<NotesProvider>
 			<FlashcardsProvider>
-				<NotesWorkspace />
+				<CalendarProvider>
+					<NotesWorkspace />
+				</CalendarProvider>
 			</FlashcardsProvider>
 		</NotesProvider>
 	);

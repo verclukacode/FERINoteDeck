@@ -6,9 +6,7 @@ export default function SharedPageItem({ page }) {
 	const { selectedPageId, selectPage } = useNotes();
 	const selected = selectedPageId === page.id;
 	const ownerName =
-		page._owner?.username ??
-		page._owner?.email?.split("@")[0] ??
-		"Unknown";
+		page._owner?.username ?? page._owner?.email?.split("@")[0] ?? "Unknown";
 
 	return (
 		<button

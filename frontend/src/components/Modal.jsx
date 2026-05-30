@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-export default function Modal({ open, onClose, children }) {
+export default function Modal({ open, onClose, children, className = "" }) {
 	useEffect(() => {
 		if (!open) return;
 		const onKey = (e) => e.key === "Escape" && onClose();
@@ -18,7 +18,9 @@ export default function Modal({ open, onClose, children }) {
 				onClick={onClose}
 				className="absolute inset-0 bg-black/15"
 			/>
-			<div className="relative w-[389px] rounded-[30px] border-[2.5px] border-border-soft bg-bg p-5 shadow-[0_5px_0_rgba(0,0,0,0.15)]">
+			<div
+				className={`relative rounded-[30px] border-[2.5px] border-border-soft bg-bg p-5 shadow-[0_5px_0_rgba(0,0,0,0.15)] ${className || "w-[389px]"}`}
+			>
 				{children}
 			</div>
 		</div>

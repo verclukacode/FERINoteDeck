@@ -19,6 +19,9 @@ storybook-static/
 backend/serviceAccountKey.json
 backend/uploads/
 
+# Database volume data
+db/data/
+
 # OS
 .DS_Store
 Thumbs.db

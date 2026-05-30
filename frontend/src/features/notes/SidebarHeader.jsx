@@ -4,7 +4,11 @@ import Pill from "../../components/Pill.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
 
-export default function SidebarHeader({ onOpenMarketplace, onOpenSearch, onOpenNotifications }) {
+export default function SidebarHeader({
+	onOpenMarketplace,
+	onOpenSearch,
+	onOpenNotifications,
+}) {
 	const { pendingInvites } = useNotes();
 	const badgeCount = pendingInvites.length;
 

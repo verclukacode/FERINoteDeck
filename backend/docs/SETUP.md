@@ -15,21 +15,19 @@ must carry.
 
 ---
 
-## 2. MySQL — local setup
+## 2. MySQL — Docker Compose
 
-1. Install and start MySQL:
+The repo ships a `db/docker-compose.yml` that runs **MySQL 8** in a container. Data is
+persisted in `db/data/` (gitignored, so it survives restarts but is not committed).
+
+1. Make sure **Docker** (Desktop or Engine) is installed and running.
+2. Start the container:
    ```sh
-   brew install mysql
-   brew services start mysql
+   yarn db:up          # from the repo root
    ```
-2. Create the database and a dedicated user (run inside `mysql -u root`):
-   ```sql
-   CREATE DATABASE notedeck;
-   CREATE USER 'notedeck'@'localhost' IDENTIFIED BY 'notedeck';
-   GRANT ALL PRIVILEGES ON notedeck.* TO 'notedeck'@'localhost';
-   FLUSH PRIVILEGES;
-   ```
-3. The connection string goes in `backend/.env` (next section) as:
+   This is also run automatically as a `predev` hook, so `yarn dev` starts the database
+   for you.
+3. The connection string (already set in `backend/.env.example`) is:
    ```
    DATABASE_URL="mysql://notedeck:notedeck@localhost:3306/notedeck"
    ```
@@ -39,6 +37,13 @@ must carry.
    yarn workspace notedeck-backend prisma:generate  # generates the Prisma client
    ```
    `prisma generate` also runs automatically on `yarn install` and `yarn build`.
+
+**Other useful DB commands** (all run from the repo root):
+```sh
+yarn db:ready   # start container and wait until MySQL is healthy (used by yarn setup)
+yarn db:logs    # stream MySQL container logs
+yarn db:down    # stop the container (data is preserved in db/data/)
+```
 
 > We use `prisma db push` rather than `prisma migrate dev` because the local `notedeck` user
 > has no permission to create Prisma's migration "shadow database". `db push` syncs the
@@ -103,10 +108,14 @@ Both `.env` files are gitignored; the committed `.env.example` files are templat
 
 ## 5. Run
 
-From the repo root:
+From the repo root — **first time only**:
 ```sh
-yarn install   # once
-yarn dev       # backend :3001, frontend :5173, Storybook :6006
+yarn setup     # installs deps, starts MySQL (waits until healthy), creates tables via prisma db push
+```
+
+Every time after that:
+```sh
+yarn dev       # starts the MySQL container (predev), then backend :3001, frontend :5173, Storybook :6006
 ```
 Open http://localhost:5173 → register an account at `/register` → notes persist to MySQL.
 
@@ -114,7 +123,7 @@ Swagger API docs: http://localhost:3001/api-docs
 
 Quick check that data is persisting:
 ```sh
-mysql -u notedeck -pnotedeck notedeck -e "SELECT title FROM Page;"
+mysql -u notedeck -pnotedeck -h 127.0.0.1 -P 3306 notedeck -e "SELECT title FROM Page;"
 ```
 
 ---

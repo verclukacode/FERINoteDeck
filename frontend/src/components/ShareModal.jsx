@@ -93,8 +93,7 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 	const title = kind === "note" ? "Share note" : "Share deck";
 	const subjectName = kind === "note" ? "note" : "deck";
 
-	const sendDisabled =
-		inviteSending || usernameState !== "found";
+	const sendDisabled = inviteSending || usernameState !== "found";
 
 	return (
 		<Modal open onClose={onClose}>

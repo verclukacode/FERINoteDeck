@@ -125,7 +125,9 @@ export function NotesProvider({ children }) {
 	const updatePageContent = useCallback(async (id, content) => {
 		await service.updatePage(id, { content });
 		setPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
-		setSharedPages((prev) => prev.map((p) => (p.id === id ? { ...p, content } : p)));
+		setSharedPages((prev) =>
+			prev.map((p) => (p.id === id ? { ...p, content } : p)),
+		);
 	}, []);
 
 	const removePage = useCallback(async (id) => {

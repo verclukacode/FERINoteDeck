@@ -37,7 +37,9 @@ export default function NotificationsModal({ onClose }) {
 										<p className="truncate text-sm font-semibold text-title">
 											{senderName}
 										</p>
-										<p className="text-xs text-body">wants to share a note with you</p>
+										<p className="text-xs text-body">
+											wants to share a note with you
+										</p>
 									</div>
 								</div>
 								<p className="rounded-xl bg-bg-secondary px-3 py-2 text-sm font-medium text-title">

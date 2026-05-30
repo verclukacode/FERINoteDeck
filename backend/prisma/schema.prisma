@@ -22,6 +22,8 @@ model User {
   studySettings    StudySettings?
   sentInvites      NoteInvite[]    @relation("SentInvites")
   receivedInvites  NoteInvite[]    @relation("ReceivedInvites")
+  calendarTags     CalendarTag[]
+  calendarEvents   CalendarEvent[]
 }
 
 model Folder {
@@ -179,4 +181,32 @@ model NoteInvite {
   @@index([senderId])
   @@index([recipientId])
   @@index([pageId])
+}
+
+model CalendarTag {
+  id        String          @id @default(cuid())
+  userId    String
+  name      String
+  color     String          @default("blue")
+  createdAt DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events    CalendarEvent[]
+
+  @@index([userId])
+}
+
+model CalendarEvent {
+  id          String       @id @default(cuid())
+  userId      String
+  tagId       String?
+  name        String
+  description String?      @db.Text
+  date        DateTime
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag         CalendarTag? @relation(fields: [tagId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([tagId])
 }

@@ -9,15 +9,21 @@ NoteDeck — a simple notes app with an Express REST API backend and a Vite + Re
 ## Repository layout
 
 - `backend/` — Node.js + Express API, TypeScript, CommonJS output
-- `frontend/` — Vite + React app, ESM, Tailwind CSS v4, Storybook
+- `frontend/` — Vite + React app, ESM, Tailwind CSS v4, Storybook (FE-only)
+- `db/` — Docker Compose file for MySQL 8; data volume lives in `db/data/` (gitignored)
 - `package.json` (root) — Yarn workspaces monorepo; run all commands from here
 
 ## Common commands
 
 Run from the **repo root** with Yarn:
-- `yarn dev` — start backend (:3001), frontend (:5173), and Storybook (:6006) concurrently
+- `yarn dev` — auto-starts the MySQL container (`predev`), then starts backend (:3001), frontend (:5173), and Storybook (:6006) concurrently
 - `yarn build` — compile backend TypeScript to `backend/dist/`, then Vite production build to `frontend/dist/`
 - `yarn install` — install all workspace dependencies
+- `yarn setup` — **first-time setup**: installs all dependencies, starts MySQL (waits until healthy), and runs `prisma db push` to create tables
+- `yarn db:up` — start the MySQL Docker container in the background (also called by `predev`)
+- `yarn db:ready` — start the MySQL container and wait until it passes its healthcheck
+- `yarn db:down` — stop the MySQL Docker container (data is preserved in `db/data/`)
+- `yarn db:logs` — stream MySQL container logs
 
 Per-workspace (if needed):
 - `yarn workspace notedeck-backend dev` — backend only (`tsx watch`)
@@ -35,7 +41,7 @@ Yarn 4 (via Corepack); `.yarnrc.yml` pins `nodeLinker: node-modules` so Vite/Sto
 
 - **Backend** (`backend/src/index.ts`) — Express, persists to **MySQL via Prisma** (`backend/prisma/schema.prisma`, client singleton `src/lib/prisma.ts`). Routers (all behind `requireAuth`): `routes/folders.ts` (`/api/folders`), `routes/pages.ts` (`/api/pages`), `routes/images.ts` (`/api/images`), `routes/users.ts` (`/api/users` — profile, avatar, study-settings), the flashcards routers `routes/flashcard-folders.ts`, `routes/decks.ts`, `routes/cards.ts`, `routes/marketplace.ts` (`/api/marketplace`), and `routes/search.ts` (`/api/search`). Uploaded images are stored as files under `backend/uploads/` and served statically. Spaced-repetition scheduling lives in `src/lib/srs.ts`; `src/lib/serialize.ts` converts `BigInt` (unix-ms) fields for JSON.
 - **Auth** is **Firebase Authentication**: the frontend signs in with the Firebase JS SDK; the backend verifies the Firebase ID token with `firebase-admin` (`src/lib/firebase.ts`, `src/middleware/requireAuth.ts`), which also upserts the MySQL `User` row.
-- **Setup**: full local setup (MySQL, Prisma, Firebase) is in `backend/docs/SETUP.md`.
+- **Setup**: full local setup (Docker/MySQL, Prisma, Firebase) is in `backend/docs/SETUP.md`. MySQL runs in Docker via `db/docker-compose.yml`; `yarn dev` starts it automatically.
 - **Frontend** is a feature-organized React app (react-router). Routes: `/` (notes UI, behind `ProtectedRoute`), `/login`, `/register`. Entry `frontend/src/main.jsx` → `routes/router.jsx`. See `frontend/ARCHITECTURE.md` for the full `src/` layout.
 - **Data layer**: all data access goes through `frontend/src/services/notesService.js`, an API-shaped facade that `fetch`es `/api/folders` + `/api/pages` with a `Bearer` Firebase ID token. Entities: `Folder {id,name,color,order,collapsed}`, `Page {id,folderId,title,content,order}` — scoped per user, ids assigned by the server.
 - **Notes UI state**: `features/notes/NotesContext.jsx` (React Context) holds folders/pages/view/selection and exposes action callbacks; `useNotes()` consumes it.
@@ -47,7 +53,7 @@ Yarn 4 (via Corepack); `.yarnrc.yml` pins `nodeLinker: node-modules` so Vite/Sto
 - **Dev proxy**: `frontend/vite.config.js` proxies `/api` → `http://localhost:3001`, so the frontend can call `/api/...` directly when both servers run locally.
 - **Tailwind**: v4 via `@tailwindcss/vite` plugin — no `tailwind.config.js`. Design tokens (colors, fonts) live in an `@theme {}` block in `frontend/src/styles/index.css`. Per-folder colors are applied via inline `style` (dynamic) using `folderHex()` from `lib/constants.js`.
 - **Icons**: SVGs in `frontend/src/assets/icons/` (fill `currentColor`); render via the `components/Icon.jsx` wrapper.
-- **Storybook**: `@storybook/react-vite` at port 6006. Config in `frontend/.storybook/`. Component stories live alongside components as `*.stories.jsx`.
+- **Storybook**: `@storybook/react-vite` at port 6006. Config in `frontend/.storybook/`. Storybook is **development-only** and **frontend-only** — it is never part of `yarn build`. Component stories live alongside components as `*.stories.jsx` with `@storybook/test` interaction tests (play functions). Backend docs live in `frontend/src/stories/Backend.mdx`. **Every new frontend component must have a `*.stories.jsx` file with interaction tests. Every time a backend route is added/removed, the data model changes, or the auth flow is modified, update `frontend/src/stories/Backend.mdx`.**
 - **Config**: backend reads `PORT`, `DATABASE_URL`, `FIREBASE_*`, `CORS_ORIGIN` from `backend/.env`; frontend reads `VITE_FIREBASE_*` from `frontend/.env` (see the `.env.example` files and `backend/docs/`).
 
 ## Backend TypeScript

@@ -1,0 +1,242 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Backend/Overview" />
+
+# Backend Overview
+
+NoteDeck's backend is a Node.js + Express REST API written in TypeScript, persisting data to MySQL via Prisma, and using Firebase Authentication for identity.
+
+## Stack
+
+<table>
+  <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+  <tbody>
+    <tr><td>Runtime</td><td>Node.js (ESM via <code>tsx watch</code> in dev, compiled to CommonJS for prod)</td></tr>
+    <tr><td>Framework</td><td>Express</td></tr>
+    <tr><td>Database</td><td>MySQL 8 (Docker) via <strong>Prisma ORM</strong></td></tr>
+    <tr><td>Auth</td><td><strong>Firebase Authentication</strong> (Admin SDK on backend, JS SDK on frontend)</td></tr>
+    <tr><td>Language</td><td>TypeScript — target ES2022, strict mode</td></tr>
+    <tr><td>Image storage</td><td>Local filesystem under <code>backend/uploads/</code></td></tr>
+    <tr><td>API docs</td><td>Swagger UI at <code>http://localhost:3001/api-docs</code> (via <code>swagger-jsdoc</code>)</td></tr>
+  </tbody>
+</table>
+
+## Directory layout
+
+```
+backend/
+  src/
+    index.ts            # Express app entry — mounts all routers
+    lib/
+      firebase.ts       # firebase-admin initialisation
+      prisma.ts         # Prisma client singleton
+      serialize.ts      # BigInt → string for JSON responses
+      srs.ts            # Anki-style SM-2 scheduler
+      studySettings.ts  # default StudySettings helper
+    middleware/
+      requireAuth.ts    # verifies Firebase ID token, upserts User row
+    routes/
+      folders.ts        # /api/folders
+      pages.ts          # /api/pages
+      images.ts         # /api/images
+      users.ts          # /api/users  (profile, avatar, study-settings)
+      flashcard-folders.ts  # /api/flashcard-folders
+      decks.ts          # /api/decks
+      cards.ts          # /api/cards
+      marketplace.ts    # /api/marketplace
+      search.ts         # /api/search
+      invites.ts        # /api/invites
+      calendar-tags.ts  # /api/calendar-tags
+      calendar-events.ts # /api/calendar-events
+  prisma/
+    schema.prisma       # single source of truth for the DB schema
+  docs/
+    SETUP.md            # full local setup guide (Docker, Prisma, Firebase)
+```
+
+## Authentication flow
+
+Every request (except `/api-docs` and static image serving) passes through `requireAuth`:
+
+1. Frontend gets a **Firebase ID token** from `firebase.currentUser.getIdToken()`.
+2. Token is sent as `Authorization: Bearer <token>`.
+3. `requireAuth` calls `admin.auth().verifyIdToken(token)`.
+4. On success it **upserts** a `User` row in MySQL (`id = firebaseUid`, `email`, optional `username`).
+5. `req.user` is set to `{ uid, email }` — all route handlers scope queries to `req.user.uid`.
+
+New users must choose a username (`username = null` after first sign-in); the frontend redirects to `/choose-username` until this is set.
+
+## API routes
+
+All routes require a valid Firebase ID token unless noted.
+
+### Notes
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/folders</code></td><td>List folders for the authenticated user</td></tr>
+    <tr><td>POST</td><td><code>/api/folders</code></td><td>Create a folder</td></tr>
+    <tr><td>PATCH</td><td><code>/api/folders/:id</code></td><td>Update folder (name, color, order, collapsed)</td></tr>
+    <tr><td>DELETE</td><td><code>/api/folders/:id</code></td><td>Delete folder + all its pages</td></tr>
+    <tr><td>PATCH</td><td><code>/api/folders/reorder</code></td><td>Bulk-reorder folders</td></tr>
+    <tr><td>GET</td><td><code>/api/pages</code></td><td>List pages (optionally <code>?folderId=</code>)</td></tr>
+    <tr><td>POST</td><td><code>/api/pages</code></td><td>Create a page</td></tr>
+    <tr><td>GET</td><td><code>/api/pages/:id</code></td><td>Get a single page</td></tr>
+    <tr><td>PATCH</td><td><code>/api/pages/:id</code></td><td>Update page (title, content, order, isPublic, publicDescription)</td></tr>
+    <tr><td>DELETE</td><td><code>/api/pages/:id</code></td><td>Delete page</td></tr>
+    <tr><td>PATCH</td><td><code>/api/pages/reorder</code></td><td>Bulk-reorder pages</td></tr>
+  </tbody>
+</table>
+
+### Images
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/images</code></td><td>Upload image (multipart); returns <code>&#123; url &#125;</code></td></tr>
+    <tr><td>GET</td><td><code>/uploads/:filename</code></td><td>Serve uploaded image (public, no auth)</td></tr>
+  </tbody>
+</table>
+
+### Users
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/users/me</code></td><td>Get own profile</td></tr>
+    <tr><td>PATCH</td><td><code>/api/users/me</code></td><td>Update username / email</td></tr>
+    <tr><td>POST</td><td><code>/api/users/me/avatar</code></td><td>Upload avatar (multipart)</td></tr>
+    <tr><td>GET</td><td><code>/api/users/study-settings</code></td><td>Get study settings</td></tr>
+    <tr><td>PATCH</td><td><code>/api/users/study-settings</code></td><td>Update study settings</td></tr>
+  </tbody>
+</table>
+
+### Flashcards
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/flashcard-folders</code></td><td>List flashcard folders</td></tr>
+    <tr><td>POST</td><td><code>/api/flashcard-folders</code></td><td>Create flashcard folder</td></tr>
+    <tr><td>PATCH</td><td><code>/api/flashcard-folders/:id</code></td><td>Update flashcard folder</td></tr>
+    <tr><td>DELETE</td><td><code>/api/flashcard-folders/:id</code></td><td>Delete flashcard folder</td></tr>
+    <tr><td>GET</td><td><code>/api/decks</code></td><td>List decks (optionally <code>?folderId=</code>)</td></tr>
+    <tr><td>POST</td><td><code>/api/decks</code></td><td>Create deck</td></tr>
+    <tr><td>PATCH</td><td><code>/api/decks/:id</code></td><td>Update deck</td></tr>
+    <tr><td>DELETE</td><td><code>/api/decks/:id</code></td><td>Delete deck</td></tr>
+    <tr><td>GET</td><td><code>/api/decks/:id/queue</code></td><td>Get today's study queue (respects daily limits)</td></tr>
+    <tr><td>GET</td><td><code>/api/cards</code></td><td>List cards (optionally <code>?deckId=</code>)</td></tr>
+    <tr><td>POST</td><td><code>/api/cards</code></td><td>Create card</td></tr>
+    <tr><td>PATCH</td><td><code>/api/cards/:id</code></td><td>Update card</td></tr>
+    <tr><td>DELETE</td><td><code>/api/cards/:id</code></td><td>Delete card</td></tr>
+    <tr><td>POST</td><td><code>/api/cards/:id/answer</code></td><td>Submit a review answer — runs SRS scheduler</td></tr>
+  </tbody>
+</table>
+
+### Marketplace
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/marketplace</code></td><td>Browse public notes + decks</td></tr>
+    <tr><td>GET</td><td><code>/api/marketplace/notes/:id</code></td><td>Preview a public note</td></tr>
+    <tr><td>GET</td><td><code>/api/marketplace/decks/:id</code></td><td>Preview a public deck</td></tr>
+    <tr><td>POST</td><td><code>/api/marketplace/notes/:id/clone</code></td><td>Clone a public note into caller's folder</td></tr>
+    <tr><td>POST</td><td><code>/api/marketplace/decks/:id/clone</code></td><td>Clone a public deck into caller's folder</td></tr>
+  </tbody>
+</table>
+
+### Search
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/search?q=…</code></td><td>Full-text search across the caller's notes, decks, and cards</td></tr>
+  </tbody>
+</table>
+
+### Invites
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/invites</code></td><td>Send a note invite to another user</td></tr>
+    <tr><td>GET</td><td><code>/api/invites</code></td><td>List received invites</td></tr>
+    <tr><td>PATCH</td><td><code>/api/invites/:id</code></td><td>Accept or decline an invite</td></tr>
+  </tbody>
+</table>
+
+### Calendar
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/api/calendar-tags</code></td><td>List user's calendar tags (name + color)</td></tr>
+    <tr><td>POST</td><td><code>/api/calendar-tags</code></td><td>Create a calendar tag</td></tr>
+    <tr><td>PATCH</td><td><code>/api/calendar-tags/:id</code></td><td>Update tag name or color</td></tr>
+    <tr><td>DELETE</td><td><code>/api/calendar-tags/:id</code></td><td>Delete tag (events' tagId set to null)</td></tr>
+    <tr><td>GET</td><td><code>/api/calendar-events</code></td><td>List all user events with tag; supports <code>?from=</code> and <code>?to=</code> ISO date filters</td></tr>
+    <tr><td>GET</td><td><code>/api/calendar-events/upcoming</code></td><td>Returns <code>&#123; warning: Event[], urgent: Event[] &#125;</code> for events within the next 3 days (warning ≤3 days, urgent ≤1 day)</td></tr>
+    <tr><td>POST</td><td><code>/api/calendar-events</code></td><td>Create an event (name, date required; description, tagId optional)</td></tr>
+    <tr><td>PATCH</td><td><code>/api/calendar-events/:id</code></td><td>Update event fields</td></tr>
+    <tr><td>DELETE</td><td><code>/api/calendar-events/:id</code></td><td>Delete event</td></tr>
+  </tbody>
+</table>
+
+## Data model
+
+```
+User ──< Folder ──< Page ──< NoteInvite
+     ──< FlashcardFolder ──< Deck ──< FlashCard ──< Review
+     ──1 StudySettings
+     ──< CalendarTag ──< CalendarEvent
+     ──< CalendarEvent (tagId nullable)
+```
+
+### Key entities
+
+**User** — `id` is the Firebase UID. `username` starts null and must be set before the app is usable.
+
+**Folder / Page** — Standard notes hierarchy. `Page.content` is a markdown string with a `<<<NoteDeckMD>>>` sentinel (custom block-editor format). `Page.isPublic` + `publicDescription` + `publishedAt` drive the marketplace.
+
+**FlashcardFolder / Deck / FlashCard** — Flashcard hierarchy. `FlashCard` holds all SRS scheduling state: `state` (`new`/`learning`/`review`/`relearning`), `due` (unix ms BigInt), `intervalSec`, `ease` (permille), `reps`, `lapses`, `learningStep`.
+
+**Review** — Immutable revlog entry written on every `POST /api/cards/:id/answer`. Stores before/after state for analytics.
+
+**StudySettings** — Per-user Anki-style config: `newCardsPerDay`, `maxReviewsPerDay`, learning/relearning step sequences, ease multipliers, interval modifier.
+
+**NoteInvite** — Lets a user share a note (`Page`) with another user by username. Status: `pending` → `accepted` / `declined`.
+
+**CalendarTag** — User-defined label with a `name` and one of the 6 folder colors (`red`, `orange`, `pink`, `green`, `blue`, `purple`). Tags are scoped per user. Deleting a tag sets `tagId` to `null` on affected events (`SetNull` cascade).
+
+**CalendarEvent** — An exam, test, or any future deadline. Fields: `name`, optional `description`, `date` (DateTime), optional `tagId`. Used by `GET /api/calendar-events/upcoming` to drive urgency toasts.
+
+## SRS scheduler (`src/lib/srs.ts`)
+
+Implements an **Anki-style SM-2** algorithm:
+
+- Cards have four states: `new` → `learning` → `review` (or `relearning` after a lapse).
+- Grades: `1 Again`, `2 Hard`, `3 Good`, `4 Easy`.
+- All times are **unix milliseconds stored as `BigInt`**; intervals are **seconds as `BigInt`**; ease is **permille** (2500 = 2.5×).
+- JSON serialization: `BigInt` fields go through `src/lib/serialize.ts` (converts to `string`) before responses are sent.
+
+## Environment variables
+
+Backend reads from `backend/.env` (see `backend/.env.example` and `backend/docs/SETUP.md`):
+
+<table>
+  <thead><tr><th>Variable</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>PORT</code></td><td>Express listen port (default 3001)</td></tr>
+    <tr><td><code>DATABASE_URL</code></td><td>MySQL connection string for Prisma</td></tr>
+    <tr><td><code>FIREBASE_PROJECT_ID</code></td><td>Firebase project</td></tr>
+    <tr><td><code>FIREBASE_CLIENT_EMAIL</code></td><td>Firebase service account email</td></tr>
+    <tr><td><code>FIREBASE_PRIVATE_KEY</code></td><td>Firebase service account private key</td></tr>
+    <tr><td><code>CORS_ORIGIN</code></td><td>Allowed CORS origin (e.g. <code>http://localhost:5173</code>)</td></tr>
+  </tbody>
+</table>
+
+---
+
+> **Keep this file up to date.** Whenever a backend route is added or removed, the data model changes, or the auth flow is modified, update this document.
