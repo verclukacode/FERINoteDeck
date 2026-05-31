@@ -4,10 +4,88 @@ import ShareModal from "../../components/ShareModal.jsx";
 import {
 	getDeckLeaderboard,
 	getDeckQueue,
+	getDeckTodayStats,
 } from "../../services/flashcardsService.js";
 import DeckLeaderboardModal from "./DeckLeaderboardModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 import StudySession from "./StudySession.jsx";
+
+function formatTime(ms) {
+	if (!ms) return "0s";
+	const s = Math.round(ms / 1000);
+	if (s < 60) return `${s}s`;
+	const m = Math.floor(s / 60);
+	const rem = s % 60;
+	return rem ? `${m}m ${rem}s` : `${m}m`;
+}
+
+function TodayStats({ stats }) {
+	if (!stats || stats.count === 0) return null;
+	return (
+		<div className="flex items-center gap-5 border-b-2 border-border-soft px-5 py-2.5">
+			<span className="text-xs font-semibold uppercase tracking-wide text-body">Today</span>
+			<div className="flex gap-5">
+				<div className="text-center">
+					<p className="text-lg font-bold text-title leading-none">{stats.count}</p>
+					<p className="text-[10px] text-body mt-0.5">cards</p>
+				</div>
+				{stats.avgGrade !== null && (
+					<div className="text-center">
+						<p className="text-lg font-bold text-title leading-none">{stats.avgGrade}</p>
+						<p className="text-[10px] text-body mt-0.5">avg grade</p>
+					</div>
+				)}
+				<div className="text-center">
+					<p className="text-lg font-bold text-title leading-none">{formatTime(stats.totalMs)}</p>
+					<p className="text-[10px] text-body mt-0.5">time</p>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+const STATE_CONFIG = [
+	{ key: "new",      label: "New",      color: "bg-folder-blue"   },
+	{ key: "learning", label: "Learning", color: "bg-[#ffbb00]"     },
+	{ key: "relearning", label: "Relearning", color: "bg-folder-orange" },
+	{ key: "review",   label: "Review",   color: "bg-folder-green"  },
+];
+
+function CardStateBar({ cards }) {
+	if (!cards.length) return null;
+
+	const counts = { new: 0, learning: 0, relearning: 0, review: 0 };
+	for (const c of cards) {
+		if (counts[c.state] !== undefined) counts[c.state]++;
+	}
+
+	const total = cards.length;
+	const visible = STATE_CONFIG.filter((s) => counts[s.key] > 0);
+
+	return (
+		<div className="px-5 py-3 border-b-2 border-border-soft flex flex-col gap-2">
+			<div className="flex h-2 w-full overflow-hidden rounded-full gap-0.5">
+				{visible.map((s) => (
+					<div
+						key={s.key}
+						className={`${s.color} h-full rounded-full`}
+						style={{ width: `${(counts[s.key] / total) * 100}%` }}
+					/>
+				))}
+			</div>
+			<div className="flex gap-4">
+				{visible.map((s) => (
+					<div key={s.key} className="flex items-center gap-1.5">
+						<span className={`h-2 w-2 rounded-full ${s.color}`} />
+						<span className="text-xs text-body">
+							{s.label} <span className="font-semibold text-title">{counts[s.key]}</span>
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
 
 // Editable deck title — Enter (or blur) commits, empty input reverts.
 function DeckTitle({ deck, onRename }) {
@@ -70,6 +148,7 @@ export default function DeckPanel() {
 	const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 	const [memberCount, setMemberCount] = useState(0);
 	const [dueCount, setDueCount] = useState(null);
+	const [todayStats, setTodayStats] = useState(null);
 
 	const deckId = selectedDeck?.id;
 	// Re-fetch the due count when the deck changes, after a study session closes,
@@ -87,6 +166,9 @@ export default function DeckPanel() {
 				setDueCount(c.new + c.learning + c.review);
 			})
 			.catch(() => active && setDueCount(0));
+		getDeckTodayStats(deckId)
+			.then((s) => active && setTodayStats(s))
+			.catch(() => {});
 		return () => {
 			active = false;
 		};
@@ -155,6 +237,9 @@ export default function DeckPanel() {
 					Study {dueCount ?? 0}
 				</button>
 			</div>
+
+			<CardStateBar cards={deckCards} />
+			<TodayStats stats={todayStats} />
 
 			<div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
 				{deckCards.map((card) => (

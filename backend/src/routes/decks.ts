@@ -213,6 +213,36 @@ router.get("/:id/queue", async (req: Request, res: Response) => {
  *       200: { description: "{ count }" }
  *       404: { description: Deck not found }
  */
+// GET /api/decks/:id/stats/today — cards reviewed today, avg grade, time spent
+router.get("/:id/stats/today", async (req: Request, res: Response) => {
+	const userId = req.user?.uid ?? "";
+	const deckId = String(req.params.id);
+
+	const deck = await prisma.deck.findFirst({ where: { id: deckId, userId } });
+	if (!deck) return res.status(404).json({ error: "Deck not found" });
+
+	const settings = await getOrCreateStudySettings(userId);
+	const now = Date.now();
+	const [startOfDay, endOfDay] = studyDayWindow(now, settings.newDayStartsAtHour);
+
+	const reviews = await prisma.review.findMany({
+		where: {
+			deckId,
+			userId,
+			reviewedAt: { gte: BigInt(startOfDay), lt: BigInt(endOfDay) },
+		},
+		select: { grade: true, elapsedMs: true },
+	});
+
+	const count = reviews.length;
+	const avgGrade = count
+		? Math.round((reviews.reduce((s, r) => s + r.grade, 0) / count) * 10) / 10
+		: null;
+	const totalMs = reviews.reduce((s, r) => s + (r.elapsedMs ?? 0), 0);
+
+	res.json({ count, avgGrade, totalMs });
+});
+
 router.post("/:id/reset", async (req: Request, res: Response) => {
 	const userId = req.user?.uid ?? "";
 	const deckId = String(req.params.id);
