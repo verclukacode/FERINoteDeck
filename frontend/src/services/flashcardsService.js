@@ -125,3 +125,26 @@ export function updateStudySettings(patch) {
 		body: patch,
 	});
 }
+
+// Direct deck-sharing invites (mirror of note invites)
+export function sendDeckInvite(deckId, username) {
+	return apiRequest("/deck-invites", {
+		method: "POST",
+		body: { deckId, username },
+	});
+}
+
+export function getDeckInvites() {
+	return apiRequest("/deck-invites");
+}
+
+export function respondDeckInvite(inviteId, action) {
+	return apiRequest(`/deck-invites/${inviteId}`, {
+		method: "PATCH",
+		body: { action },
+	});
+}
+
+export function getDeckLeaderboard(deckId) {
+	return apiRequest(`/decks/${deckId}/leaderboard`);
+}

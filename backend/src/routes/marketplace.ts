@@ -1,4 +1,5 @@
 import { type Request, type Response, Router } from "express";
+import { cloneDeckForUser } from "../lib/cloneDeck";
 import { prisma } from "../lib/prisma";
 
 /**
@@ -257,7 +258,7 @@ router.post("/decks/:id/clone", async (req: Request, res: Response) => {
 	const folderId = String(req.body?.folderId ?? "");
 	const source = await prisma.deck.findFirst({
 		where: { id: String(req.params.id), isPublic: true },
-		include: { cards: { orderBy: { order: "asc" } } },
+		select: { id: true },
 	});
 	if (!source) return res.status(404).json({ error: "Source not found" });
 	const folder = await prisma.flashcardFolder.findFirst({
@@ -265,52 +266,14 @@ router.post("/decks/:id/clone", async (req: Request, res: Response) => {
 	});
 	if (!folder) return res.status(400).json({ error: "Folder not found" });
 
-	const result = await prisma.$transaction(async (tx) => {
-		const order = await tx.deck.count({ where: { folderId } });
-		const deck = await tx.deck.create({
-			data: {
-				userId,
-				folderId,
-				name: source.name,
-				order,
-				isPublic: false,
-				publicDescription: null,
-				publishedAt: null,
-			},
-		});
-		if (source.cards.length) {
-			// Omit scheduling fields: Prisma's schema defaults give a fresh
-			// state="new" card per row, exactly what we want for a clone.
-			await tx.flashCard.createMany({
-				data: source.cards.map((c) => ({
-					userId,
-					deckId: deck.id,
-					type: c.type,
-					question: c.question,
-					answer: c.answer,
-					order: c.order,
-				})),
-			});
-		}
-		const cards = await tx.flashCard.findMany({
-			where: { deckId: deck.id },
-			// Strip BigInt scheduling fields from the response.
-			select: {
-				id: true,
-				userId: true,
-				deckId: true,
-				type: true,
-				question: true,
-				answer: true,
-				order: true,
-				createdAt: true,
-				updatedAt: true,
-				state: true,
-			},
-			orderBy: { order: "asc" },
-		});
-		return { deck, cards };
-	});
+	const result = await prisma.$transaction((tx) =>
+		cloneDeckForUser(tx, {
+			sourceDeckId: source.id,
+			recipientUserId: userId,
+			targetFolderId: folderId,
+			sharedFromDeckId: null,
+		}),
+	);
 	res.status(201).json(result);
 });
 

@@ -22,6 +22,8 @@ model User {
   studySettings    StudySettings?
   sentInvites      NoteInvite[]    @relation("SentInvites")
   receivedInvites  NoteInvite[]    @relation("ReceivedInvites")
+  sentDeckInvites      DeckInvite[] @relation("SentDeckInvites")
+  receivedDeckInvites  DeckInvite[] @relation("ReceivedDeckInvites")
   calendarTags     CalendarTag[]
   calendarEvents   CalendarEvent[]
 }
@@ -85,15 +87,18 @@ model Deck {
   isPublic          Boolean         @default(false)
   publicDescription String?         @db.Text
   publishedAt       DateTime?
+  sharedFromDeckId  String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   folder            FlashcardFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
   cards             FlashCard[]
   reviews           Review[]
+  invites           DeckInvite[]
 
   @@index([userId])
   @@index([folderId])
+  @@index([sharedFromDeckId])
 }
 
 model FlashCard {
@@ -181,6 +186,24 @@ model NoteInvite {
   @@index([senderId])
   @@index([recipientId])
   @@index([pageId])
+}
+
+model DeckInvite {
+  id          String   @id @default(uuid())
+  senderId    String
+  recipientId String
+  deckId      String
+  status      String   @default("pending") // pending, accepted, declined
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sender      User     @relation("SentDeckInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   User     @relation("ReceivedDeckInvites", fields: [recipientId], references: [id], onDelete: Cascade)
+  deck        Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, deckId])
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([deckId])
 }
 
 model CalendarTag {

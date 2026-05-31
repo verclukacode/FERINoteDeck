@@ -1,6 +1,7 @@
 import logo from "../../assets/Logo.png";
 import Icon from "../../components/Icon.jsx";
 import Pill from "../../components/Pill.jsx";
+import { useFlashcards } from "../flashcards/FlashcardsContext.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import ViewToggle from "./ViewToggle.jsx";
 
@@ -10,7 +11,8 @@ export default function SidebarHeader({
 	onOpenNotifications,
 }) {
 	const { pendingInvites } = useNotes();
-	const badgeCount = pendingInvites.length;
+	const { pendingDeckInvites } = useFlashcards();
+	const badgeCount = pendingInvites.length + pendingDeckInvites.length;
 
 	return (
 		<div className="flex flex-col">
@@ -39,7 +41,12 @@ export default function SidebarHeader({
 						aria-label="Notifications"
 						className="relative flex h-9 w-9 items-center justify-center text-title"
 					>
-						<img src="/ringbell.svg" alt="Notifications" width={18} height={18} />
+						<img
+							src="/ringbell.svg"
+							alt="Notifications"
+							width={18}
+							height={18}
+						/>
 						{badgeCount > 0 && (
 							<span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-folder-red text-[9px] font-bold text-white">
 								{badgeCount}

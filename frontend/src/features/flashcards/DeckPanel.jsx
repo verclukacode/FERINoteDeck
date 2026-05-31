@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import ShareModal from "../../components/ShareModal.jsx";
 import { getDeckQueue } from "../../services/flashcardsService.js";
+import DeckLeaderboardModal from "./DeckLeaderboardModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 import StudySession from "./StudySession.jsx";
 
@@ -61,6 +62,7 @@ export default function DeckPanel() {
 	} = useFlashcards();
 	const [studying, setStudying] = useState(false);
 	const [sharing, setSharing] = useState(false);
+	const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 	const [dueCount, setDueCount] = useState(null);
 
 	const deckId = selectedDeck?.id;
@@ -100,6 +102,15 @@ export default function DeckPanel() {
 					deck={selectedDeck}
 					onRename={renameDeck}
 				/>
+				<button
+					type="button"
+					onClick={() => setLeaderboardOpen(true)}
+					className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-border-soft bg-bg px-4 text-[15px] font-semibold text-title"
+					aria-label="Leaderboard"
+				>
+					<Icon name="party" size={20} />
+					Leaderboard
+				</button>
 				<button
 					type="button"
 					onClick={() => setSharing(true)}
@@ -151,6 +162,13 @@ export default function DeckPanel() {
 					item={selectedDeck}
 					onSave={(patch) => updateDeckShare(selectedDeck.id, patch)}
 					onClose={() => setSharing(false)}
+				/>
+			)}
+
+			{leaderboardOpen && (
+				<DeckLeaderboardModal
+					deckId={selectedDeck.id}
+					onClose={() => setLeaderboardOpen(false)}
 				/>
 			)}
 		</main>

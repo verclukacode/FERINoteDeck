@@ -229,6 +229,86 @@ router.post("/:id/reset", async (req: Request, res: Response) => {
 
 /**
  * @openapi
+ * /api/decks/{id}/leaderboard:
+ *   get:
+ *     summary: Rank deck members by average SM-2 ease factor
+ *     tags: [Decks]
+ *     responses:
+ *       200: { description: Sorted member list }
+ *       404: { description: Deck not found or not a member }
+ */
+router.get("/:id/leaderboard", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const deckId = String(req.params.id);
+
+	const deck = await prisma.deck.findUnique({
+		where: { id: deckId },
+		select: { id: true, userId: true, sharedFromDeckId: true },
+	});
+	if (!deck) return res.status(404).json({ error: "Deck not found" });
+
+	// Resolve canonical source: caller hit the owner's deck, or a member's clone.
+	const sourceDeckId = deck.sharedFromDeckId ?? deck.id;
+
+	// Authz: caller must own the source OR own a clone whose sharedFromDeckId
+	// points at it. (deck.userId === uid is the easy case: own the source or
+	// own this clone.)
+	const isOwnerOfThis = deck.userId === uid;
+	if (!isOwnerOfThis) {
+		// Caller is not the owner of this row; check membership via lineage.
+		const myClone = await prisma.deck.findFirst({
+			where: { sharedFromDeckId: sourceDeckId, userId: uid },
+			select: { id: true },
+		});
+		const ownsSource = deck.sharedFromDeckId === null && deck.userId === uid;
+		if (!myClone && !ownsSource) {
+			return res.status(404).json({ error: "Not a member" });
+		}
+	}
+
+	const memberDecks = await prisma.deck.findMany({
+		where: {
+			OR: [{ id: sourceDeckId }, { sharedFromDeckId: sourceDeckId }],
+		},
+		select: {
+			id: true,
+			userId: true,
+			sharedFromDeckId: true,
+			user: { select: { username: true, avatarUrl: true } },
+		},
+	});
+
+	const stats = await prisma.flashCard.groupBy({
+		by: ["deckId"],
+		where: { deckId: { in: memberDecks.map((d) => d.id) } },
+		_avg: { ease: true },
+		_count: { _all: true },
+	});
+	const byDeck = new Map(stats.map((s) => [s.deckId, s]));
+
+	const rows = memberDecks.map((d) => {
+		const s = byDeck.get(d.id);
+		return {
+			userId: d.userId,
+			username: d.user.username,
+			avatarUrl: d.user.avatarUrl,
+			avgEase: s?._avg.ease ?? null,
+			cardCount: s?._count._all ?? 0,
+			isOwner: d.sharedFromDeckId === null,
+			isMe: d.userId === uid,
+		};
+	});
+	rows.sort((a, b) => {
+		// Members with no cards sit at the bottom.
+		if (a.cardCount === 0 && b.cardCount > 0) return 1;
+		if (b.cardCount === 0 && a.cardCount > 0) return -1;
+		return (b.avgEase ?? 0) - (a.avgEase ?? 0);
+	});
+	res.json(rows);
+});
+
+/**
+ * @openapi
  * /api/decks/{id}:
  *   patch:
  *     summary: Update a deck — name, or marketplace share (isPublic, publicDescription)

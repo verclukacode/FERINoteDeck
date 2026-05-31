@@ -64,6 +64,13 @@ function DeckRow({ deck }) {
 				{deck.isPublic && (
 					<Icon name="store" size={14} className="shrink-0 text-folder-blue" />
 				)}
+				{deck.sharedFromDeckId && (
+					<Icon
+						name="paperplane"
+						size={14}
+						className="shrink-0 text-folder-pink"
+					/>
+				)}
 			</button>
 
 			{menu && (

@@ -15,12 +15,14 @@ import {
 	deleteCard,
 	deleteDeck,
 	deleteFlashcardFolder,
+	getDeckInvites,
 	listCards,
 	listDecks,
 	listFlashcardFolders,
 	reorderFlashcardFolders,
 	resetCard as resetCardService,
 	resetDeck as resetDeckService,
+	respondDeckInvite,
 	saveDecks,
 	updateCard,
 	updateDeck,
@@ -58,16 +60,23 @@ export function FlashcardsProvider({ children }) {
 	const [selectedDeckId, setSelectedDeckId] = useState(null);
 	const [selectedCardId, setSelectedCardId] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [pendingDeckInvites, setPendingDeckInvites] = useState([]);
 
 	const decksRef = useRef(decks);
 	decksRef.current = decks;
 
 	useEffect(() => {
-		Promise.all([listFlashcardFolders(), listDecks(), listCards()])
-			.then(([f, d, c]) => {
+		Promise.all([
+			listFlashcardFolders(),
+			listDecks(),
+			listCards(),
+			getDeckInvites(),
+		])
+			.then(([f, d, c, invites]) => {
 				setFolders(f);
 				setDecks(d);
 				setCards(c);
+				setPendingDeckInvites(invites ?? []);
 			})
 			.finally(() => setLoading(false));
 	}, []);
@@ -152,6 +161,35 @@ export function FlashcardsProvider({ children }) {
 		);
 		setSelectedDeckId(deck.id);
 		setSelectedCardId(clonedCards[0]?.id ?? null);
+	}, []);
+
+	const acceptDeckInvite = useCallback(async (inviteId) => {
+		const result = await respondDeckInvite(inviteId, "accept");
+		setPendingDeckInvites((prev) => prev.filter((i) => i.id !== inviteId));
+		if (result?.deck) {
+			// Server may have created a new "Shared decks" folder for us.
+			setFolders((prev) =>
+				prev.some((f) => f.id === result.deck.folderId)
+					? prev
+					: [
+							...prev,
+							{
+								id: result.deck.folderId,
+								name: "Shared decks",
+								color: "purple",
+								collapsed: false,
+								order: prev.length,
+							},
+						],
+			);
+			setDecks((prev) => [...prev, result.deck]);
+			setCards((prev) => [...prev, ...(result.cards ?? [])]);
+		}
+	}, []);
+
+	const declineDeckInvite = useCallback(async (inviteId) => {
+		await respondDeckInvite(inviteId, "decline");
+		setPendingDeckInvites((prev) => prev.filter((i) => i.id !== inviteId));
 	}, []);
 
 	const removeDeck = useCallback(async (id) => {
@@ -286,6 +324,7 @@ export function FlashcardsProvider({ children }) {
 			folders,
 			decks,
 			cards,
+			pendingDeckInvites,
 			selectedDeckId,
 			selectedCardId,
 			selectedDeck: decks.find((d) => d.id === selectedDeckId) ?? null,
@@ -301,6 +340,8 @@ export function FlashcardsProvider({ children }) {
 			renameDeck,
 			updateDeckShare,
 			addDeckFromClone,
+			acceptDeckInvite,
+			declineDeckInvite,
 			removeDeck,
 			selectDeck,
 			addCard,
@@ -316,6 +357,7 @@ export function FlashcardsProvider({ children }) {
 			folders,
 			decks,
 			cards,
+			pendingDeckInvites,
 			selectedDeckId,
 			selectedCardId,
 			loading,
@@ -328,6 +370,8 @@ export function FlashcardsProvider({ children }) {
 			renameDeck,
 			updateDeckShare,
 			addDeckFromClone,
+			acceptDeckInvite,
+			declineDeckInvite,
 			removeDeck,
 			selectDeck,
 			addCard,
