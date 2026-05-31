@@ -79,15 +79,49 @@ relearning steps (`10m`), graduating interval (1d), easy interval (4d), starting
 (36500d), new-day rollover hour (4). The UI shows minutes / multipliers / percent and
 converts to the stored seconds / permille.
 
+## Sharing & leaderboard
+
+Decks can be shared two ways:
+
+1. **Marketplace** — publish publicly so anyone can clone (independent copy, no link back).
+2. **Direct invite** by `@username` — recipient gets a clone tagged with `Deck.sharedFromDeckId`
+   pointing to the source, so the source + every clone form a leaderboard cohort.
+
+See [marketplace.md](marketplace.md) for the full sharing flow. Key bits for flashcards:
+
+- `POST /api/deck-invites` body `{ deckId, username }` — sender must own the deck (403 if the
+  deck is itself a clone).
+- `PATCH /api/deck-invites/:id` body `{ action }` — on accept the backend clones the deck via
+  `cloneDeckForUser` (independent `FlashCard` rows + fresh scheduling) into the recipient's
+  first folder (auto-creating a "Shared decks" folder if needed) and sets
+  `sharedFromDeckId = sourceDeckId`.
+- `GET /api/decks/:id/leaderboard` — members-only. Returns
+  `[{userId, username, avatarUrl, avgEase, cardCount, isOwner, isMe}]` sorted by `avgEase` desc.
+  `avgEase` is permille; divide by 1000 for display (e.g. `2500 → 2.50`).
+
+Frontend:
+- `DeckPanel` prefetches the leaderboard on deck change so the **Leaderboard** button only shows
+  when `members >= 2`. It opens `DeckLeaderboardModal` (avatar, `@username`, formatted ease,
+  card count; "Owner" pill on `isOwner`, highlight on `isMe`).
+- `DeckPanel` hides the paperplane (Share) button on shared clones (`sharedFromDeckId !== null`)
+  so members can't re-share someone else's deck. Backend enforces the same with 403s.
+- `DeckFolderItem` adds a paperplane badge on shared clones in the sidebar.
+- `FlashcardsContext` exposes `pendingDeckInvites` + `acceptDeckInvite` / `declineDeckInvite`;
+  accept hydrates the cloned deck + cards into local state via `addDeckFromClone`.
+
 ## API
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/api/decks/:id/queue` | Due queue + counts (daily limits) |
+| GET | `/api/decks/:id/leaderboard` | Members-only avg-ease ranking (resolves canonical source via `sharedFromDeckId`) |
 | POST | `/api/cards/:id/answer` | Grade a card (SM-2 + revlog) |
 | POST | `/api/cards/:id/reset` | Reset one card to new |
 | POST | `/api/decks/:id/reset` | Reset every card in a deck |
 | GET/PATCH | `/api/users/me/study-settings` | Read / update study defaults |
+| POST | `/api/deck-invites` | Send a deck-share invite to a user by username |
+| GET | `/api/deck-invites` | List pending deck invites for the current user |
+| PATCH | `/api/deck-invites/:id` | Accept (clones the deck) or decline an invite |
 
 Plus the existing folder/deck/card CRUD and `/order` reorder routes.
 
@@ -97,3 +131,5 @@ Plus the existing folder/deck/card CRUD and `/order` reorder routes.
 - Classic SM-2 only (no FSRS); interval fuzz is off (deterministic).
 - The frontend data layer is `frontend/src/services/flashcardsService.js`; in-memory
   state + optimistic updates live in `FlashcardsContext.jsx`.
+- Deck clones don't track the owner's later edits — members and source can drift in card
+  count/content. A true shared-content deck would need a per-user `CardProgress` table.

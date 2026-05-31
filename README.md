@@ -1,8 +1,11 @@
 # NoteDeck
 
-A full-stack notes & flashcards app — Express REST API + MySQL backend with a React + Vite
+A full-stack personal knowledge app — Express REST API + MySQL backend with a React + Vite
 frontend. Notes use a block-based markdown editor; flashcards use an Anki-style spaced-repetition
-scheduler. Accounts are handled with Firebase Authentication.
+scheduler with per-deck leaderboards when shared with others. Includes a calendar for events,
+a public marketplace for browsing/cloning others' notes & decks, and direct user-to-user sharing
+(with collaborator avatars on notes and clone-on-accept for decks). Accounts are handled with
+Firebase Authentication.
 
 ## Design
 [Figma design](https://www.figma.com/design/6tgxbVBCI2aQEKWJ6ljoyo/NoteDeck?node-id=2028-172&t=TxnQ93y2De1SI7VC-1)
@@ -78,15 +81,16 @@ FERINoteDeck/
 │       └── routes/            # folders, pages, images, users, flashcard-folders, decks, cards, marketplace, search
 └── frontend/
     ├── ARCHITECTURE.md        # frontend src/ layout
-    ├── docs/                  # editor.md, flashcards.md
+    ├── docs/                  # editor.md, flashcards.md, marketplace.md, search.md
     └── src/
         ├── routes/router.jsx
-        ├── pages/             # NotesPage, Login, Register, …
-        ├── features/notes/    # sidebar, folders/pages, block editor, account modal
-        ├── features/flashcards/   # decks, cards, study session (spaced repetition)
+        ├── pages/             # NotesPage, Login, Register, VerifyEmail, ChooseUsername
+        ├── features/notes/    # sidebar, folders/pages, block editor, invites, account modal
+        ├── features/flashcards/   # decks, cards, study session (SM-2), deck invites, leaderboard
         ├── features/marketplace/  # browse, preview, clone public notes/decks
-        ├── features/search/   # cross-feature search modal
-        └── services/          # notesService.js, flashcardsService.js, marketplaceService.js, searchService.js
+        ├── features/calendar/     # month/week views, events with tags, upcoming-event toasts
+        ├── features/search/       # Spotlight-style cross-feature search
+        └── services/          # notesService, flashcardsService, marketplaceService, calendarService, searchService
 ```
 
 ## API
@@ -95,11 +99,15 @@ Base URL `http://localhost:3001/api`. Every route requires an
 `Authorization: Bearer <Firebase ID token>` header and is scoped to the authenticated user.
 Browse the full, live spec at **`/api-docs`** (Swagger). Route groups:
 
-- **Notes**: `/folders`, `/pages`, `/images`
-- **Flashcards**: `/flashcard-folders`, `/decks` (incl. `/decks/:id/queue`),
+- **Notes**: `/folders`, `/pages` (incl. `/pages/shared`), `/images` (helmet-secured, magic-byte verified)
+- **Flashcards**: `/flashcard-folders`, `/decks` (incl. `/decks/:id/queue`, `/decks/:id/leaderboard`),
   `/cards` (incl. `/cards/:id/answer`, `/cards/:id/reset`)
+- **Direct sharing**:
+  - `/invites` — note-share invites (POST/GET pending, `/sent`, PATCH accept/decline, DELETE revoke)
+  - `/deck-invites` — deck-share invites (accept clones the deck and links via `Deck.sharedFromDeckId`)
 - **Marketplace**: `/marketplace` (search public notes + decks), `/marketplace/notes/:id`,
   `/marketplace/decks/:id`, `/marketplace/*/clone`
+- **Calendar**: `/calendar-tags`, `/calendar-events` (incl. `/calendar-events/upcoming` for the 3-day warning/urgent buckets)
 - **Search**: `/search?q=` (cross-feature, relevance-sorted, scoped to the caller)
 - **Account**: `/users/me`, `/users/me/avatar`, `/users/me/study-settings`
 
@@ -107,12 +115,13 @@ Data is persisted in MySQL (see the ER diagram in [backend/docs/SETUP.md](backen
 
 ## Documentation
 
-- [backend/docs/SETUP.md](backend/docs/SETUP.md) — local setup, ER diagram, API overview
+- [backend/docs/SETUP.md](backend/docs/SETUP.md) — local setup, ER diagram, SM-2 state diagram, use-case diagram, API overview
 - [frontend/ARCHITECTURE.md](frontend/ARCHITECTURE.md) — frontend structure & data flow
 - [frontend/docs/editor.md](frontend/docs/editor.md) — the block-based note editor
-- [frontend/docs/flashcards.md](frontend/docs/flashcards.md) — flashcards & SM-2 spaced repetition
+- [frontend/docs/flashcards.md](frontend/docs/flashcards.md) — flashcards, SM-2 spaced repetition, deck invites + leaderboard
 - [frontend/docs/marketplace.md](frontend/docs/marketplace.md) — sharing + marketplace + clone flow
 - [frontend/docs/search.md](frontend/docs/search.md) — cross-feature search + relevance scoring
+- [docs/deployment.md](docs/deployment.md) — Docker / GHCR / Nginx CI-CD pipeline
 
 ## Configuration
 
