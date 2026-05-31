@@ -337,6 +337,19 @@ router.patch("/:id", async (req: Request, res: Response) => {
 		data.publishedAt = isPublic ? new Date() : null;
 	}
 
+	// Members can't republish someone else's deck via their clone.
+	if (isPublic === true || publicDescription !== undefined) {
+		const owned = await prisma.deck.findFirst({
+			where: { id: String(req.params.id), userId: req.user?.uid ?? "" },
+			select: { sharedFromDeckId: true },
+		});
+		if (owned && owned.sharedFromDeckId !== null) {
+			return res
+				.status(403)
+				.json({ error: "Only the original owner can publish this deck" });
+		}
+	}
+
 	const result = await prisma.deck.updateMany({
 		where: { id: String(req.params.id), userId: req.user?.uid ?? "" },
 		data,

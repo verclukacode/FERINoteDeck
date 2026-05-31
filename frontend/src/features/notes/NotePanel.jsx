@@ -28,11 +28,23 @@ function TitleField({ page, onRename }) {
 }
 
 export default function NotePanel() {
-	const { selectedPage, renamePage, updatePageContent, updatePageShare, pageShares, revokeShare } =
-		useNotes();
+	const {
+		selectedPage,
+		renamePage,
+		updatePageContent,
+		updatePageShare,
+		pageShares,
+		revokeShare,
+		sharedPages,
+	} = useNotes();
 	const editorRef = useRef(null);
 	const [dirty, setDirty] = useState(false);
 	const [sharing, setSharing] = useState(false);
+
+	// Only the page owner can share or publish — collaborators (notes shared
+	// with me) live in `sharedPages` and get the editor but not the paperplane.
+	const isOwner =
+		!!selectedPage && !sharedPages.some((p) => p.id === selectedPage.id);
 
 	if (!selectedPage) {
 		return (
@@ -63,14 +75,16 @@ export default function NotePanel() {
 					>
 						{dirty ? "Save" : "Saved"}
 					</button>
-					<button
-						type="button"
-						onClick={() => setSharing(true)}
-						aria-label="Share note"
-						className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
-					>
-						<Icon name="paperplane" size={20} />
-					</button>
+					{isOwner && (
+						<button
+							type="button"
+							onClick={() => setSharing(true)}
+							aria-label="Share note"
+							className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
+						>
+							<Icon name="paperplane" size={20} />
+						</button>
+					)}
 					<button
 						type="button"
 						className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-folder-purple/15 bg-folder-purple/15 px-5 text-[15px] font-semibold text-folder-purple"

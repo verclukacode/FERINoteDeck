@@ -38,6 +38,12 @@ router.post("/", async (req: Request, res: Response) => {
 	if (!deck) {
 		return res.status(404).json({ error: "Deck not found" });
 	}
+	// Members can't re-share someone else's deck via their clone.
+	if (deck.sharedFromDeckId !== null) {
+		return res
+			.status(403)
+			.json({ error: "Only the original owner can invite to this deck" });
+	}
 
 	const recipient = await prisma.user.findUnique({
 		where: { username },

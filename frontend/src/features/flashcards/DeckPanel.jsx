@@ -133,14 +133,16 @@ export default function DeckPanel() {
 						Leaderboard
 					</button>
 				)}
-				<button
-					type="button"
-					onClick={() => setSharing(true)}
-					className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
-					aria-label="Share deck"
-				>
-					<Icon name="paperplane" size={20} />
-				</button>
+				{!selectedDeck.sharedFromDeckId && (
+					<button
+						type="button"
+						onClick={() => setSharing(true)}
+						className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
+						aria-label="Share deck"
+					>
+						<Icon name="paperplane" size={20} />
+					</button>
+				)}
 				<button
 					type="button"
 					disabled={!dueCount}
