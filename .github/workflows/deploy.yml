@@ -89,7 +89,7 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
           source: docker-compose.prod.yml
-          target: ~/notedeck/
+          target: /home/deploy/notedeck/
 
       # Pull latest images and restart services
       - name: Deploy
@@ -109,7 +109,7 @@ jobs:
             # Authenticate against GHCR so the VM can pull private images
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-            cd ~/notedeck
+            cd /home/deploy/notedeck
 
             # Pull updated images and restart containers
             docker compose -f docker-compose.prod.yml pull

@@ -7,6 +7,8 @@ RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
+# prisma schema is required by backend's postinstall (prisma generate)
+COPY backend/prisma ./backend/prisma
 RUN yarn install --immutable
 COPY frontend/ ./frontend/
 

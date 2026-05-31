@@ -52,7 +52,9 @@ services:
     container_name: notedeck-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      # Bind only to localhost — system nginx on the VM is the public entry point.
+      # Direct access on :80 from outside is blocked.
+      - "127.0.0.1:8080:80"
     depends_on:
       - backend
 
