@@ -139,10 +139,17 @@ erDiagram
     User ||--o{ FlashCard : owns
     User ||--o{ Review : owns
     User ||--o| StudySettings : has
+    User ||--o{ NoteInvite : "sends/receives"
+    User ||--o{ DeckInvite : "sends/receives"
+    User ||--o{ CalendarTag : owns
+    User ||--o{ CalendarEvent : owns
     Folder ||--o{ Page : contains
     FlashcardFolder ||--o{ Deck : contains
     Deck ||--o{ FlashCard : contains
+    Deck ||--o{ DeckInvite : "is invited from"
+    Page ||--o{ NoteInvite : "is invited from"
     FlashCard ||--o{ Review : logs
+    CalendarTag ||--o{ CalendarEvent : "tags"
 
     User {
         string id PK "Firebase UID"
@@ -187,6 +194,7 @@ erDiagram
         boolean isPublic "marketplace"
         text publicDescription "nullable"
         datetime publishedAt "nullable"
+        string sharedFromDeckId "nullable; lineage from a deck-invite clone"
     }
     FlashCard {
         string id PK "uuid"
@@ -238,6 +246,39 @@ erDiagram
         int maxIntervalDays
         int newDayStartsAtHour
     }
+    NoteInvite {
+        string id PK "uuid"
+        string senderId FK
+        string recipientId FK
+        string pageId FK
+        string status "pending | accepted | declined"
+        datetime createdAt
+        datetime updatedAt
+    }
+    DeckInvite {
+        string id PK "uuid"
+        string senderId FK
+        string recipientId FK
+        string deckId FK "source (owner's) deck"
+        string status "pending | accepted | declined"
+        datetime createdAt
+        datetime updatedAt
+    }
+    CalendarTag {
+        string id PK "cuid"
+        string userId FK
+        string name
+        string color
+        datetime createdAt
+    }
+    CalendarEvent {
+        string id PK "cuid"
+        string userId FK
+        string tagId FK "nullable; SetNull on tag delete"
+        string name
+        text description "nullable"
+        datetime date
+    }
 ```
 
 - **Cascade deletes**: deleting a `User` removes all their rows; deleting a `Folder`
@@ -255,6 +296,15 @@ erDiagram
   `publicDescription`, `publishedAt`) — see `frontend/docs/marketplace.md`. Cloning a
   public note/deck creates an independent row owned by the cloner; unsharing the source
   hides the listing but does not affect existing clones.
+- **Direct sharing** — notes use `NoteInvite` (true shared content: collaborators edit
+  the same `Page` row). Decks use `DeckInvite` plus a **clone-on-accept** model: when a
+  recipient accepts, the backend creates an independent `Deck` row + fresh `FlashCard`
+  rows (per-user scheduling) and stamps `Deck.sharedFromDeckId = sourceDeckId` to track
+  lineage. The leaderboard endpoint walks this lineage to rank all members of the source
+  deck by average `FlashCard.ease` (see §8 SM-2 state diagram and §9 use-case diagram).
+- **Calendar** — `CalendarTag` (name + color) and `CalendarEvent` (name, date, optional
+  description + tag). Tag deletion sets `CalendarEvent.tagId = NULL` (SetNull) rather
+  than cascading, so events survive when their colour-coding is removed.
 
 ---
 
@@ -267,25 +317,131 @@ docs are at `http://localhost:3001/api-docs` (Swagger, generated from `@openapi`
 Notes:
 - `GET/POST /api/folders`, `PATCH/DELETE /api/folders/:id`, `PUT /api/folders/order`
 - `GET/POST /api/pages`, `GET/PATCH/DELETE /api/pages/:id`, `PUT /api/pages/order`
-- `POST /api/images` — image upload (multipart); files served from `GET /api/images/...`
+- `GET /api/pages/shared` — notes shared with me (accepted invites). `PATCH` lets owners edit any
+  field; collaborators may only patch `title`/`content`, never marketplace fields.
+- `POST /api/images` — image upload (multipart, multer); enforces mimetype + extension allowlist
+  and verifies magic bytes after write. Files served from `GET /api/images/...` with `helmet`
+  headers (`X-Content-Type-Options: nosniff`, `Content-Disposition: inline`).
 
 Flashcards:
 - `GET/POST /api/flashcard-folders`, `PATCH/DELETE /api/flashcard-folders/:id`, `PUT /api/flashcard-folders/order`
 - `GET/POST /api/decks`, `PATCH/DELETE /api/decks/:id`, `PUT /api/decks/order`
 - `GET /api/decks/:id/queue` — due study queue + counts (daily limits); `POST /api/decks/:id/reset`
+- `GET /api/decks/:id/leaderboard` — members-only ranking of `AVG(FlashCard.ease)` per member;
+  resolves the canonical source via `Deck.sharedFromDeckId` and aggregates everyone whose deck
+  points back at it.
 - `GET/POST /api/cards`, `PATCH/DELETE /api/cards/:id`
 - `POST /api/cards/:id/answer` — grade a card (SM-2 + revlog); `POST /api/cards/:id/reset`
+
+Direct sharing:
+- `POST /api/invites` — send a note invite by `@username`. `GET /api/invites` lists my pending
+  ones; `GET /api/invites/sent?pageId=` lists accepted recipients for a page I own;
+  `PATCH /api/invites/:id` accepts or declines; `DELETE /api/invites/:id` lets the owner revoke.
+- `POST /api/deck-invites` — send a deck invite. `GET /api/deck-invites` lists pending;
+  `PATCH /api/deck-invites/:id` accepts (server clones the deck into the recipient's first
+  folder — auto-creates a "Shared decks" folder if needed — and stamps
+  `sharedFromDeckId = sourceDeckId`) or declines. **Owner-only**: 403 if the source deck is
+  itself a clone (`sharedFromDeckId !== null`).
 
 Account:
 - `GET/PATCH /api/users/me`, `GET /api/users/check-username/:username`, `POST /api/users/me/avatar`
 - `GET/PATCH /api/users/me/study-settings` — spaced-repetition defaults
 
 Marketplace (public notes + decks):
-- `PATCH /api/pages/:id` / `PATCH /api/decks/:id` also accept `{ isPublic, publicDescription }` to publish/unpublish
+- `PATCH /api/pages/:id` / `PATCH /api/decks/:id` also accept `{ isPublic, publicDescription }` to publish/unpublish.
+  **Owner-only**: for decks, 403 if the row is a shared clone; for pages, collaborators are blocked
+  by the patch handler (only `title`/`content` allowed).
 - `GET /api/marketplace?q=&kind=note|deck|all&offset=&limit=` — paginated mixed listing
 - `GET /api/marketplace/notes/:id` / `/decks/:id` — fetch a public item for preview
-- `POST /api/marketplace/notes/:id/clone` / `/decks/:id/clone` — clone into a folder you own
+- `POST /api/marketplace/notes/:id/clone` / `/decks/:id/clone` — clone into a folder you own.
+  Deck clones via this endpoint have `sharedFromDeckId = null` (fully independent — they do **not**
+  appear on the source's leaderboard).
+
+Calendar:
+- `GET/POST /api/calendar-tags`, `PATCH/DELETE /api/calendar-tags/:id`
+- `GET /api/calendar-events?from=&to=`, `POST /api/calendar-events`,
+  `PATCH/DELETE /api/calendar-events/:id`
+- `GET /api/calendar-events/upcoming` — warning/urgent buckets for the next 3 days
+  (consumed by `CalendarToasts`).
 
 Search:
 - `GET /api/search?q=` — mixed, relevance-sorted matches across the caller's notes
   (title + content), decks (name), and cards (question + answer). See `frontend/docs/search.md`.
+
+---
+
+## 8. Flashcard scheduler (SM-2 state diagram)
+
+Card transitions in `backend/src/lib/srs.ts`. Grades are **1=Again, 2=Hard, 3=Good, 4=Easy**.
+`learningStepsSec`/`relearningStepsSec` (per-user from `StudySettings`) drive how many short
+steps a card takes before graduating; `easyBonusPermille`, `hardMultiplierPermille`, and
+`intervalModifierPermille` shape the review interval; `ease` is permille (starts at 2500).
+
+```mermaid
+stateDiagram-v2
+    [*] --> new : card created
+    new --> learning : grade 1-3 (start at step 0)
+    new --> review : grade 4 (Easy — skips learning, uses easyIntervalDays)
+
+    learning --> learning : grade 1 (reset to step 0) / grade 2-3 (advance one step)
+    learning --> review : final step graded Good, OR grade 4 (Easy)
+
+    review --> review : grade 2-4 (interval grows by ease + multiplier; ease adjusts)
+    review --> relearning : grade 1 (lapse — interval reset, lapses++, drops ease)
+
+    relearning --> relearning : grade 1 (reset to step 0) / grade 2-3 (advance)
+    relearning --> review : final relearning step graded Good
+```
+
+Notes:
+- Every grade also writes a `Review` row capturing prev/new state, interval, ease, due, and
+  client-reported `elapsedMs`. The revlog is the audit trail and the source for analytics.
+- `POST /api/decks/:id/reset` and `POST /api/cards/:id/reset` send affected cards back to `new`
+  but keep the `Review` rows untouched.
+- The study day rolls over at `StudySettings.newDayStartsAtHour` (default 4am local) — daily
+  `newCardsPerDay` and `maxReviewsPerDay` caps reset at that boundary.
+
+---
+
+## 9. Use-case diagram
+
+High-level capabilities by actor. (Mermaid `flowchart` standing in for UML use-cases.)
+
+```mermaid
+flowchart LR
+    Guest((Guest))
+    User((Authenticated User))
+    Owner((Note/Deck Owner))
+    Member((Shared Member))
+
+    Guest --> UC_Register[Register / Verify email]
+    Guest --> UC_Login[Log in]
+
+    User --> UC_Notes[Manage notes — folders, pages, block editor]
+    User --> UC_Decks[Manage decks & cards]
+    User --> UC_Study[Study deck — SM-2 grading]
+    User --> UC_Calendar[Manage calendar events & tags]
+    User --> UC_Search[Search across notes, decks, cards]
+    User --> UC_Browse[Browse marketplace]
+    User --> UC_Clone[Clone a public note / deck]
+    User --> UC_Account[Edit profile, avatar, study settings]
+    User --> UC_Notif[Open notifications inbox]
+
+    Owner --> UC_Publish[Publish to marketplace — isPublic, publicDescription]
+    Owner --> UC_Invite[Invite by username — note or deck]
+    Owner --> UC_Revoke[Revoke a note collaborator]
+    Owner --> UC_Leader[View deck leaderboard]
+
+    Member --> UC_Edit[Edit shared note title / content]
+    Member --> UC_StudyShared[Study a shared deck clone]
+    Member --> UC_Leader
+
+    UC_Invite -.-> UC_Notif
+    UC_Clone -.-> UC_Notes
+    UC_Clone -.-> UC_Decks
+```
+
+Owner vs. Member is a per-resource role: each user is the owner of resources they created and a
+member of resources shared with them. The backend enforces this — `PATCH /api/decks/:id` and
+`POST /api/deck-invites` return 403 when a non-owner attempts to publish or re-invite from a clone,
+and `PATCH /api/pages/:id` restricts collaborators to `title`/`content` only.

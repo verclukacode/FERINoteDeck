@@ -26,32 +26,35 @@ NoteDeck's backend is a Node.js + Express REST API written in TypeScript, persis
 ```
 backend/
   src/
-    index.ts            # Express app entry — mounts all routers
+    index.ts            # Express app entry — mounts all routers; helmet headers
     lib/
       firebase.ts       # firebase-admin initialisation
       prisma.ts         # Prisma client singleton
       serialize.ts      # BigInt → string for JSON responses
       srs.ts            # Anki-style SM-2 scheduler
       studySettings.ts  # default StudySettings helper
+      cloneDeck.ts      # cloneDeckForUser(tx, …) — shared by marketplace + deck-invite accept
+      imageValidation.ts # mimetype + extension allowlist + magic-byte verify + URL allowlist
     middleware/
       requireAuth.ts    # verifies Firebase ID token, upserts User row
     routes/
-      folders.ts        # /api/folders
-      pages.ts          # /api/pages
-      images.ts         # /api/images
-      users.ts          # /api/users  (profile, avatar, study-settings)
+      folders.ts            # /api/folders
+      pages.ts              # /api/pages (incl. /pages/shared)
+      images.ts             # /api/images
+      users.ts              # /api/users  (profile, avatar, study-settings)
       flashcard-folders.ts  # /api/flashcard-folders
-      decks.ts          # /api/decks
-      cards.ts          # /api/cards
-      marketplace.ts    # /api/marketplace
-      search.ts         # /api/search
-      invites.ts        # /api/invites
-      calendar-tags.ts  # /api/calendar-tags
-      calendar-events.ts # /api/calendar-events
+      decks.ts              # /api/decks (incl. /:id/queue, /:id/reset, /:id/leaderboard)
+      cards.ts              # /api/cards
+      marketplace.ts        # /api/marketplace
+      search.ts             # /api/search
+      invites.ts            # /api/invites (note invites + sent + revoke)
+      deck-invites.ts       # /api/deck-invites (clone-on-accept)
+      calendar-tags.ts      # /api/calendar-tags
+      calendar-events.ts    # /api/calendar-events
   prisma/
     schema.prisma       # single source of truth for the DB schema
   docs/
-    SETUP.md            # full local setup guide (Docker, Prisma, Firebase)
+    SETUP.md            # full local setup guide + ER, SM-2 state, use-case diagrams
 ```
 
 ## Authentication flow
@@ -94,10 +97,17 @@ All routes require a valid Firebase ID token unless noted.
 <table>
   <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
   <tbody>
-    <tr><td>POST</td><td><code>/api/images</code></td><td>Upload image (multipart); returns <code>&#123; url &#125;</code></td></tr>
-    <tr><td>GET</td><td><code>/uploads/:filename</code></td><td>Serve uploaded image (public, no auth)</td></tr>
+    <tr><td>POST</td><td><code>/api/images</code></td><td>Upload image (multipart); strict mimetype + extension allowlist (PNG/JPEG/GIF/WEBP only), post-write magic-byte verification deletes the file on failure. Returns <code>&#123; url &#125;</code>.</td></tr>
+    <tr><td>GET</td><td><code>/api/images/:uid/:filename</code></td><td>Serve uploaded image (public, no auth). Sent with <code>X-Content-Type-Options: nosniff</code> and <code>Content-Disposition: inline</code> so polyglot payloads cannot execute.</td></tr>
   </tbody>
 </table>
+
+`helmet` is mounted globally with `crossOriginResourcePolicy: "cross-origin"` (so the frontend at
+`:5173` can load images from `:3001`) and `referrerPolicy: "no-referrer"`. Image URLs stored in
+`User.avatarUrl` and in published note content are validated against an allowlist (`/avatars/*`
+preset avatars, `/api/images/*` uploads) — external URLs are rejected so attackers can't drop
+tracker beacons into shared content. The allowlist + magic-byte check live in
+`backend/src/lib/imageValidation.ts`.
 
 ### Users
 
@@ -126,11 +136,14 @@ All routes require a valid Firebase ID token unless noted.
     <tr><td>PATCH</td><td><code>/api/decks/:id</code></td><td>Update deck</td></tr>
     <tr><td>DELETE</td><td><code>/api/decks/:id</code></td><td>Delete deck</td></tr>
     <tr><td>GET</td><td><code>/api/decks/:id/queue</code></td><td>Get today's study queue (respects daily limits)</td></tr>
+    <tr><td>POST</td><td><code>/api/decks/:id/reset</code></td><td>Reset every card in the deck to <code>state="new"</code> (revlog preserved)</td></tr>
+    <tr><td>GET</td><td><code>/api/decks/:id/leaderboard</code></td><td>Members-only ranking by <code>AVG(FlashCard.ease)</code> across owner + everyone with <code>sharedFromDeckId = sourceDeckId</code></td></tr>
     <tr><td>GET</td><td><code>/api/cards</code></td><td>List cards (optionally <code>?deckId=</code>)</td></tr>
     <tr><td>POST</td><td><code>/api/cards</code></td><td>Create card</td></tr>
     <tr><td>PATCH</td><td><code>/api/cards/:id</code></td><td>Update card</td></tr>
     <tr><td>DELETE</td><td><code>/api/cards/:id</code></td><td>Delete card</td></tr>
     <tr><td>POST</td><td><code>/api/cards/:id/answer</code></td><td>Submit a review answer — runs SRS scheduler</td></tr>
+    <tr><td>POST</td><td><code>/api/cards/:id/reset</code></td><td>Reset one card to <code>state="new"</code></td></tr>
   </tbody>
 </table>
 
@@ -156,16 +169,38 @@ All routes require a valid Firebase ID token unless noted.
   </tbody>
 </table>
 
-### Invites
+### Note invites
 
 <table>
   <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
   <tbody>
-    <tr><td>POST</td><td><code>/api/invites</code></td><td>Send a note invite to another user</td></tr>
-    <tr><td>GET</td><td><code>/api/invites</code></td><td>List received invites</td></tr>
+    <tr><td>POST</td><td><code>/api/invites</code></td><td>Send a note invite by <code>@username</code> (owner-only)</td></tr>
+    <tr><td>GET</td><td><code>/api/invites</code></td><td>List my pending received invites</td></tr>
+    <tr><td>GET</td><td><code>/api/invites/sent?pageId=</code></td><td>List accepted recipients for a page I own (powers "People with access")</td></tr>
+    <tr><td>GET</td><td><code>/api/invites/sent/all</code></td><td>Compact map of <code>&#123;pageId → recipients&#125;</code> for sidebar collaborator avatars</td></tr>
     <tr><td>PATCH</td><td><code>/api/invites/:id</code></td><td>Accept or decline an invite</td></tr>
+    <tr><td>DELETE</td><td><code>/api/invites/:id</code></td><td>Owner revokes a previously-accepted invite</td></tr>
   </tbody>
 </table>
+
+Collaborators (accepted invitees) see the **same** `Page` row and can edit
+`title`/`content` via `PATCH /api/pages/:id`. The handler silently drops `isPublic` /
+`publicDescription` for non-owners — marketplace publishing is owner-only.
+
+### Deck invites
+
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>POST</td><td><code>/api/deck-invites</code></td><td>Send a deck invite by <code>@username</code>. <strong>403</strong> if the source deck is itself a clone (<code>sharedFromDeckId !== null</code>).</td></tr>
+    <tr><td>GET</td><td><code>/api/deck-invites</code></td><td>List my pending received invites</td></tr>
+    <tr><td>PATCH</td><td><code>/api/deck-invites/:id</code></td><td>Accept (transaction: flip status + <code>cloneDeckForUser</code> into the recipient's first folder — auto-creating a "Shared decks" folder if needed — with <code>sharedFromDeckId = sourceDeckId</code>). Returns <code>&#123; invite, deck, cards &#125;</code>. Decline returns <code>&#123; invite &#125;</code>.</td></tr>
+  </tbody>
+</table>
+
+Owner-only restriction on `PATCH /api/decks/:id`: setting `isPublic` or `publicDescription` on
+a shared clone returns **403**. Marketplace clones (`sharedFromDeckId = null`) stay fully
+independent and are **not** counted on the source deck's leaderboard.
 
 ### Calendar
 
@@ -189,10 +224,16 @@ All routes require a valid Firebase ID token unless noted.
 ```
 User ──< Folder ──< Page ──< NoteInvite
      ──< FlashcardFolder ──< Deck ──< FlashCard ──< Review
+                              │  └─< DeckInvite
+                              └─ sharedFromDeckId? → Deck (lineage from deck-invite clone)
      ──1 StudySettings
      ──< CalendarTag ──< CalendarEvent
      ──< CalendarEvent (tagId nullable)
 ```
+
+Full Mermaid ER diagram with every field is in
+[backend/docs/SETUP.md §6](../../backend/docs/SETUP.md), alongside the SM-2 state diagram
+(§8) and the use-case diagram (§9).
 
 ### Key entities
 
@@ -206,7 +247,9 @@ User ──< Folder ──< Page ──< NoteInvite
 
 **StudySettings** — Per-user Anki-style config: `newCardsPerDay`, `maxReviewsPerDay`, learning/relearning step sequences, ease multipliers, interval modifier.
 
-**NoteInvite** — Lets a user share a note (`Page`) with another user by username. Status: `pending` → `accepted` / `declined`.
+**NoteInvite** — Lets a user share a note (`Page`) with another user by username. Status: `pending` → `accepted` / `declined`. Unique on `(recipientId, pageId)` so re-invites flip back to pending instead of duplicating. Owner can revoke an accepted invite with `DELETE /api/invites/:id`.
+
+**DeckInvite** — Same shape but for decks, with `(recipientId, deckId)` unique. **Clone-on-accept**: the backend creates an independent `Deck` row + fresh `FlashCard` rows (per-user scheduling) and stamps the new deck's `sharedFromDeckId = sourceDeckId`. Members can study independently; the leaderboard endpoint aggregates everyone with the same `sharedFromDeckId`.
 
 **CalendarTag** — User-defined label with a `name` and one of the 6 folder colors (`red`, `orange`, `pink`, `green`, `blue`, `purple`). Tags are scoped per user. Deleting a tag sets `tagId` to `null` on affected events (`SetNull` cascade).
 
