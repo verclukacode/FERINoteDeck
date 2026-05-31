@@ -12,8 +12,10 @@ import { VIEW } from "../../lib/constants.js";
 import * as service from "../../services/notesService.js";
 import {
 	getInvites,
+	listAllSharedWith,
 	listSharedPages,
 	respondInvite,
+	revokeInvite,
 } from "../../services/notesService.js";
 
 const NotesContext = createContext(null);
@@ -39,6 +41,8 @@ export function NotesProvider({ children }) {
 	const [username, setUsername] = useState("");
 	const [sharedPages, setSharedPages] = useState([]);
 	const [pendingInvites, setPendingInvites] = useState([]);
+	// pageShares: { [pageId]: Array<{ id, recipient: { username, avatarUrl, email } }> }
+	const [pageShares, setPageShares] = useState({});
 
 	const pagesRef = useRef(pages);
 	pagesRef.current = pages;
@@ -51,8 +55,9 @@ export function NotesProvider({ children }) {
 			service.getMe(),
 			listSharedPages(),
 			getInvites(),
+			listAllSharedWith(),
 		])
-			.then(([f, p, me, shared, invites]) => {
+			.then(([f, p, me, shared, invites, allShares]) => {
 				if (!active) return;
 				setFolders(f);
 				setPages(p);
@@ -60,6 +65,12 @@ export function NotesProvider({ children }) {
 				setUsername(me?.username ?? "");
 				setSharedPages(shared ?? []);
 				setPendingInvites(invites ?? []);
+				const sharesMap = {};
+				for (const inv of allShares ?? []) {
+					if (!sharesMap[inv.pageId]) sharesMap[inv.pageId] = [];
+					sharesMap[inv.pageId].push(inv);
+				}
+				setPageShares(sharesMap);
 				setLoading(false);
 			})
 			.catch((err) => {
@@ -148,6 +159,14 @@ export function NotesProvider({ children }) {
 	const declineInvite = useCallback(async (inviteId) => {
 		await respondInvite(inviteId, "decline");
 		setPendingInvites((prev) => prev.filter((i) => i.id !== inviteId));
+	}, []);
+
+	const revokeShare = useCallback(async (inviteId, pageId) => {
+		await revokeInvite(inviteId);
+		setPageShares((prev) => {
+			const updated = (prev[pageId] ?? []).filter((i) => i.id !== inviteId);
+			return { ...prev, [pageId]: updated };
+		});
 	}, []);
 
 	// Marketplace sharing. Patch shape: { isPublic, publicDescription }.
@@ -270,6 +289,8 @@ export function NotesProvider({ children }) {
 			addPageFromClone,
 			acceptInvite,
 			declineInvite,
+			pageShares,
+			revokeShare,
 			handleDndOver,
 			handleDndEnd,
 		}),
@@ -297,6 +318,8 @@ export function NotesProvider({ children }) {
 			addPageFromClone,
 			acceptInvite,
 			declineInvite,
+			pageShares,
+			revokeShare,
 			handleDndOver,
 			handleDndEnd,
 		],

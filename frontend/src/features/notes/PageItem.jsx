@@ -1,6 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
+import userProfilePic from "../../assets/userProfilePic.svg";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import ContextMenu from "../../components/ContextMenu.jsx";
 import Icon from "../../components/Icon.jsx";
@@ -9,7 +10,8 @@ import { useNotes } from "./NotesContext.jsx";
 import PagePreview from "./PagePreview.jsx";
 
 export default function PageItem({ page, selected, onSelect }) {
-	const { removePage } = useNotes();
+	const { removePage, pageShares } = useNotes();
+	const shares = pageShares[page.id] ?? [];
 	const { menu, open, close } = useContextMenu();
 	const [confirming, setConfirming] = useState(false);
 	const {
@@ -57,6 +59,20 @@ export default function PageItem({ page, selected, onSelect }) {
 				<span className="truncate">{page.title}</span>
 				{page.isPublic && (
 					<Icon name="store" size={14} className="shrink-0 text-folder-blue" />
+				)}
+				{shares.length > 0 && (
+					<div className="flex shrink-0 items-center">
+						{shares.slice(0, 3).map((inv, i) => (
+							<img
+								key={inv.id}
+								src={inv.recipient?.avatarUrl ?? userProfilePic}
+								alt={inv.recipient?.username ?? ""}
+								title={`@${inv.recipient?.username ?? ""}`}
+								style={{ marginLeft: i === 0 ? 0 : -6 }}
+								className="h-5 w-5 rounded-full border-[1.5px] border-bg-secondary object-cover"
+							/>
+						))}
+					</div>
 				)}
 			</button>
 

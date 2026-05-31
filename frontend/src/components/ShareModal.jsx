@@ -1,38 +1,18 @@
 import { useEffect, useState } from "react";
 import userProfilePic from "../assets/userProfilePic.svg";
 import { buildMarketplaceLink } from "../features/marketplace/marketplaceLink.js";
-import {
-	checkUsername,
-	listSharedWith,
-	revokeInvite,
-	sendInvite,
-} from "../services/notesService.js";
+import { checkUsername, sendInvite } from "../services/notesService.js";
 import DuoButton from "./DuoButton.jsx";
 import Modal from "./Modal.jsx";
 
 // Generic share toggle + public-description editor used by both notes and decks.
 // Parent passes the current item and onSave({ isPublic, publicDescription }).
-export default function ShareModal({ kind, item, onSave, onClose }) {
+export default function ShareModal({ kind, item, onSave, onClose, sharedWith = [], onRevoke }) {
 	const [isPublic, setIsPublic] = useState(!!item?.isPublic);
 	const [desc, setDesc] = useState(item?.publicDescription ?? "");
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState("");
 	const [linkCopied, setLinkCopied] = useState(false);
-
-	// People with access (accepted invites sent by owner)
-	const [sharedWith, setSharedWith] = useState([]);
-
-	useEffect(() => {
-		if (kind !== "note" || !item?.id) return;
-		listSharedWith(item.id)
-			.then((list) => setSharedWith(list ?? []))
-			.catch(() => {});
-	}, [kind, item?.id]);
-
-	async function handleRevoke(inviteId) {
-		await revokeInvite(inviteId);
-		setSharedWith((prev) => prev.filter((i) => i.id !== inviteId));
-	}
 
 	// Direct share state
 	const [inviteUsername, setInviteUsername] = useState("");
@@ -298,7 +278,7 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 										</span>
 										<button
 											type="button"
-											onClick={() => handleRevoke(invite.id)}
+											onClick={() => onRevoke?.(invite.id)}
 											className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-folder-red hover:bg-folder-red/10"
 										>
 											Remove

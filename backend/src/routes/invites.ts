@@ -61,6 +61,23 @@ router.get("/", async (req: Request, res: Response) => {
 	res.json(invites);
 });
 
+// GET /api/invites/sent/all — all accepted invites for all pages owned by caller
+router.get("/sent/all", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+
+	const invites = await prisma.noteInvite.findMany({
+		where: { senderId: uid, status: "accepted" },
+		select: {
+			id: true,
+			pageId: true,
+			recipient: { select: { username: true, avatarUrl: true, email: true } },
+		},
+		orderBy: { updatedAt: "asc" },
+	});
+
+	res.json(invites);
+});
+
 // GET /api/invites/sent?pageId= — list accepted invites the caller sent for a page
 router.get("/sent", async (req: Request, res: Response) => {
 	const uid = req.user?.uid ?? "";

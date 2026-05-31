@@ -28,7 +28,7 @@ function TitleField({ page, onRename }) {
 }
 
 export default function NotePanel() {
-	const { selectedPage, renamePage, updatePageContent, updatePageShare } =
+	const { selectedPage, renamePage, updatePageContent, updatePageShare, pageShares, revokeShare } =
 		useNotes();
 	const editorRef = useRef(null);
 	const [dirty, setDirty] = useState(false);
@@ -96,6 +96,8 @@ export default function NotePanel() {
 					item={selectedPage}
 					onSave={(patch) => updatePageShare(selectedPage.id, patch)}
 					onClose={() => setSharing(false)}
+					sharedWith={pageShares[selectedPage.id] ?? []}
+					onRevoke={(inviteId) => revokeShare(inviteId, selectedPage.id)}
 				/>
 			)}
 		</div>

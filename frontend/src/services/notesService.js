@@ -124,6 +124,10 @@ export function listSharedWith(pageId) {
 	return apiRequest(`/invites/sent?pageId=${encodeURIComponent(pageId)}`);
 }
 
+export function listAllSharedWith() {
+	return apiRequest("/invites/sent/all");
+}
+
 export function revokeInvite(inviteId) {
 	return apiRequest(`/invites/${inviteId}`, { method: "DELETE" });
 }
