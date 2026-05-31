@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import ShareModal from "../../components/ShareModal.jsx";
-import { getDeckQueue } from "../../services/flashcardsService.js";
+import {
+	getDeckLeaderboard,
+	getDeckQueue,
+} from "../../services/flashcardsService.js";
 import DeckLeaderboardModal from "./DeckLeaderboardModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 import StudySession from "./StudySession.jsx";
@@ -63,6 +66,7 @@ export default function DeckPanel() {
 	const [studying, setStudying] = useState(false);
 	const [sharing, setSharing] = useState(false);
 	const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+	const [memberCount, setMemberCount] = useState(0);
 	const [dueCount, setDueCount] = useState(null);
 
 	const deckId = selectedDeck?.id;
@@ -86,6 +90,22 @@ export default function DeckPanel() {
 		};
 	}, [deckId, studying, statesSig]);
 
+	// Member count drives whether the Leaderboard button shows — solo decks
+	// have no one to rank against.
+	useEffect(() => {
+		if (!deckId) {
+			setMemberCount(0);
+			return;
+		}
+		let active = true;
+		getDeckLeaderboard(deckId)
+			.then((rows) => active && setMemberCount(rows?.length ?? 0))
+			.catch(() => active && setMemberCount(0));
+		return () => {
+			active = false;
+		};
+	}, [deckId]);
+
 	if (!selectedDeck) {
 		return (
 			<main className="flex flex-1 items-center justify-center rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary text-body">
@@ -102,15 +122,17 @@ export default function DeckPanel() {
 					deck={selectedDeck}
 					onRename={renameDeck}
 				/>
-				<button
-					type="button"
-					onClick={() => setLeaderboardOpen(true)}
-					className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-border-soft bg-bg px-4 text-[15px] font-semibold text-title"
-					aria-label="Leaderboard"
-				>
-					<Icon name="party" size={20} />
-					Leaderboard
-				</button>
+				{memberCount >= 2 && (
+					<button
+						type="button"
+						onClick={() => setLeaderboardOpen(true)}
+						className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-border-soft bg-bg px-4 text-[15px] font-semibold text-title"
+						aria-label="Leaderboard"
+					>
+						<Icon name="party" size={20} />
+						Leaderboard
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={() => setSharing(true)}
