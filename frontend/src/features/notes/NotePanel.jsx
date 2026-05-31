@@ -3,6 +3,7 @@ import Icon from "../../components/Icon.jsx";
 import ShareModal from "../../components/ShareModal.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import BlockEditor from "./editor/BlockEditor.jsx";
+import { exportNoteToPdf } from "./editor/exportPdf.js";
 
 // Editable page title — Enter (or blur) commits, empty input reverts.
 function TitleField({ page, onRename }) {
@@ -74,6 +75,14 @@ export default function NotePanel() {
 						}`}
 					>
 						{dirty ? "Save" : "Saved"}
+					</button>
+					<button
+						type="button"
+						onClick={() => exportNoteToPdf(selectedPage)}
+						aria-label="Export as PDF"
+						className="flex h-[45px] items-center rounded-full border-[2.5px] border-border-soft bg-bg px-4 text-[13px] font-semibold text-title"
+					>
+						PDF
 					</button>
 					{isOwner && (
 						<button
