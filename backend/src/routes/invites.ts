@@ -61,6 +61,49 @@ router.get("/", async (req: Request, res: Response) => {
 	res.json(invites);
 });
 
+// GET /api/invites/sent?pageId= — list accepted invites the caller sent for a page
+router.get("/sent", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const { pageId } = req.query as { pageId?: string };
+
+	if (!pageId) {
+		return res.status(400).json({ error: "pageId is required" });
+	}
+
+	// Verify caller owns the page
+	const page = await prisma.page.findFirst({
+		where: { id: pageId, userId: uid },
+	});
+	if (!page) {
+		return res.status(404).json({ error: "Page not found" });
+	}
+
+	const invites = await prisma.noteInvite.findMany({
+		where: { pageId, senderId: uid, status: "accepted" },
+		include: {
+			recipient: { select: { username: true, avatarUrl: true, email: true } },
+		},
+		orderBy: { updatedAt: "asc" },
+	});
+
+	res.json(invites);
+});
+
+// DELETE /api/invites/:id — owner revokes an accepted invite
+router.delete("/:id", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+
+	const invite = await prisma.noteInvite.findFirst({
+		where: { id: String(req.params.id), senderId: uid },
+	});
+	if (!invite) {
+		return res.status(404).json({ error: "Invite not found" });
+	}
+
+	await prisma.noteInvite.delete({ where: { id: invite.id } });
+	res.status(204).end();
+});
+
 // PATCH /api/invites/:id — accept or decline an invite
 router.patch("/:id", async (req: Request, res: Response) => {
 	const uid = req.user?.uid ?? "";

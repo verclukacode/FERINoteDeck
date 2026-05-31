@@ -120,6 +120,14 @@ export function respondInvite(inviteId, action) {
 	});
 }
 
+export function listSharedWith(pageId) {
+	return apiRequest(`/invites/sent?pageId=${encodeURIComponent(pageId)}`);
+}
+
+export function revokeInvite(inviteId) {
+	return apiRequest(`/invites/${inviteId}`, { method: "DELETE" });
+}
+
 export function listSharedPages() {
 	return apiRequest("/pages/shared");
 }

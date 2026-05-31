@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
+import userProfilePic from "../assets/userProfilePic.svg";
 import { buildMarketplaceLink } from "../features/marketplace/marketplaceLink.js";
-import { checkUsername, sendInvite } from "../services/notesService.js";
+import {
+	checkUsername,
+	listSharedWith,
+	revokeInvite,
+	sendInvite,
+} from "../services/notesService.js";
 import DuoButton from "./DuoButton.jsx";
 import Modal from "./Modal.jsx";
 
@@ -12,6 +18,21 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState("");
 	const [linkCopied, setLinkCopied] = useState(false);
+
+	// People with access (accepted invites sent by owner)
+	const [sharedWith, setSharedWith] = useState([]);
+
+	useEffect(() => {
+		if (kind !== "note" || !item?.id) return;
+		listSharedWith(item.id)
+			.then((list) => setSharedWith(list ?? []))
+			.catch(() => {});
+	}, [kind, item?.id]);
+
+	async function handleRevoke(inviteId) {
+		await revokeInvite(inviteId);
+		setSharedWith((prev) => prev.filter((i) => i.id !== inviteId));
+	}
 
 	// Direct share state
 	const [inviteUsername, setInviteUsername] = useState("");
@@ -195,7 +216,7 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 						<div className="h-px flex-1 border-t-[2px] border-dashed border-border-soft" />
 					</div>
 					<p className="mt-2 px-1 text-sm text-body">
-						Send this note directly to a colleague — they can view and edit it.
+						Send this note directly to a colleague - they can view and edit it.
 					</p>
 					<div className="mt-3 flex gap-2">
 						<div className="relative min-w-0 flex-1 flex items-center rounded-2xl bg-bg-secondary px-4">
@@ -250,6 +271,42 @@ export default function ShareModal({ kind, item, onSave, onClose }) {
 					)}
 					{inviteStatus && inviteStatus !== "sent" && (
 						<p className="mt-1 px-1 text-sm text-folder-red">{inviteStatus}</p>
+					)}
+
+					{sharedWith.length > 0 && (
+						<div className="mt-4 flex flex-col gap-2">
+							<p className="px-1 text-xs font-semibold uppercase tracking-wide text-body">
+								People with access
+							</p>
+							{sharedWith.map((invite) => {
+								const name =
+									invite.recipient?.username ??
+									invite.recipient?.email?.split("@")[0] ??
+									"Unknown";
+								return (
+									<div
+										key={invite.id}
+										className="flex items-center gap-3 rounded-2xl bg-bg-secondary px-4 py-2"
+									>
+										<img
+											src={invite.recipient?.avatarUrl ?? userProfilePic}
+											alt={name}
+											className="h-7 w-7 shrink-0 rounded-full object-cover border border-border-soft"
+										/>
+										<span className="min-w-0 flex-1 truncate text-sm font-medium text-title">
+											@{name}
+										</span>
+										<button
+											type="button"
+											onClick={() => handleRevoke(invite.id)}
+											className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-folder-red hover:bg-folder-red/10"
+										>
+											Remove
+										</button>
+									</div>
+								);
+							})}
+						</div>
 					)}
 				</>
 			)}
