@@ -145,6 +145,10 @@ export function respondDeckInvite(inviteId, action) {
 	});
 }
 
+export function getDeckTodayStats(deckId) {
+	return apiRequest(`/decks/${deckId}/stats/today`);
+}
+
 export function getDeckLeaderboard(deckId) {
 	return apiRequest(`/decks/${deckId}/leaderboard`);
 }
