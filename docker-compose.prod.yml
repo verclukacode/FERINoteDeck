@@ -1,0 +1,61 @@
+# Production docker-compose for NoteDeck
+# Pulled and started by the CI/CD pipeline on the VM.
+#
+# Required env vars — create ~/notedeck/.env on the VM before first deploy:
+#   GHCR_OWNER            your GitHub username (lowercase)
+#   MYSQL_ROOT_PASSWORD   strong root password
+#   MYSQL_PASSWORD        strong password for the notedeck DB user
+#   CORS_ORIGIN           public URL of the app, e.g. https://notes.example.com
+#   FIREBASE_PROJECT_ID
+#   FIREBASE_CLIENT_EMAIL
+#   FIREBASE_PRIVATE_KEY  (keep the \n escapes, wrap in double quotes in .env)
+
+services:
+  db:
+    image: mysql:8
+    container_name: notedeck-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: notedeck
+      MYSQL_USER: notedeck
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "notedeck", "-p${MYSQL_PASSWORD}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  backend:
+    image: ghcr.io/${GHCR_OWNER}/notedeck-backend:latest
+    container_name: notedeck-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: mysql://notedeck:${MYSQL_PASSWORD}@db:3306/notedeck
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+    volumes:
+      - uploads:/app/backend/uploads
+
+  frontend:
+    image: ghcr.io/${GHCR_OWNER}/notedeck-frontend:latest
+    container_name: notedeck-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
+  uploads:
