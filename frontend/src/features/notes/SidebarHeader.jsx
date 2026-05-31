@@ -39,7 +39,7 @@ export default function SidebarHeader({
 						aria-label="Notifications"
 						className="relative flex h-9 w-9 items-center justify-center text-title"
 					>
-						<Icon name="bell" size={18} />
+						<img src="/ringbell.svg" alt="Notifications" width={18} height={18} />
 						{badgeCount > 0 && (
 							<span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-folder-red text-[9px] font-bold text-white">
 								{badgeCount}

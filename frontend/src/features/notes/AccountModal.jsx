@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import arrowIcon from "../../assets/arrow.svg";
 import pencilIcon from "../../assets/pencil.svg";
 import userProfilePic from "../../assets/userProfilePic.svg";
 import DuoButton from "../../components/DuoButton.jsx";
@@ -34,7 +33,7 @@ function Row({ icon, label, onClick }) {
 		>
 			<span className="text-body">{icon}</span>
 			<span className="flex-1 font-medium text-title">{label}</span>
-			<img src={arrowIcon} width={26} height={26} alt="" />
+			<img src="/arrowwr.svg" width={10} height={10} alt="" />
 		</button>
 	);
 }
