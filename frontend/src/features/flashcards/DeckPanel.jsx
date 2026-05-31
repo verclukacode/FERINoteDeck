@@ -62,6 +62,8 @@ export default function DeckPanel() {
 		addCard,
 		renameDeck,
 		updateDeckShare,
+		deckShares,
+		revokeDeckShare,
 	} = useFlashcards();
 	const [studying, setStudying] = useState(false);
 	const [sharing, setSharing] = useState(false);
@@ -186,6 +188,8 @@ export default function DeckPanel() {
 					item={selectedDeck}
 					onSave={(patch) => updateDeckShare(selectedDeck.id, patch)}
 					onClose={() => setSharing(false)}
+					sharedWith={deckShares[selectedDeck.id] ?? []}
+					onRevoke={(inviteId) => revokeDeckShare(inviteId, selectedDeck.id)}
 				/>
 			)}
 

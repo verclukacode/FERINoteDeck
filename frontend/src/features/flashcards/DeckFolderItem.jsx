@@ -10,13 +10,15 @@ import ContextMenu from "../../components/ContextMenu.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useContextMenu } from "../../hooks/useContextMenu.js";
 import { folderHex } from "../../lib/constants.js";
+import userProfilePic from "../../assets/userProfilePic.svg";
 import DeckFolderPreview from "./DeckFolderPreview.jsx";
 import DeckPreview from "./DeckPreview.jsx";
 import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 
 function DeckRow({ deck }) {
-	const { selectedDeckId, selectDeck, removeDeck, resetDeck } = useFlashcards();
+	const { selectedDeckId, selectDeck, removeDeck, resetDeck, deckShares } = useFlashcards();
+	const shares = !deck.sharedFromDeckId ? (deckShares[deck.id] ?? []) : [];
 	const { menu, open, close } = useContextMenu();
 	const [confirming, setConfirming] = useState(false);
 	const [resetting, setResetting] = useState(false);
@@ -70,6 +72,20 @@ function DeckRow({ deck }) {
 						size={14}
 						className="shrink-0 text-folder-pink"
 					/>
+				)}
+				{shares.length > 0 && (
+					<div className="flex shrink-0 items-center">
+						{shares.slice(0, 3).map((inv, i) => (
+							<img
+								key={inv.id}
+								src={inv.recipient?.avatarUrl ?? userProfilePic}
+								alt={inv.recipient?.username ?? ""}
+								title={`@${inv.recipient?.username ?? ""}`}
+								style={{ marginLeft: i === 0 ? 0 : -6 }}
+								className="h-5 w-5 rounded-full border-[1.5px] border-bg-secondary object-cover"
+							/>
+						))}
+					</div>
 				)}
 			</button>
 

@@ -16,6 +16,7 @@ import {
 	deleteDeck,
 	deleteFlashcardFolder,
 	getDeckInvites,
+	listAllDeckSharedWith,
 	listCards,
 	listDecks,
 	listFlashcardFolders,
@@ -23,6 +24,7 @@ import {
 	resetCard as resetCardService,
 	resetDeck as resetDeckService,
 	respondDeckInvite,
+	revokeDeckInvite,
 	saveDecks,
 	updateCard,
 	updateDeck,
@@ -61,6 +63,7 @@ export function FlashcardsProvider({ children }) {
 	const [selectedCardId, setSelectedCardId] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [pendingDeckInvites, setPendingDeckInvites] = useState([]);
+	const [deckShares, setDeckShares] = useState({});
 
 	const decksRef = useRef(decks);
 	decksRef.current = decks;
@@ -71,12 +74,19 @@ export function FlashcardsProvider({ children }) {
 			listDecks(),
 			listCards(),
 			getDeckInvites(),
+			listAllDeckSharedWith(),
 		])
-			.then(([f, d, c, invites]) => {
+			.then(([f, d, c, invites, allShares]) => {
 				setFolders(f);
 				setDecks(d);
 				setCards(c);
 				setPendingDeckInvites(invites ?? []);
+				const sharesMap = {};
+				for (const inv of allShares ?? []) {
+					if (!sharesMap[inv.deckId]) sharesMap[inv.deckId] = [];
+					sharesMap[inv.deckId].push(inv);
+				}
+				setDeckShares(sharesMap);
 			})
 			.finally(() => setLoading(false));
 	}, []);
@@ -190,6 +200,14 @@ export function FlashcardsProvider({ children }) {
 	const declineDeckInvite = useCallback(async (inviteId) => {
 		await respondDeckInvite(inviteId, "decline");
 		setPendingDeckInvites((prev) => prev.filter((i) => i.id !== inviteId));
+	}, []);
+
+	const revokeDeckShare = useCallback(async (inviteId, deckId) => {
+		await revokeDeckInvite(inviteId);
+		setDeckShares((prev) => {
+			const updated = (prev[deckId] ?? []).filter((i) => i.id !== inviteId);
+			return { ...prev, [deckId]: updated };
+		});
 	}, []);
 
 	const removeDeck = useCallback(async (id) => {
@@ -342,6 +360,8 @@ export function FlashcardsProvider({ children }) {
 			addDeckFromClone,
 			acceptDeckInvite,
 			declineDeckInvite,
+			deckShares,
+			revokeDeckShare,
 			removeDeck,
 			selectDeck,
 			addCard,
@@ -358,6 +378,7 @@ export function FlashcardsProvider({ children }) {
 			decks,
 			cards,
 			pendingDeckInvites,
+			deckShares,
 			selectedDeckId,
 			selectedCardId,
 			loading,
@@ -372,6 +393,7 @@ export function FlashcardsProvider({ children }) {
 			addDeckFromClone,
 			acceptDeckInvite,
 			declineDeckInvite,
+			revokeDeckShare,
 			removeDeck,
 			selectDeck,
 			addCard,

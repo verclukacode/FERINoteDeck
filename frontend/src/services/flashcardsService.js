@@ -148,3 +148,11 @@ export function respondDeckInvite(inviteId, action) {
 export function getDeckLeaderboard(deckId) {
 	return apiRequest(`/decks/${deckId}/leaderboard`);
 }
+
+export function listAllDeckSharedWith() {
+	return apiRequest("/deck-invites/sent/all");
+}
+
+export function revokeDeckInvite(inviteId) {
+	return apiRequest(`/deck-invites/${inviteId}`, { method: "DELETE" });
+}

@@ -74,6 +74,38 @@ router.post("/", async (req: Request, res: Response) => {
  *     responses:
  *       200: { description: Array of pending invites }
  */
+// GET /api/deck-invites/sent/all — all accepted invites sent by the caller
+router.get("/sent/all", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+
+	const invites = await prisma.deckInvite.findMany({
+		where: { senderId: uid, status: "accepted" },
+		select: {
+			id: true,
+			deckId: true,
+			recipient: { select: { username: true, avatarUrl: true, email: true } },
+		},
+		orderBy: { updatedAt: "asc" },
+	});
+
+	res.json(invites);
+});
+
+// DELETE /api/deck-invites/:id — owner revokes an accepted invite
+router.delete("/:id", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+
+	const invite = await prisma.deckInvite.findFirst({
+		where: { id: String(req.params.id), senderId: uid },
+	});
+	if (!invite) {
+		return res.status(404).json({ error: "Invite not found" });
+	}
+
+	await prisma.deckInvite.delete({ where: { id: invite.id } });
+	res.status(204).end();
+});
+
 router.get("/", async (req: Request, res: Response) => {
 	const uid = req.user?.uid ?? "";
 
