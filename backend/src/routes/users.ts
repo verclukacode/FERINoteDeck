@@ -155,6 +155,44 @@ const INT_SETTING_LIMITS: Record<string, { min: number; max: number }> = {
  *     responses:
  *       200: { description: The study settings }
  */
+// GET /api/users/me/streak — consecutive study days (global, all decks)
+router.get("/me/streak", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const settings = await getOrCreateStudySettings(uid);
+	const hour = settings.newDayStartsAtHour;
+
+	// Fetch all review timestamps for this user
+	const reviews = await prisma.review.findMany({
+		where: { userId: uid },
+		select: { reviewedAt: true },
+		orderBy: { reviewedAt: "desc" },
+	});
+
+	if (!reviews.length) return res.json({ streak: 0, studiedToday: false });
+
+	// Bucket each review into its study day start (ms)
+	function dayStart(tsMs: number): number {
+		const d = new Date(tsMs);
+		const rollover = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0, 0, 0).getTime();
+		return tsMs < rollover ? rollover - 86_400_000 : rollover;
+	}
+
+	const days = new Set(reviews.map((r) => dayStart(Number(r.reviewedAt))));
+	const todayStart = dayStart(Date.now());
+
+	const studiedToday = days.has(todayStart);
+
+	// Count consecutive days going backward from today (or yesterday)
+	let streak = 0;
+	let cursor = studiedToday ? todayStart : todayStart - 86_400_000;
+	while (days.has(cursor)) {
+		streak++;
+		cursor -= 86_400_000;
+	}
+
+	res.json({ streak, studiedToday });
+});
+
 router.get("/me/study-settings", async (req: Request, res: Response) => {
 	const settings = await getOrCreateStudySettings(req.user?.uid ?? "");
 	res.json(settings);

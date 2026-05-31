@@ -145,6 +145,10 @@ export function respondDeckInvite(inviteId, action) {
 	});
 }
 
+export function getStreak() {
+	return apiRequest("/users/me/streak");
+}
+
 export function getDeckTodayStats(deckId) {
 	return apiRequest(`/decks/${deckId}/stats/today`);
 }

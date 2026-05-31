@@ -5,6 +5,7 @@ import {
 	getDeckLeaderboard,
 	getDeckQueue,
 	getDeckTodayStats,
+	getStreak,
 } from "../../services/flashcardsService.js";
 import DeckLeaderboardModal from "./DeckLeaderboardModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
@@ -19,27 +20,47 @@ function formatTime(ms) {
 	return rem ? `${m}m ${rem}s` : `${m}m`;
 }
 
-function TodayStats({ stats }) {
-	if (!stats || stats.count === 0) return null;
+function TodayStats({ stats, streak }) {
+	const hasStreak = streak && streak.streak > 0;
+	const hasStats = stats && stats.count > 0;
+	if (!hasStreak && !hasStats) return null;
+
 	return (
-		<div className="flex items-center gap-5 border-b-2 border-border-soft px-5 py-2.5">
-			<span className="text-xs font-semibold uppercase tracking-wide text-body">Today</span>
-			<div className="flex gap-5">
-				<div className="text-center">
-					<p className="text-lg font-bold text-title leading-none">{stats.count}</p>
-					<p className="text-[10px] text-body mt-0.5">cards</p>
-				</div>
-				{stats.avgGrade !== null && (
-					<div className="text-center">
-						<p className="text-lg font-bold text-title leading-none">{stats.avgGrade}</p>
-						<p className="text-[10px] text-body mt-0.5">avg grade</p>
+		<div className="flex items-center gap-3 border-b-2 border-border-soft px-5 py-3">
+			{hasStreak && (
+				<div className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${
+					streak.studiedToday ? "bg-folder-orange/15" : "bg-bg-secondary"
+				}`}>
+					<span className="text-xl">🔥</span>
+					<div>
+						<p className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}>
+							{streak.streak} day{streak.streak !== 1 ? "s" : ""}
+						</p>
+						<p className="text-[10px] text-body mt-0.5">streak</p>
 					</div>
-				)}
-				<div className="text-center">
-					<p className="text-lg font-bold text-title leading-none">{formatTime(stats.totalMs)}</p>
-					<p className="text-[10px] text-body mt-0.5">time</p>
 				</div>
-			</div>
+			)}
+			{hasStats && (
+				<>
+					<div className="h-8 w-px bg-border-soft" />
+					<div className="flex gap-4">
+						<div className="text-center">
+							<p className="text-base font-bold text-title leading-none">{stats.count}</p>
+							<p className="text-[10px] text-body mt-0.5">cards today</p>
+						</div>
+						{stats.avgGrade !== null && (
+							<div className="text-center">
+								<p className="text-base font-bold text-title leading-none">{stats.avgGrade}</p>
+								<p className="text-[10px] text-body mt-0.5">avg grade</p>
+							</div>
+						)}
+						<div className="text-center">
+							<p className="text-base font-bold text-title leading-none">{formatTime(stats.totalMs)}</p>
+							<p className="text-[10px] text-body mt-0.5">time</p>
+						</div>
+					</div>
+				</>
+			)}
 		</div>
 	);
 }
@@ -149,6 +170,7 @@ export default function DeckPanel() {
 	const [memberCount, setMemberCount] = useState(0);
 	const [dueCount, setDueCount] = useState(null);
 	const [todayStats, setTodayStats] = useState(null);
+	const [streak, setStreak] = useState(null);
 
 	const deckId = selectedDeck?.id;
 	// Re-fetch the due count when the deck changes, after a study session closes,
@@ -168,6 +190,9 @@ export default function DeckPanel() {
 			.catch(() => active && setDueCount(0));
 		getDeckTodayStats(deckId)
 			.then((s) => active && setTodayStats(s))
+			.catch(() => {});
+		getStreak()
+			.then((s) => active && setStreak(s))
 			.catch(() => {});
 		return () => {
 			active = false;
@@ -239,7 +264,7 @@ export default function DeckPanel() {
 			</div>
 
 			<CardStateBar cards={deckCards} />
-			<TodayStats stats={todayStats} />
+			<TodayStats stats={todayStats} streak={streak} />
 
 			<div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
 				{deckCards.map((card) => (
