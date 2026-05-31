@@ -113,8 +113,12 @@ jobs:
 
             cd /home/deploy/notedeck
 
-            # Pull updated images and restart containers
-            docker compose -f docker-compose.prod.yml pull
+            # Pull updated images with retries (guards against transient network drops)
+            n=0; until [ $n -ge 5 ]; do
+              docker compose -f docker-compose.prod.yml pull && break
+              n=$((n+1)); echo "Pull failed, retry $n/5 in 15s..."; sleep 15
+            done
+            if [ $n -ge 5 ]; then echo "Pull failed after 5 retries"; exit 1; fi
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             # Clean up dangling images to free disk space
