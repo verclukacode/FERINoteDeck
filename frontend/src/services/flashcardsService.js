@@ -149,6 +149,10 @@ export function getStreak() {
 	return apiRequest("/users/me/streak");
 }
 
+export function getActivity(days = 30) {
+	return apiRequest(`/users/me/activity?days=${days}`);
+}
+
 export function getDeckTodayStats(deckId) {
 	return apiRequest(`/decks/${deckId}/stats/today`);
 }

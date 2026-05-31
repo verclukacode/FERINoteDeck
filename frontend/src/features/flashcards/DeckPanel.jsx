@@ -7,6 +7,7 @@ import {
 	getDeckTodayStats,
 	getStreak,
 } from "../../services/flashcardsService.js";
+import ActivityModal from "./ActivityModal.jsx";
 import DeckLeaderboardModal from "./DeckLeaderboardModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 import StudySession from "./StudySession.jsx";
@@ -20,7 +21,7 @@ function formatTime(ms) {
 	return rem ? `${m}m ${rem}s` : `${m}m`;
 }
 
-function TodayStats({ stats, streak }) {
+function TodayStats({ stats, streak, onOpenActivity }) {
 	const hasStreak = streak && streak.streak > 0;
 	const hasStats = stats && stats.count > 0;
 	if (!hasStreak && !hasStats) return null;
@@ -61,6 +62,13 @@ function TodayStats({ stats, streak }) {
 					</div>
 				</>
 			)}
+			<button
+				type="button"
+				onClick={onOpenActivity}
+				className="ml-auto text-xs font-semibold text-folder-blue hover:underline"
+			>
+				30-day chart →
+			</button>
 		</div>
 	);
 }
@@ -167,6 +175,7 @@ export default function DeckPanel() {
 	const [studying, setStudying] = useState(false);
 	const [sharing, setSharing] = useState(false);
 	const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+	const [activityOpen, setActivityOpen] = useState(false);
 	const [memberCount, setMemberCount] = useState(0);
 	const [dueCount, setDueCount] = useState(null);
 	const [todayStats, setTodayStats] = useState(null);
@@ -264,7 +273,7 @@ export default function DeckPanel() {
 			</div>
 
 			<CardStateBar cards={deckCards} />
-			<TodayStats stats={todayStats} streak={streak} />
+			<TodayStats stats={todayStats} streak={streak} onOpenActivity={() => setActivityOpen(true)} />
 
 			<div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
 				{deckCards.map((card) => (
@@ -308,6 +317,9 @@ export default function DeckPanel() {
 					deckId={selectedDeck.id}
 					onClose={() => setLeaderboardOpen(false)}
 				/>
+			)}
+			{activityOpen && (
+				<ActivityModal onClose={() => setActivityOpen(false)} />
 			)}
 		</main>
 	);

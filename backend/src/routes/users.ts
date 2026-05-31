@@ -193,6 +193,54 @@ router.get("/me/streak", async (req: Request, res: Response) => {
 	res.json({ streak, studiedToday });
 });
 
+// GET /api/users/me/activity?days=30 — reviews per study day for the last N days
+router.get("/me/activity", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const days = Math.min(Number(req.query.days) || 30, 365);
+	const settings = await getOrCreateStudySettings(uid);
+	const hour = settings.newDayStartsAtHour;
+
+	const now = Date.now();
+
+	function dayStart(tsMs: number): number {
+		const d = new Date(tsMs);
+		const rollover = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0, 0, 0).getTime();
+		return tsMs < rollover ? rollover - 86_400_000 : rollover;
+	}
+
+	const todayStart = dayStart(now);
+	const windowStart = todayStart - (days - 1) * 86_400_000;
+
+	const reviews = await prisma.review.findMany({
+		where: {
+			userId: uid,
+			reviewedAt: { gte: BigInt(windowStart) },
+		},
+		select: { reviewedAt: true },
+	});
+
+	// Count reviews per study day
+	const counts = new Map<number, number>();
+	for (const r of reviews) {
+		const ds = dayStart(Number(r.reviewedAt));
+		counts.set(ds, (counts.get(ds) ?? 0) + 1);
+	}
+
+	// Build full array of N days (fill zeros for days with no reviews)
+	const result = [];
+	for (let i = 0; i < days; i++) {
+		const ds = windowStart + i * 86_400_000;
+		const date = new Date(ds);
+		result.push({
+			date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
+			count: counts.get(ds) ?? 0,
+			isToday: ds === todayStart,
+		});
+	}
+
+	res.json(result);
+});
+
 router.get("/me/study-settings", async (req: Request, res: Response) => {
 	const settings = await getOrCreateStudySettings(req.user?.uid ?? "");
 	res.json(settings);
