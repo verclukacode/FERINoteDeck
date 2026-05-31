@@ -83,6 +83,24 @@ export function NotesProvider({ children }) {
 		};
 	}, []);
 
+	useEffect(() => {
+		function onFocus() {
+			if (document.visibilityState !== "visible") return;
+			listAllSharedWith()
+				.then((allShares) => {
+					const sharesMap = {};
+					for (const inv of allShares ?? []) {
+						if (!sharesMap[inv.pageId]) sharesMap[inv.pageId] = [];
+						sharesMap[inv.pageId].push(inv);
+					}
+					setPageShares(sharesMap);
+				})
+				.catch(() => {});
+		}
+		document.addEventListener("visibilitychange", onFocus);
+		return () => document.removeEventListener("visibilitychange", onFocus);
+	}, []);
+
 	const addFolder = useCallback(async ({ name, color }) => {
 		const folder = await service.createFolder({ name, color });
 		setFolders((prev) => [...prev, folder]);

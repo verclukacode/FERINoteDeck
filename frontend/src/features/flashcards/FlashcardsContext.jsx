@@ -91,6 +91,24 @@ export function FlashcardsProvider({ children }) {
 			.finally(() => setLoading(false));
 	}, []);
 
+	useEffect(() => {
+		function onFocus() {
+			if (document.visibilityState !== "visible") return;
+			listAllDeckSharedWith()
+				.then((allShares) => {
+					const sharesMap = {};
+					for (const inv of allShares ?? []) {
+						if (!sharesMap[inv.deckId]) sharesMap[inv.deckId] = [];
+						sharesMap[inv.deckId].push(inv);
+					}
+					setDeckShares(sharesMap);
+				})
+				.catch(() => {});
+		}
+		document.addEventListener("visibilitychange", onFocus);
+		return () => document.removeEventListener("visibilitychange", onFocus);
+	}, []);
+
 	const addFolder = useCallback(async ({ name, color }) => {
 		const folder = await createFlashcardFolder({ name, color });
 		setFolders((prev) => [...prev, folder]);
