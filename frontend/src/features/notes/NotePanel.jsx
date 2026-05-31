@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import userProfilePic from "../../assets/userProfilePic.svg";
 import Icon from "../../components/Icon.jsx";
 import ShareModal from "../../components/ShareModal.jsx";
+import { getPresence, sendPresence } from "../../services/notesService.js";
 import { useNotes } from "./NotesContext.jsx";
 import BlockEditor from "./editor/BlockEditor.jsx";
 import { exportNoteToPdf } from "./editor/exportPdf.js";
@@ -41,6 +43,22 @@ export default function NotePanel() {
 	const editorRef = useRef(null);
 	const [dirty, setDirty] = useState(false);
 	const [sharing, setSharing] = useState(false);
+	const [viewers, setViewers] = useState([]);
+
+	useEffect(() => {
+		if (!selectedPage?.id) return;
+		const pageId = selectedPage.id;
+
+		sendPresence(pageId).catch(() => {});
+		getPresence(pageId).then(setViewers).catch(() => {});
+
+		const interval = setInterval(() => {
+			sendPresence(pageId).catch(() => {});
+			getPresence(pageId).then(setViewers).catch(() => {});
+		}, 5000);
+
+		return () => clearInterval(interval);
+	}, [selectedPage?.id]);
 
 	// Only the page owner can share or publish — collaborators (notes shared
 	// with me) live in `sharedPages` and get the editor but not the paperplane.
@@ -63,6 +81,20 @@ export default function NotePanel() {
 					page={selectedPage}
 					onRename={renamePage}
 				/>
+				{viewers.length > 0 && (
+					<div className="flex items-center">
+						{viewers.slice(0, 5).map((v, i) => (
+							<img
+								key={v.username}
+								src={v.avatarUrl ?? userProfilePic}
+								alt={v.username}
+								title={`@${v.username} is viewing`}
+								style={{ marginLeft: i === 0 ? 0 : -8 }}
+								className="h-8 w-8 rounded-full border-2 border-bg object-cover"
+							/>
+						))}
+					</div>
+				)}
 				<div className="flex items-center gap-2.5">
 					<button
 						type="button"

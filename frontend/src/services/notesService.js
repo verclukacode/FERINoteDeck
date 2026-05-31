@@ -132,6 +132,14 @@ export function revokeInvite(inviteId) {
 	return apiRequest(`/invites/${inviteId}`, { method: "DELETE" });
 }
 
+export function sendPresence(pageId) {
+	return apiRequest(`/pages/${pageId}/presence`, { method: "POST" });
+}
+
+export function getPresence(pageId) {
+	return apiRequest(`/pages/${pageId}/presence`);
+}
+
 export function listSharedPages() {
 	return apiRequest("/pages/shared");
 }

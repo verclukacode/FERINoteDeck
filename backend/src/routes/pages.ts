@@ -2,6 +2,20 @@ import { type Request, type Response, Router } from "express";
 import { extractImageUrls, isAllowedImageUrl } from "../lib/imageValidation";
 import { prisma } from "../lib/prisma";
 
+// In-memory presence: pageId → userId → { username, avatarUrl, lastSeen }
+const presence = new Map<string, Map<string, { username: string; avatarUrl: string | null; lastSeen: number }>>();
+const PRESENCE_TTL = 12_000; // 12s — clients ping every 5s
+
+function getViewers(pageId: string) {
+	const now = Date.now();
+	const page = presence.get(pageId);
+	if (!page) return [];
+	for (const [uid, data] of page) {
+		if (now - data.lastSeen > PRESENCE_TTL) page.delete(uid);
+	}
+	return Array.from(page.values());
+}
+
 /**
  * @openapi
  * tags:
@@ -133,6 +147,34 @@ router.get("/shared", async (req: Request, res: Response) => {
  *       200: { description: The page }
  *       404: { description: Page not found }
  */
+// POST /api/pages/:id/presence — heartbeat (user is viewing this page)
+router.post("/:id/presence", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const pageId = String(req.params.id);
+
+	const me = await prisma.user.findUnique({
+		where: { id: uid },
+		select: { username: true, avatarUrl: true },
+	});
+
+	if (!presence.has(pageId)) presence.set(pageId, new Map());
+	presence.get(pageId)!.set(uid, {
+		username: me?.username ?? uid,
+		avatarUrl: me?.avatarUrl ?? null,
+		lastSeen: Date.now(),
+	});
+
+	res.status(204).end();
+});
+
+// GET /api/pages/:id/presence — who's currently viewing (excluding caller)
+router.get("/:id/presence", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
+	const pageId = String(req.params.id);
+	const viewers = getViewers(pageId).filter((v) => v.username !== (presence.get(pageId)?.get(uid)?.username));
+	res.json(viewers);
+});
+
 router.get("/:id", async (req: Request, res: Response) => {
 	const uid = req.user?.uid ?? "";
 	const pageId = String(req.params.id);
