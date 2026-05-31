@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import pencilIcon from "../../assets/pencil.svg";
 import userProfilePic from "../../assets/userProfilePic.svg";
@@ -94,8 +94,8 @@ function ChangeEmailPanel({ onBack }) {
 			<BackButton onClick={onBack} />
 			<h3 className="text-lg font-bold text-title">Change email</h3>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-sm font-medium text-title">New email</label>
+			<label className="flex flex-col gap-1">
+				<span className="text-sm font-medium text-title">New email</span>
 				<input
 					type="email"
 					value={newEmail}
@@ -104,12 +104,10 @@ function ChangeEmailPanel({ onBack }) {
 					required
 					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
 				/>
-			</div>
+			</label>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-sm font-medium text-title">
-					Confirm new email
-				</label>
+			<label className="flex flex-col gap-1">
+				<span className="text-sm font-medium text-title">Confirm new email</span>
 				<input
 					type="email"
 					value={confirmEmail}
@@ -118,12 +116,10 @@ function ChangeEmailPanel({ onBack }) {
 					required
 					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
 				/>
-			</div>
+			</label>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-sm font-medium text-title">
-					Current password
-				</label>
+			<label className="flex flex-col gap-1">
+				<span className="text-sm font-medium text-title">Current password</span>
 				<input
 					type="password"
 					value={password}
@@ -132,7 +128,7 @@ function ChangeEmailPanel({ onBack }) {
 					required
 					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
 				/>
-			</div>
+			</label>
 
 			{error && <p className="text-sm text-folder-red text-center">{error}</p>}
 
@@ -244,10 +240,8 @@ function ChangePasswordPanel({ onBack }) {
 			<BackButton onClick={onBack} />
 			<h3 className="text-lg font-bold text-title">Change password</h3>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-sm font-medium text-title">
-					Current password
-				</label>
+			<label className="flex flex-col gap-1">
+				<span className="text-sm font-medium text-title">Current password</span>
 				<input
 					type="password"
 					value={currentPassword}
@@ -256,10 +250,10 @@ function ChangePasswordPanel({ onBack }) {
 					required
 					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
 				/>
-			</div>
+			</label>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-sm font-medium text-title">New password</label>
+			<label className="flex flex-col gap-1">
+				<span className="text-sm font-medium text-title">New password</span>
 				<input
 					type="password"
 					value={newPassword}
@@ -268,12 +262,10 @@ function ChangePasswordPanel({ onBack }) {
 					required
 					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
 				/>
-			</div>
+			</label>
 
-			<div className="flex flex-col gap-1">
-				<label className="text-sm font-medium text-title">
-					Confirm new password
-				</label>
+			<label className="flex flex-col gap-1">
+				<span className="text-sm font-medium text-title">Confirm new password</span>
 				<input
 					type="password"
 					value={confirmPassword}
@@ -282,7 +274,7 @@ function ChangePasswordPanel({ onBack }) {
 					required
 					className="rounded-full bg-bg-secondary px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
 				/>
-			</div>
+			</label>
 
 			{error && <p className="text-sm text-folder-red text-center">{error}</p>}
 
@@ -314,13 +306,36 @@ function ChangeProfilePicPanel({ currentAvatar, onSave, onBack }) {
 		}
 	}
 
+	function compressAvatar(file, maxPx = 512, quality = 0.82) {
+		return new Promise((resolve, reject) => {
+			const img = new Image();
+			const objectUrl = URL.createObjectURL(file);
+			img.onload = () => {
+				URL.revokeObjectURL(objectUrl);
+				const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+				const canvas = document.createElement("canvas");
+				canvas.width = Math.round(img.width * scale);
+				canvas.height = Math.round(img.height * scale);
+				canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+				canvas.toBlob(
+					(blob) => (blob ? resolve(new File([blob], "avatar.jpg", { type: "image/jpeg" })) : reject(new Error("Compression failed"))),
+					"image/jpeg",
+					quality,
+				);
+			};
+			img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Could not load image")); };
+			img.src = objectUrl;
+		});
+	}
+
 	async function handleFileChange(e) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 		setUploading(true);
 		setError("");
 		try {
-			const user = await uploadAvatar(file);
+			const compressed = await compressAvatar(file);
+			const user = await uploadAvatar(compressed);
 			setSelected(user.avatarUrl);
 			onSave(user.avatarUrl);
 		} catch {
@@ -494,7 +509,6 @@ function ChangeUsernamePanel({ onBack }) {
 						}
 						placeholder="new_username"
 						maxLength={20}
-						autoFocus
 						className="w-full rounded-full bg-bg-secondary py-3 pl-8 pr-4 text-sm text-title placeholder:text-body/50 outline-none"
 					/>
 				</div>
@@ -523,11 +537,13 @@ const secToMinutes = (arr) =>
 	(arr ?? []).map((s) => Math.round((s / 60) * 100) / 100).join(" ");
 
 function SettingsField({ label, hint, ...props }) {
+	const id = useId();
 	return (
-		<label className="flex flex-col gap-1">
+		<label htmlFor={id} className="flex flex-col gap-1">
 			<span className="text-sm font-medium text-title">{label}</span>
 			{hint && <span className="text-xs text-body">{hint}</span>}
 			<input
+				id={id}
 				{...props}
 				className="rounded-full bg-bg-secondary px-4 py-2.5 text-sm text-title placeholder:text-body/50 outline-none"
 			/>
@@ -808,7 +824,7 @@ export default function AccountModal({ onClose }) {
 									src={avatarUrl ?? userProfilePic}
 									width={80}
 									height={80}
-									alt="Profile picture"
+									alt="Your avatar"
 									className="h-20 w-20 rounded-full object-cover"
 								/>
 								<button

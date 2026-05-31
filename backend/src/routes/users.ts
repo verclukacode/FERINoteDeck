@@ -15,6 +15,19 @@ import { uploadsDir } from "./images";
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
+// Delete a locally-stored avatar file if the URL points to one we own.
+// URLs look like /api/images/<uid>/<filename>; anything else (presets, null) is ignored.
+async function deleteLocalAvatarIfOwned(
+	avatarUrl: string | null | undefined,
+	uid: string,
+): Promise<void> {
+	if (!avatarUrl?.startsWith("/api/images/")) return;
+	const parts = avatarUrl.split("/"); // ["","api","images",uid,filename]
+	if (parts.length !== 5 || parts[3] !== uid) return; // never delete another user's file
+	const filePath = path.join(uploadsDir, parts[3], parts[4]);
+	await fsp.unlink(filePath).catch(() => {});
+}
+
 // Same rationale as routes/images.ts: SVG and other non-raster types are out
 // (SVG can carry script, polyglot files defeat the mimetype check).
 const ALLOWED_MIMETYPES = new Set([
@@ -75,6 +88,12 @@ router.patch("/me", async (req: Request, res: Response) => {
 				.status(400)
 				.json({ error: "avatarUrl must be a preset or an uploaded image" });
 		}
+		// Clean up the old uploaded avatar (if any) before switching to a preset / null.
+		const current = await prisma.user.findUnique({
+			where: { id: req.user?.uid ?? "" },
+			select: { avatarUrl: true },
+		});
+		await deleteLocalAvatarIfOwned(current?.avatarUrl, req.user?.uid ?? "");
 		data.avatarUrl = avatarUrl ?? null;
 	}
 
@@ -204,6 +223,12 @@ router.post(
 			await fsp.unlink(req.file.path).catch(() => {});
 			return res.status(400).json({ error: "File is not a valid image" });
 		}
+		// Delete the previous uploaded avatar before storing the new one.
+		const current = await prisma.user.findUnique({
+			where: { id: req.user?.uid ?? "" },
+			select: { avatarUrl: true },
+		});
+		await deleteLocalAvatarIfOwned(current?.avatarUrl, req.user?.uid ?? "");
 		const avatarUrl = `/api/images/${req.user?.uid ?? ""}/${req.file.filename}`;
 		const user = await prisma.user.update({
 			where: { id: req.user?.uid ?? "" },
