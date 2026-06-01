@@ -1,7 +1,10 @@
 {
 	"name": "notedeck",
 	"private": true,
-	"workspaces": ["backend", "frontend"],
+	"workspaces": [
+		"backend",
+		"frontend"
+	],
 	"scripts": {
 		"predev": "yarn db:up",
 		"dev": "concurrently -n be,fe,sb -c blue,green,magenta \"yarn workspace notedeck-backend dev\" \"yarn workspace notedeck-frontend dev\" \"yarn workspace notedeck-frontend storybook\"",
