@@ -49,10 +49,10 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 							<p className="text-base font-bold text-title leading-none">{stats.count}</p>
 							<p className="text-[10px] text-body mt-0.5">cards today</p>
 						</div>
-						{stats.avgGrade !== null && (
+						{stats.correctRate !== null && (
 							<div className="text-center">
-								<p className="text-base font-bold text-title leading-none">{stats.avgGrade}</p>
-								<p className="text-[10px] text-body mt-0.5">avg grade</p>
+								<p className="text-base font-bold text-title leading-none">{stats.correctRate}%</p>
+								<p className="text-[10px] text-body mt-0.5">correct</p>
 							</div>
 						)}
 						<div className="text-center">

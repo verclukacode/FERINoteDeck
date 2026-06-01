@@ -251,12 +251,11 @@ router.get("/:id/stats/today", async (req: Request, res: Response) => {
 	});
 
 	const count = reviews.length;
-	const avgGrade = count
-		? Math.round((reviews.reduce((s, r) => s + r.grade, 0) / count) * 10) / 10
-		: null;
+	const correct = reviews.filter((r) => r.grade >= 3).length;
+	const correctRate = count ? Math.round((correct / count) * 100) : null;
 	const totalMs = reviews.reduce((s, r) => s + (r.elapsedMs ?? 0), 0);
 
-	res.json({ count, avgGrade, totalMs });
+	res.json({ count, correctRate, totalMs });
 });
 
 router.post("/:id/reset", async (req: Request, res: Response) => {
