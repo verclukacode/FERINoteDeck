@@ -27,48 +27,52 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 	if (!hasStreak && !hasStats) return null;
 
 	return (
-		<div className="flex items-center gap-3 border-b-2 border-border-soft px-5 py-3">
-			{hasStreak && (
-				<div className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${
-					streak.studiedToday ? "bg-folder-orange/15" : "bg-bg-secondary"
-				}`}>
-					<span className="text-xl">🔥</span>
-					<div>
-						<p className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}>
-							{streak.streak} day{streak.streak !== 1 ? "s" : ""}
-						</p>
-						<p className="text-[10px] text-body mt-0.5">streak</p>
+		<div className="border-b-2 border-border-soft px-5 py-3 flex flex-col gap-2">
+			<div className="flex items-center justify-between">
+				<span className="text-xs font-semibold uppercase tracking-wide text-body">Today</span>
+				<button
+					type="button"
+					onClick={onOpenActivity}
+					className="text-xs font-semibold text-folder-blue hover:underline"
+				>
+					30-day chart →
+				</button>
+			</div>
+			<div className="flex items-center gap-2">
+				{hasStreak && (
+					<div className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${
+						streak.studiedToday ? "bg-folder-orange/15" : "bg-bg-secondary"
+					}`}>
+						<span className="text-xl">🔥</span>
+						<div>
+							<p className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}>
+								{streak.streak} day{streak.streak !== 1 ? "s" : ""}
+							</p>
+							<p className="text-[10px] text-body mt-0.5">streak</p>
+						</div>
 					</div>
-				</div>
-			)}
-			{hasStats && (
-				<>
-					<div className="h-8 w-px bg-border-soft" />
-					<div className="flex gap-4">
-						<div className="text-center">
-							<p className="text-base font-bold text-title leading-none">{stats.count}</p>
-							<p className="text-[10px] text-body mt-0.5">cards today</p>
+				)}
+				{hasStats && (
+					<>
+						<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
+							<span className="text-sm font-bold text-title">{stats.count}</span>
+							<span className="text-xs text-body">cards</span>
 						</div>
 						{stats.correctRate !== null && (
-							<div className="text-center">
-								<p className="text-base font-bold text-title leading-none">{stats.correctRate}%</p>
-								<p className="text-[10px] text-body mt-0.5">correct</p>
+							<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
+								<span className={`text-sm font-bold ${stats.correctRate >= 80 ? "text-folder-green" : stats.correctRate >= 50 ? "text-folder-blue" : "text-folder-red"}`}>
+									{stats.correctRate}%
+								</span>
+								<span className="text-xs text-body">correct</span>
 							</div>
 						)}
-						<div className="text-center">
-							<p className="text-base font-bold text-title leading-none">{formatTime(stats.totalMs)}</p>
-							<p className="text-[10px] text-body mt-0.5">time</p>
+						<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
+							<span className="text-sm font-bold text-title">{formatTime(stats.totalMs)}</span>
+							<span className="text-xs text-body">time</span>
 						</div>
-					</div>
-				</>
-			)}
-			<button
-				type="button"
-				onClick={onOpenActivity}
-				className="ml-auto text-xs font-semibold text-folder-blue hover:underline"
-			>
-				30-day chart →
-			</button>
+					</>
+				)}
+			</div>
 		</div>
 	);
 }
