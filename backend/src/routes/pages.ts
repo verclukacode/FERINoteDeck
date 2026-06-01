@@ -132,6 +132,7 @@ router.get("/shared", async (req: Request, res: Response) => {
 		...inv.page,
 		_shared: true,
 		_owner: inv.sender,
+		_inviteId: inv.id,
 	}));
 
 	res.json(pages);

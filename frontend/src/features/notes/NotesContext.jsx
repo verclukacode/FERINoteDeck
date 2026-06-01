@@ -187,6 +187,12 @@ export function NotesProvider({ children }) {
 		});
 	}, []);
 
+	const leaveSharedPage = useCallback(async (inviteId, pageId) => {
+		await revokeInvite(inviteId);
+		setSharedPages((prev) => prev.filter((p) => p.id !== pageId));
+		setSelectedPageId((cur) => (cur === pageId ? null : cur));
+	}, []);
+
 	// Marketplace sharing. Patch shape: { isPublic, publicDescription }.
 	const updatePageShare = useCallback(async (id, patch) => {
 		const updated = await service.updatePage(id, patch);
@@ -309,6 +315,7 @@ export function NotesProvider({ children }) {
 			declineInvite,
 			pageShares,
 			revokeShare,
+			leaveSharedPage,
 			handleDndOver,
 			handleDndEnd,
 		}),
@@ -338,6 +345,7 @@ export function NotesProvider({ children }) {
 			declineInvite,
 			pageShares,
 			revokeShare,
+			leaveSharedPage,
 			handleDndOver,
 			handleDndEnd,
 		],
