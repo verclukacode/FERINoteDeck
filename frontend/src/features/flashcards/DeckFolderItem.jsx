@@ -148,7 +148,7 @@ export default function DeckFolderItem({ folder }) {
 	const { menu, open, close } = useContextMenu();
 	const [editing, setEditing] = useState(false);
 	const [confirming, setConfirming] = useState(false);
-	const folderDecks = decks.filter((d) => d.folderId === folder.id);
+	const folderDecks = decks.filter((d) => d.folderId === folder.id && !d.sharedFromDeckId);
 	const {
 		attributes,
 		listeners,

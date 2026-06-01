@@ -41,11 +41,27 @@ const router = Router();
  *       200: { description: Array of decks }
  */
 router.get("/", async (req: Request, res: Response) => {
+	const uid = req.user?.uid ?? "";
 	const decks = await prisma.deck.findMany({
-		where: { userId: req.user?.uid ?? "" },
+		where: { userId: uid },
 		orderBy: { order: "asc" },
 	});
-	res.json(decks);
+
+	// For cloned decks, attach the original owner info via the invite record
+	const clonedIds = decks.map((d) => d.sharedFromDeckId).filter(Boolean) as string[];
+	const invites = clonedIds.length
+		? await prisma.deckInvite.findMany({
+				where: { deckId: { in: clonedIds }, recipientId: uid, status: "accepted" },
+				select: { deckId: true, sender: { select: { username: true, avatarUrl: true, email: true } } },
+			})
+		: [];
+	const ownerMap = new Map(invites.map((i) => [i.deckId, i.sender]));
+
+	const result = decks.map((d) =>
+		d.sharedFromDeckId ? { ...d, _owner: ownerMap.get(d.sharedFromDeckId) ?? null } : d,
+	);
+
+	res.json(result);
 });
 
 /**
