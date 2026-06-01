@@ -416,32 +416,252 @@ flowchart LR
 
     Guest --> UC_Register[Register / Verify email]
     Guest --> UC_Login[Log in]
+    Guest --> UC_Username[Choose username]
 
     User --> UC_Notes[Manage notes — folders, pages, block editor]
     User --> UC_Decks[Manage decks & cards]
+    User --> UC_DnD[Drag-and-drop reorder — folders, pages, decks]
     User --> UC_Study[Study deck — SM-2 grading]
+    User --> UC_StudyStats[View today's study stats — count, avg grade, time]
+    User --> UC_Streak[View study streak]
+    User --> UC_Activity[View 30-day activity chart]
+    User --> UC_CardBar[See card-state distribution bar]
     User --> UC_Calendar[Manage calendar events & tags]
+    User --> UC_Upcoming[Get upcoming-event toasts — 3-day buckets]
     User --> UC_Search[Search across notes, decks, cards]
     User --> UC_Browse[Browse marketplace]
     User --> UC_Clone[Clone a public note / deck]
+    User --> UC_Image[Upload images — validated mimetype + magic bytes]
+    User --> UC_PDF[Export note as PDF]
     User --> UC_Account[Edit profile, avatar, study settings]
-    User --> UC_Notif[Open notifications inbox]
+    User --> UC_AvatarDel[Delete avatar locally]
+    User --> UC_Notif[Open notifications inbox — note + deck invites]
 
     Owner --> UC_Publish[Publish to marketplace — isPublic, publicDescription]
     Owner --> UC_Invite[Invite by username — note or deck]
-    Owner --> UC_Revoke[Revoke a note collaborator]
+    Owner --> UC_RevokeNote[Revoke note collaborator]
+    Owner --> UC_RevokeDeck[Revoke deck collaborator]
+    Owner --> UC_AvatarsNote[See collaborator avatars on shared notes]
+    Owner --> UC_AvatarsDeck[See member avatars on shared decks]
     Owner --> UC_Leader[View deck leaderboard]
 
     Member --> UC_Edit[Edit shared note title / content]
     Member --> UC_StudyShared[Study a shared deck clone]
     Member --> UC_Leader
+    Member --> UC_Presence[See live presence on shared note — who else is viewing]
+    Owner --> UC_Presence
 
     UC_Invite -.-> UC_Notif
     UC_Clone -.-> UC_Notes
     UC_Clone -.-> UC_Decks
+    UC_Image -.-> UC_Notes
+    UC_PDF -.-> UC_Notes
 ```
 
 Owner vs. Member is a per-resource role: each user is the owner of resources they created and a
 member of resources shared with them. The backend enforces this — `PATCH /api/decks/:id` and
 `POST /api/deck-invites` return 403 when a non-owner attempts to publish or re-invite from a clone,
 and `PATCH /api/pages/:id` restricts collaborators to `title`/`content` only.
+
+---
+
+## 10. Sequence diagram — deck invite, accept, study, leaderboard
+
+End-to-end cross-feature flow exercising authentication, the invite router, the shared
+`cloneDeckForUser` transaction, SRS scheduling, and the leaderboard endpoint.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as User A (Owner)
+    actor B as User B (Recipient)
+    participant FE as Frontend (React + Vite)
+    participant BE as Backend (Express)
+    participant DB as MySQL (Prisma)
+    participant FB as Firebase Auth
+
+    A->>FE: Open Deck → click paperplane
+    FE->>FE: ShareModal: enter @userB, debounced check
+    FE->>BE: POST /api/deck-invites { deckId, username }
+    Note over BE,DB: requireAuth verifies Firebase ID token<br/>and UPSERTs the User row (id, email)
+    BE->>DB: SELECT deck WHERE id=? AND userId=A
+    Note over BE: 403 if deck.sharedFromDeckId !== null<br/>(owner-only: members can't re-share a clone)
+    BE->>DB: SELECT user WHERE username=?
+    Note over BE: 400 if recipient is the sender (self-invite)
+    BE->>DB: UPSERT DeckInvite (status=pending)
+    BE-->>FE: 201 { invite }
+
+    B->>FE: Open NotificationsModal (bell)
+    FE->>BE: GET /api/deck-invites
+    BE->>DB: SELECT pending invites for B
+    BE-->>FE: [{ invite, sender, deck }]
+
+    B->>FE: Click Accept
+    FE->>BE: PATCH /api/deck-invites/:id { action:"accept" }
+    BE->>DB: SELECT first FlashcardFolder for B (orderBy order asc)
+    alt B has no folders
+        BE->>DB: INSERT FlashcardFolder { name:"Shared decks", color:"purple" }
+    end
+    Note over BE,DB: prisma.$transaction (atomic from here)
+    BE->>DB: UPDATE DeckInvite status=accepted
+    BE->>DB: cloneDeckForUser: INSERT Deck (sharedFromDeckId=source)
+    BE->>DB: createMany FlashCard (fresh scheduling — defaults)
+    BE-->>FE: 200 { invite, deck, cards }
+    FE->>FE: FlashcardsContext.addDeckFromClone
+
+    B->>FE: Open cloned deck → Study
+    FE->>BE: GET /api/decks/:id/queue
+    BE->>DB: SELECT due cards (daily caps via StudySettings)
+    BE-->>FE: { counts, cards }
+    loop For each card
+        B->>FE: Reveal + grade (1..4)
+        FE->>BE: POST /api/cards/:id/answer { grade }
+        BE->>BE: schedule() — SM-2
+        BE->>DB: UPDATE FlashCard, INSERT Review
+        BE-->>FE: serialized updated card
+    end
+
+    A->>FE: Open source deck → click Leaderboard
+    FE->>BE: GET /api/decks/:id/leaderboard
+    BE->>DB: SELECT deck (id, userId, sharedFromDeckId)
+    Note over BE: resolve sourceDeckId = sharedFromDeckId ?? id
+    Note over BE: 404 "Not a member" unless caller<br/>owns source OR owns a clone of it
+    BE->>DB: findMany Deck WHERE id=source OR sharedFromDeckId=source
+    BE->>DB: groupBy FlashCard.deckId, AVG(ease), COUNT
+    BE-->>FE: [{ userId, username, avgEase, cardCount, isOwner, isMe }]
+    FE->>FE: DeckLeaderboardModal renders ranked list
+```
+
+Key design choices visible here: ID-token verification happens **per request** (stateless backend),
+the accept handler is a **single Prisma transaction** so a partial clone never leaks, and the
+leaderboard endpoint is **read-only aggregation** over each member's local `FlashCard` rows — no
+need for a shared scheduling table.
+
+---
+
+## 11. Activity diagram — grading one flashcard
+
+Flow inside `POST /api/cards/:id/answer`, illustrating the branching that the SM-2 scheduler
+performs and the daily-cap interaction with the revlog. Drawn as a Mermaid flowchart with
+decision diamonds (Mermaid does not have a native UML activity notation, but the spec allows
+"druge tehnike" so long as the activity is conveyed).
+
+```mermaid
+flowchart TD
+    Start([User reveals card, picks grade 1..4]) --> Auth[requireAuth verifies Firebase token]
+    Auth --> Load[Load FlashCard + StudySettings]
+    Load --> State{Card state?}
+
+    State -->|new / learning / relearning| NewSeed{First time seen?<br/>(state = new)}
+    NewSeed -->|yes| AdoptEase[ease = settings.startingEase]
+    NewSeed -->|no| LearnGrade
+    AdoptEase --> LearnGrade{Grade?}
+    LearnGrade -->|1 Again| ResetSteps[Reset to step 0, due = now + step duration]
+    LearnGrade -->|2 Hard| RepeatStep[Repeat current step, due = now + step duration]
+    LearnGrade -->|3 Good| AdvanceStep[Advance one step]
+    LearnGrade -->|4 Easy| GraduateEasy[Graduate to review, interval = easyIntervalDays, reps++]
+    AdvanceStep --> LastStep{Past final step?}
+    LastStep -->|yes| GraduateGood[Graduate to review, interval = graduatingIntervalDays, reps++]
+    LastStep -->|no| StayLearning[Stay in steps, due = now + next step]
+    ResetSteps --> WriteCard
+    RepeatStep --> WriteCard
+    StayLearning --> WriteCard
+    GraduateEasy --> Modifier
+    GraduateGood --> Modifier
+
+    State -->|review| ReviewGrade{Grade?}
+    ReviewGrade -->|1 Again| Lapse[Lapse: state=relearning, lapses++, ease -= 200 permille, restart relearning steps]
+    ReviewGrade -->|2 Hard| Hard[interval x hardMultiplier, ease -= 150 permille, reps++]
+    ReviewGrade -->|3 Good| Good[interval x ease/1000, ease unchanged, reps++]
+    ReviewGrade -->|4 Easy| Easy[interval x ease/1000 x easyBonus, ease += 150 permille, reps++]
+    Lapse --> WriteCard
+    Hard --> Modifier
+    Good --> Modifier
+    Easy --> Modifier
+    Modifier["Apply intervalModifierPermille<br/>ensure +1d minimum vs previous interval<br/>cap at maxIntervalDays<br/>clamp ease ≥ 1300<br/>(review intervals only — learning/relearning steps bypass this)"] --> WriteCard
+
+    WriteCard[Transaction: UPDATE FlashCard with new state/due/ease/reps/lapses] --> WriteReview[INSERT Review row with prev/new snapshot + elapsedMs]
+    WriteReview --> Serialize[serialize BigInt fields → JSON]
+    Serialize --> Resp([Return updated card])
+```
+
+The revlog write is inside the same transaction as the card update, so a crashed request can
+never leave a card scheduled forward without an audit row — and `Review.reviewedAt` is what the
+queue endpoint counts against `newCardsPerDay` / `maxReviewsPerDay`, so the cap honours the
+revlog as the source of truth.
+
+---
+
+## 12. Deployment diagram — production topology + CI/CD
+
+Production runs in a single VM, fronted by Nginx, with backend and frontend each shipped as
+Docker images published to GHCR by GitHub Actions. Firebase Auth is consumed by **both** sides
+(frontend SDK for sign-in; backend Admin SDK for verification).
+
+```mermaid
+flowchart LR
+    subgraph Dev["Developer workstation"]
+        git[git push origin main]
+    end
+
+    subgraph GH["GitHub"]
+        repo[(Repository)]
+        actions[Actions workflow]
+        ghcr[(GHCR<br/>container registry)]
+    end
+
+    subgraph VM["Production VM (Linux)"]
+        sysnginx["System Nginx<br/>(TLS terminator, public :80/:443)"]
+        subgraph Compose["docker-compose.prod.yml"]
+            fe["notedeck-frontend container<br/>nginx:alpine + Vite static build<br/>published as 127.0.0.1:8080 → :80<br/>proxies /api/* → backend:3001"]
+            be["notedeck-backend container<br/>Node + Express + Prisma<br/>:3001 (internal only)"]
+            mysql[(notedeck-db container<br/>MySQL 8 + named volume db_data)]
+            uploads[(named volume<br/>uploads → /app/backend/uploads)]
+        end
+    end
+
+    subgraph Ext["External services"]
+        fbauth[Firebase Authentication]
+    end
+
+    user((End user<br/>Browser))
+
+    git --> repo
+    repo --> actions
+    actions -->|build + push images| ghcr
+    actions -->|SSH deploy| Compose
+    Compose -->|docker pull| ghcr
+
+    user -->|HTTPS| sysnginx
+    sysnginx -->|reverse proxy to 127.0.0.1:8080| fe
+    fe -->|/api/* via Docker network| be
+    fe -->|/ → SPA index.html fallback| user
+    be -->|Prisma over Docker network| mysql
+    be -->|read/write uploaded files| uploads
+    be -->|verifyIdToken| fbauth
+    user -->|sign-in JS SDK| fbauth
+
+    classDef ext fill:#ffe4b5,stroke:#cc8800,color:#000
+    class fbauth ext
+```
+
+Key choices:
+- **Two-layer nginx** — the VM's **system nginx** is the public TLS entry point; it reverse-proxies
+  to the frontend container which itself runs **nginx:alpine** (from the multi-stage Dockerfile)
+  to serve the static React build and forward `/api/*` to the Node container on the Docker
+  network. The frontend container is bound to `127.0.0.1` so it can't be reached directly from
+  outside. The **system nginx config is not tracked in this repo** — it's manually provisioned
+  by the operator on the VM and points at `127.0.0.1:8080`.
+- **Single VM, docker-compose** — no Kubernetes; the project's scale doesn't justify the
+  operational overhead, and rollback is `docker pull <prev-sha> && docker-compose up -d`.
+- **GHCR for image storage** — same auth as the repo; no separate registry credentials.
+- **Browser sees one origin** — `/` serves the SPA, `/api/*` reaches the backend through the
+  same hostname (both layers of nginx preserve the path), so CORS is a non-issue in prod.
+- **Firebase Auth as the only external dependency** — keeps the VM stateless except for the
+  MySQL data volume; tokens are verified per-request, no session store.
+- **MySQL inside docker-compose, not managed** — fine for a school project; data lives on a
+  named Docker volume that survives container restarts. For real production you'd move the DB
+  to RDS / Cloud SQL.
+
+The end-to-end CI/CD narrative (workflow file paths, secrets, rollback) is in
+[`docs/deployment.md`](../../docs/deployment.md); this diagram is the visual companion.
