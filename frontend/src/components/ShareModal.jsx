@@ -266,9 +266,9 @@ export default function ShareModal({
 					<p className="mt-1 px-1 text-sm text-folder-red">{inviteStatus}</p>
 				)}
 
-				{/* People with access (note invites only — deck members use the
+				{/* People with access
 				    Leaderboard for the equivalent view). */}
-				{kind === "note" && sharedWith.length > 0 && (
+				{sharedWith.length > 0 && (
 					<div className="mt-4 flex flex-col gap-2">
 						<p className="px-1 text-xs font-semibold uppercase tracking-wide text-body">
 							People with access
