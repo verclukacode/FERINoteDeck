@@ -166,6 +166,127 @@ export async function generateNoteFromFiles(
 	return { title, content: wrapped };
 }
 
+export type GeneratedCard = {
+	question: string;
+	answer: string;
+	type: "rate" | "boolean";
+};
+
+const FLASHCARDS_SYSTEM_PROMPT = `You turn a study note into a deck of high-quality flashcards.
+
+LANGUAGE: write the flashcards in the SAME language as the note. Never translate.
+
+For each important concept, fact, or relationship in the note, produce one card. Each
+card has a "type" that picks which study UI it uses:
+
+- type "rate" — open-ended Q/A graded by self-assessment on a 1–4 scale (Bad / Meh /
+  Good / Amazing). Use this for recall questions, explanations, "name three…", "how does
+  X work", "what is the difference between X and Y", etc. The answer can be a sentence
+  or a short list joined into one line.
+- type "boolean" — a true/false fact-check, graded Wrong / Correct. The QUESTION should
+  be a STATEMENT that the student decides true or false from memory. The ANSWER should
+  start with "True." or "False." followed by a short justification or correction. Use
+  this for testing common misconceptions, sharp distinctions, and crisp facts.
+
+For each card produce:
+- question: a precise, self-contained prompt (8–20 words is typical).
+- answer: a concise, complete answer (one short paragraph or a short list joined into
+  one line; no markdown formatting tokens like *, #, or [ ]).
+- type: "rate" or "boolean".
+
+Rules:
+- One concept per card; do not bundle multiple ideas into a single Q/A pair.
+- No duplicates and no near-duplicates.
+- Mix the two types — most decks benefit from roughly 70% rate / 30% boolean, but adapt
+  to what the content actually supports. A note full of definitions leans rate; a note
+  full of common-pitfalls / claim-checks leans boolean.
+- Questions should be answerable from memory, not "what does the note say about X" — frame
+  them as direct factual / conceptual queries.
+- Skip filler, headings-only content, and meta references to "the document".
+- Aim for 10–25 cards depending on the note's depth. Fewer is fine for short notes.
+
+Return JSON with shape { cards: [{ question, answer, type }, ...] }.`;
+
+// Strip markdown formatting tokens that the flashcard renderer doesn't honour
+// — questions and answers are plain text in the editor.
+function plainText(s: string): string {
+	return (s ?? "")
+		.replace(/\s+/g, " ")
+		.replace(/[*_`]+/g, "")
+		.trim()
+		.slice(0, 500);
+}
+
+export async function generateFlashcardsFromNote(
+	noteTitle: string,
+	noteContent: string,
+): Promise<GeneratedCard[]> {
+	const userText = [
+		`NOTE TITLE: ${noteTitle}`,
+		"",
+		"NOTE CONTENT:",
+		noteContent,
+	].join("\n");
+
+	const completion = await getClient().chat.completions.create({
+		model: "gpt-4o-mini",
+		messages: [
+			{ role: "system", content: FLASHCARDS_SYSTEM_PROMPT },
+			{ role: "user", content: userText },
+		],
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				name: "generated_deck",
+				strict: true,
+				schema: {
+					type: "object",
+					additionalProperties: false,
+					required: ["cards"],
+					properties: {
+						cards: {
+							type: "array",
+							items: {
+								type: "object",
+								additionalProperties: false,
+								required: ["question", "answer", "type"],
+								properties: {
+									question: { type: "string" },
+									answer: { type: "string" },
+									type: { type: "string", enum: ["rate", "boolean"] },
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	});
+
+	const raw = completion.choices[0]?.message?.content;
+	if (!raw) throw new Error("OpenAI returned an empty response");
+	let parsed: {
+		cards?: Array<{
+			question?: unknown;
+			answer?: unknown;
+			type?: unknown;
+		}>;
+	};
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		throw new Error("OpenAI returned malformed JSON");
+	}
+	const cards: GeneratedCard[] = (parsed.cards ?? [])
+		.map((c) => ({
+			question: plainText(String(c.question ?? "")),
+			answer: plainText(String(c.answer ?? "")),
+			type: c.type === "boolean" ? ("boolean" as const) : ("rate" as const),
+		}))
+		.filter((c) => c.question && c.answer);
+	return cards;
+}
+
 // Safety net: the editor's parser only accepts a fixed set of block forms,
 // but LLMs have strong markdown habits — they slip ### headings, * bullets,
 // "1)" numbered items, and indented sub-lists through despite the system

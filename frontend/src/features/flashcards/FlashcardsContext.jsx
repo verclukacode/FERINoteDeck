@@ -9,6 +9,7 @@ import {
 	useState,
 } from "react";
 import {
+	bulkCreateCards,
 	createCard,
 	createDeck,
 	createFlashcardFolder,
@@ -189,6 +190,15 @@ export function FlashcardsProvider({ children }) {
 		);
 		setSelectedDeckId(deck.id);
 		setSelectedCardId(clonedCards[0]?.id ?? null);
+	}, []);
+
+	// Bulk-append cards into an existing deck (CSV import → "existing deck").
+	// Server returns the freshly-created rows so we can hydrate local state
+	// without a refetch.
+	const importCardsIntoDeck = useCallback(async (deckId, newCards) => {
+		const created = await bulkCreateCards({ deckId, cards: newCards });
+		setCards((prev) => [...prev, ...created]);
+		return created;
 	}, []);
 
 	const acceptDeckInvite = useCallback(async (inviteId) => {
@@ -376,6 +386,7 @@ export function FlashcardsProvider({ children }) {
 			renameDeck,
 			updateDeckShare,
 			addDeckFromClone,
+			importCardsIntoDeck,
 			acceptDeckInvite,
 			declineDeckInvite,
 			deckShares,
@@ -409,6 +420,7 @@ export function FlashcardsProvider({ children }) {
 			renameDeck,
 			updateDeckShare,
 			addDeckFromClone,
+			importCardsIntoDeck,
 			acceptDeckInvite,
 			declineDeckInvite,
 			revokeDeckShare,
