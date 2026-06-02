@@ -7,6 +7,7 @@ function blocksToHtml(blocks, separatorImg) {
 	let underH1 = false;
 	let underH2 = false;
 	let numberedRun = 0;
+	let currentDepth = 0;
 	const lines = [];
 
 	function getDepth(type) {
@@ -27,12 +28,23 @@ function blocksToHtml(blocks, separatorImg) {
 			});
 	}
 
+	// Open/close wrapper divs to maintain continuous border-left
+	function setDepth(newDepth) {
+		while (currentDepth > newDepth) {
+			lines.push(`</div>`);
+			currentDepth--;
+		}
+		while (currentDepth < newDepth) {
+			currentDepth++;
+			lines.push(`<div style="border-left:2.5px solid #e5e5e5;padding-left:12px;margin-left:24px">`);
+		}
+	}
+
 	for (const block of blocks) {
 		if (block.type !== "numbered") numberedRun = 0;
 		const depth = getDepth(block.type);
-		const ml = depth * 24;
-		const borderLeft = depth > 0 ? "border-left:2.5px solid #e5e5e5;padding-left:12px;" : "";
-		const style = `margin-left:${ml}px;${borderLeft}`;
+
+		setDepth(depth);
 
 		if (block.type === "h1") { underH1 = true; underH2 = false; }
 		else if (block.type === "h2") { underH2 = true; }
@@ -40,24 +52,23 @@ function blocksToHtml(blocks, separatorImg) {
 
 		switch (block.type) {
 			case "h1":
-				lines.push(`<h1 style="font-size:24px;font-weight:700;margin:16px 0 4px;${style}">${inline(block.content)}</h1>`);
+				lines.push(`<h1 style="font-size:24px;font-weight:700;margin:16px 0 4px">${inline(block.content)}</h1>`);
 				break;
 			case "h2":
-				lines.push(`<h2 style="font-size:18px;font-weight:600;margin:12px 0 4px;${style}">${inline(block.content)}</h2>`);
+				lines.push(`<h2 style="font-size:18px;font-weight:600;margin:12px 0 4px">${inline(block.content)}</h2>`);
 				break;
 			case "bullet":
-				lines.push(`<div style="display:flex;gap:8px;margin:3px 0;${style}"><span>•</span><span>${inline(block.content)}</span></div>`);
+				lines.push(`<div style="display:flex;gap:8px;margin:3px 0"><span>•</span><span>${inline(block.content)}</span></div>`);
 				break;
 			case "numbered":
 				numberedRun++;
-				lines.push(`<div style="display:flex;gap:8px;margin:3px 0;${style}"><span>${numberedRun}.</span><span>${inline(block.content)}</span></div>`);
+				lines.push(`<div style="display:flex;gap:8px;margin:3px 0"><span>${numberedRun}.</span><span>${inline(block.content)}</span></div>`);
 				break;
 			case "task": {
 				const checked = !!block.checked;
 				const svgChecked = `<svg width="15" height="15" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg"><rect width="15" height="15" rx="2" fill="#3b82f6"/><polyline points="3,7.5 6,10.5 12,4" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 				const svgEmpty = `<svg width="15" height="15" viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg"><rect width="15" height="15" rx="2" fill="none" stroke="#bbb" stroke-width="1.5"/></svg>`;
 
-				// Apply Unicode combining strikethrough to text nodes only (skips HTML tags)
 				const addStrike = (html) =>
 					html.replace(/(?<=>|^)([^<]+)(?=<|$)/g, (m) =>
 						m.split("").map((c) => (/\s/.test(c) ? c : c + "̶")).join(""),
@@ -66,29 +77,30 @@ function blocksToHtml(blocks, separatorImg) {
 				const textHtml = checked ? addStrike(inline(block.content)) : inline(block.content);
 				const textColor = checked ? "color:#777;" : "";
 
-				lines.push(`<table style="border-collapse:collapse;margin:4px 0;${style}"><tr>
-    <td style="padding:4px 8px 0 8px;width:15px;vertical-align:top;">${checked ? svgChecked : svgEmpty}</td>
-    <td style="padding:0;vertical-align:top;line-height:0.5;${textColor}">${textHtml}</td>
-</tr></table>`);
+				lines.push(`<table style="border-collapse:collapse;margin:4px 0"><tr>
+					<td style="padding:4px 8px 0 8px;width:15px;vertical-align:top">${checked ? svgChecked : svgEmpty}</td>
+					<td style="padding:0;vertical-align:top;line-height:0.5;${textColor}">${textHtml}</td>
+				</tr></table>`);
 				break;
-				}
+			}
 			case "separator":
 				lines.push(`<img src="${separatorImg}" style="width:100%;height:22px;margin:14px 0;display:block" />`);
 				break;
-				break;
 			case "image":
 				if (block.imageUrl) {
-					lines.push(`<div style="margin:8px 0;${style}"><img src="${block.imageUrl}" style="max-width:100%;border-radius:8px" /></div>`);
+					lines.push(`<div style="margin:8px 0"><img src="${block.imageUrl}" style="max-width:100%;border-radius:8px" /></div>`);
 				}
 				break;
 			default:
 				if (block.content) {
-					lines.push(`<p style="margin:3px 0;${style}">${inline(block.content)}</p>`);
+					lines.push(`<p style="margin:3px 0">${inline(block.content)}</p>`);
 				} else {
 					lines.push(`<p style="margin:8px 0"></p>`);
 				}
 		}
 	}
+
+	setDepth(0); // close any remaining wrappers
 	return lines.join("\n");
 }
 
