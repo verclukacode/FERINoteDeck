@@ -39,6 +39,7 @@ export function NotesProvider({ children }) {
 	const [accountOpen, setAccountOpen] = useState(false);
 	const [avatarUrl, setAvatarUrl] = useState(null);
 	const [username, setUsername] = useState("");
+	const [tier, setTier] = useState("basic");
 	const [sharedPages, setSharedPages] = useState([]);
 	const [pendingInvites, setPendingInvites] = useState([]);
 	// pageShares: { [pageId]: Array<{ id, recipient: { username, avatarUrl, email } }> }
@@ -63,6 +64,7 @@ export function NotesProvider({ children }) {
 				setPages(p);
 				setAvatarUrl(me?.avatarUrl ?? null);
 				setUsername(me?.username ?? "");
+				setTier(me?.tier ?? "basic");
 				setSharedPages(shared ?? []);
 				setPendingInvites(invites ?? []);
 				const sharesMap = {};
@@ -312,6 +314,7 @@ export function NotesProvider({ children }) {
 			setAvatarUrl,
 			username,
 			setUsername,
+			tier,
 			setView,
 			addFolder,
 			editFolder,
@@ -343,6 +346,7 @@ export function NotesProvider({ children }) {
 			accountOpen,
 			avatarUrl,
 			username,
+			tier,
 			addFolder,
 			editFolder,
 			removeFolder,

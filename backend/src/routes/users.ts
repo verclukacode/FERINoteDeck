@@ -67,7 +67,13 @@ const router = Router();
 router.get("/me", async (req: Request, res: Response) => {
 	const user = await prisma.user.findUnique({
 		where: { id: req.user?.uid ?? "" },
-		select: { id: true, email: true, username: true, avatarUrl: true },
+		select: {
+			id: true,
+			email: true,
+			username: true,
+			avatarUrl: true,
+			tier: true,
+		},
 	});
 	res.json(user);
 });
@@ -173,7 +179,15 @@ router.get("/me/streak", async (req: Request, res: Response) => {
 	// Bucket each review into its study day start (ms)
 	function dayStart(tsMs: number): number {
 		const d = new Date(tsMs);
-		const rollover = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0, 0, 0).getTime();
+		const rollover = new Date(
+			d.getFullYear(),
+			d.getMonth(),
+			d.getDate(),
+			hour,
+			0,
+			0,
+			0,
+		).getTime();
 		return tsMs < rollover ? rollover - 86_400_000 : rollover;
 	}
 
@@ -204,7 +218,15 @@ router.get("/me/activity", async (req: Request, res: Response) => {
 
 	function dayStart(tsMs: number): number {
 		const d = new Date(tsMs);
-		const rollover = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, 0, 0, 0).getTime();
+		const rollover = new Date(
+			d.getFullYear(),
+			d.getMonth(),
+			d.getDate(),
+			hour,
+			0,
+			0,
+			0,
+		).getTime();
 		return tsMs < rollover ? rollover - 86_400_000 : rollover;
 	}
 

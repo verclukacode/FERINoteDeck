@@ -133,8 +133,6 @@ const ALLOWED_EXTS = [
 	".webp",
 ];
 
-const STORAGE_KEY = "notedeck.aiImportPassword";
-
 function formatBytes(n) {
 	if (n < 1024) return `${n} B`;
 	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -152,9 +150,6 @@ export default function ImportFilesModal({ onClose }) {
 	// Phase 1 (collect)
 	const [files, setFiles] = useState([]);
 	const [prompt, setPrompt] = useState("");
-	const [password, setPassword] = useState(
-		() => sessionStorage.getItem(STORAGE_KEY) ?? "",
-	);
 	const [generating, setGenerating] = useState(false);
 	const [error, setError] = useState("");
 
@@ -193,19 +188,16 @@ export default function ImportFilesModal({ onClose }) {
 	}
 
 	async function handleGenerate() {
-		if (!files.length || !password) return;
+		if (!files.length) return;
 		setError("");
 		setGenerating(true);
 		try {
-			const res = await importFiles({ files, prompt, password });
-			sessionStorage.setItem(STORAGE_KEY, password);
+			const res = await importFiles({ files, prompt });
 			setGenerated(res);
 			setTitle(res.title);
 		} catch (err) {
-			if (err.status === 401) {
-				sessionStorage.removeItem(STORAGE_KEY);
-				setPassword("");
-				setError("Incorrect password.");
+			if (err.status === 403) {
+				setError("AI import requires a Pro or Premium account.");
 			} else if (err.status === 503) {
 				setError("AI import is not configured on this server.");
 			} else {
@@ -229,8 +221,7 @@ export default function ImportFilesModal({ onClose }) {
 		}
 	}
 
-	const generateDisabled =
-		generating || !files.length || !password || overTotal;
+	const generateDisabled = generating || !files.length || overTotal;
 
 	return (
 		<>
@@ -322,22 +313,6 @@ export default function ImportFilesModal({ onClose }) {
 						>
 							{prompt.length}/{PROMPT_MAX}
 						</p>
-
-						<label
-							htmlFor="ai-import-password"
-							className="mt-4 block px-1 text-sm font-semibold text-title"
-						>
-							AI password
-						</label>
-						<input
-							id="ai-import-password"
-							type="password"
-							autoComplete="off"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							placeholder="Required to use the AI feature"
-							className="mt-2 w-full rounded-2xl bg-bg-secondary px-4 py-3 text-sm text-title outline-none placeholder:text-body/50"
-						/>
 
 						{error && (
 							<p className="mt-3 text-center text-sm text-folder-red">

@@ -49,9 +49,9 @@ Yarn 4 (via Corepack); `.yarnrc.yml` pins `nodeLinker: node-modules` so Vite/Sto
   - `routes/search.ts` (`/api/search`) — weighted cross-entity search
   - `routes/calendar-tags.ts` + `routes/calendar-events.ts` — calendar
   - `routes/import.ts` (`/api/import`) — AI file-to-note import (PDF/DOCX/PPTX/TXT/MD/images
-    + prompt → gpt-4o-mini → structured `{title, content}`); gated by `IMPORT_AI_PASSWORD`
-    env var (503 if unset). File extraction in `src/lib/fileExtraction.ts`, OpenAI client in
-    `src/lib/openai.ts`.
+    + prompt → gpt-4o-mini → structured `{title, content}`); access gated per-user by
+    `User.tier` (basic = 403, pro/premium = allowed). 503 if `OPENAI_API_KEY` is unset.
+    File extraction in `src/lib/fileExtraction.ts`, OpenAI client in `src/lib/openai.ts`.
   - `GET /api/decks/:id/leaderboard` (on `decks.ts`) — ranks deck members by average SM-2 ease
 
   Uploaded images live under `backend/uploads/` and are served statically; security headers via `helmet` (`X-Content-Type-Options: nosniff` + `Content-Disposition: inline` + cross-origin CORP + no-referrer). Upload validation lives in `src/lib/imageValidation.ts` (mimetype + extension allowlist + post-write magic-byte verification; URL allowlist enforced for `User.avatarUrl` and images inside published notes). Spaced-repetition scheduling lives in `src/lib/srs.ts`; `src/lib/serialize.ts` converts `BigInt` (unix-ms) fields for JSON. Deck cloning (used by both marketplace and deck-invite accept) lives in `src/lib/cloneDeck.ts`.

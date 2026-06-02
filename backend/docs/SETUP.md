@@ -101,20 +101,25 @@ CORS_ORIGIN=http://localhost:5173
 
 # AI Import (optional — leave empty to disable the feature)
 OPENAI_API_KEY=...                    # platform.openai.com → API keys, server-only
-IMPORT_AI_PASSWORD=...                # shared secret users type in the Import modal
 ```
 
 `frontend/.env` — the `VITE_FIREBASE_*` values from step 3b.
 
 Both `.env` files are gitignored; the committed `.env.example` files are templates.
 
-**AI Import notes.** The "Import files" button in the notes sidebar lets users upload PDFs /
-DOCX / PPTX / TXT / MD / images plus a prompt and get a generated NoteDeck note back. The
-backend gates this with `IMPORT_AI_PASSWORD`: if either it or `OPENAI_API_KEY` is unset,
-`POST /api/import` returns 503 and the feature is effectively off. The password is checked
-with `crypto.timingSafeEqual` to avoid leaking length via timing. Calls use `gpt-4o-mini`
-with structured output; per-file cap is 10 MB, total cap is 20 MB, prompt cap is 1500
-characters.
+**AI Import notes.** The "Import files (AI)" button in the notes sidebar lets users upload
+PDFs / DOCX / PPTX / TXT / MD / images plus a prompt and get a generated NoteDeck note back.
+Access is gated by **`User.tier`** in the database — every account starts at `basic` and is
+blocked from the feature (the button is hidden in the UI and `POST /api/import` returns
+403). Raising a user to `pro` or `premium` unlocks the feature:
+
+```sql
+UPDATE User SET tier = 'pro' WHERE username = '<their-username>';
+```
+
+If `OPENAI_API_KEY` is unset the endpoint returns 503 regardless of tier. Calls use
+`gpt-4o-mini` with structured output; per-file cap is 10 MB, total cap is 20 MB, prompt cap
+is 1500 characters.
 
 ---
 
@@ -168,6 +173,7 @@ erDiagram
         string email
         string username "unique, nullable"
         string avatarUrl "nullable"
+        string tier "basic | pro | premium — gates AI import"
         datetime createdAt
     }
     Folder {

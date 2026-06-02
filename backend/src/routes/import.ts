@@ -17,6 +17,7 @@ import {
 	verifyImportMagicBytes,
 } from "../lib/imageValidation";
 import { generateNoteFromFiles } from "../lib/openai";
+import { prisma } from "../lib/prisma";
 import { uploadsDir } from "./images";
 
 const PROMPT_MAX = 1500;
@@ -76,14 +77,9 @@ const upload = multer({
 	},
 });
 
-function timingSafeStringEquals(a: string, b: string): boolean {
-	const ab = Buffer.from(a);
-	const bb = Buffer.from(b);
-	if (ab.length !== bb.length) return false;
-	return crypto.timingSafeEqual(ab, bb);
-}
-
 const NO_API_SUFFIX = "(no-api)";
+// Lowest tier — gets everything except AI import.
+const BASIC_TIER = "basic";
 
 // Dummy note that exercises every supported block type, populated with the
 // real filenames + image URLs the user uploaded so the test feels grounded.
@@ -154,7 +150,6 @@ router.post(
 	"/",
 	upload.array("files", 20),
 	async (req: Request, res: Response) => {
-		const aiPassword = process.env.IMPORT_AI_PASSWORD;
 		const apiKey = process.env.OPENAI_API_KEY;
 		const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
@@ -165,27 +160,33 @@ router.post(
 		}
 
 		try {
-			if (!aiPassword || !apiKey) {
+			if (!apiKey) {
 				await deleteTemp();
 				return res
 					.status(503)
 					.json({ error: "AI import not configured on this server" });
 			}
-			const submittedPassword = String(req.body?.password ?? "");
-			// Debug short-circuit: "<password>(no-api)" still requires the correct
-			// prefix to authenticate, but skips the OpenAI call and returns a
-			// curated dummy note so we can iterate on the animation + UI without
-			// burning credits.
-			const isNoApi = submittedPassword.endsWith(NO_API_SUFFIX);
-			const passwordForCompare = isNoApi
-				? submittedPassword.slice(0, -NO_API_SUFFIX.length)
-				: submittedPassword;
-			if (!timingSafeStringEquals(passwordForCompare, aiPassword)) {
+			// Tier gate — only non-basic accounts have AI import.
+			const account = await prisma.user.findUnique({
+				where: { id: req.user?.uid ?? "" },
+				select: { tier: true },
+			});
+			if (!account || account.tier === BASIC_TIER) {
 				await deleteTemp();
-				return res.status(401).json({ error: "Invalid password" });
+				return res.status(403).json({
+					error: "AI import requires a Pro or Premium account",
+				});
 			}
 
-			const prompt = String(req.body?.prompt ?? "");
+			// Debug short-circuit: prompt ending with "(no-api)" skips the OpenAI
+			// call and returns a curated dummy note so we can iterate on the
+			// animation + UI without burning credits. Only available to non-basic
+			// users, since the tier gate is already checked above.
+			const rawPrompt = String(req.body?.prompt ?? "");
+			const isNoApi = rawPrompt.trimEnd().endsWith(NO_API_SUFFIX);
+			const prompt = isNoApi
+				? rawPrompt.trimEnd().slice(0, -NO_API_SUFFIX.length).trimEnd()
+				: rawPrompt;
 			if (prompt.length > PROMPT_MAX) {
 				await deleteTemp();
 				return res

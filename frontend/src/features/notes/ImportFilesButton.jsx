@@ -1,8 +1,13 @@
 import { useState } from "react";
 import ImportFilesModal from "./ImportFilesModal.jsx";
+import { useNotes } from "./NotesContext.jsx";
 
 export default function ImportFilesButton() {
+	const { tier } = useNotes();
 	const [open, setOpen] = useState(false);
+
+	// AI import is a Pro/Premium-tier feature. Basic accounts don't see it.
+	if (tier === "basic") return null;
 
 	return (
 		<>

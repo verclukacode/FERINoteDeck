@@ -63,16 +63,16 @@ export function createPage({ folderId, title, content }) {
 	return apiRequest("/pages", { method: "POST", body });
 }
 
-// Upload files + prompt + password to the AI import endpoint. Returns
-// { title, content } — the page is NOT created yet; the caller picks a
-// folder + confirms the title before calling createPage.
-export async function importFiles({ files, prompt, password }) {
+// Upload files + prompt to the AI import endpoint. Returns { title, content }
+// — the page is NOT created yet; the caller picks a folder + confirms the
+// title before calling createPage. Tier-gated server-side: basic accounts
+// get 403; Pro/Premium pass through.
+export async function importFiles({ files, prompt }) {
 	await auth.authStateReady();
 	const token = await auth.currentUser?.getIdToken();
 	const form = new FormData();
 	for (const f of files) form.append("files", f);
 	form.append("prompt", prompt ?? "");
-	form.append("password", password ?? "");
 	const res = await fetch(`${BASE}/import`, {
 		method: "POST",
 		headers: token ? { Authorization: `Bearer ${token}` } : {},
