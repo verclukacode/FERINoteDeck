@@ -4,6 +4,7 @@ import { VIEW } from "../../lib/constants.js";
 import DeckList from "../flashcards/DeckList.jsx";
 import AddFolderButton from "./AddFolderButton.jsx";
 import FolderList from "./FolderList.jsx";
+import ImportFilesButton from "./ImportFilesButton.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import NotificationsModal from "./NotificationsModal.jsx";
 import SharedPageItem from "./SharedPageItem.jsx";
@@ -38,6 +39,7 @@ export default function Sidebar({ onOpenMarketplace, onOpenSearch }) {
 					<>
 						<FolderList />
 						<AddFolderButton />
+						<ImportFilesButton />
 						{sharedPages.length > 0 && (
 							<div className="flex flex-col gap-1">
 								<div className="flex items-center gap-3 py-1">

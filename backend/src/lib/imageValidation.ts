@@ -49,6 +49,35 @@ export async function verifyImageMagicBytes(
 	}
 }
 
+// Magic-byte verification for the import flow's broader set of file kinds
+// (PDF + DOCX/PPTX zip envelopes + raster images). Text files (.txt / .md)
+// have no signature — they're whitelisted by extension + checked via UTF-8
+// decodability at the call site.
+export async function verifyImportMagicBytes(
+	filepath: string,
+	kind: "pdf" | "zip" | "image",
+): Promise<boolean> {
+	if (kind === "image") return verifyImageMagicBytes(filepath);
+	let fd: Awaited<ReturnType<typeof fs.open>> | undefined;
+	try {
+		fd = await fs.open(filepath, "r");
+		const buf = Buffer.alloc(8);
+		await fd.read(buf, 0, 8, 0);
+		if (kind === "pdf") {
+			// "%PDF-" — every PDF starts with this signature.
+			return buf.subarray(0, 5).toString("ascii") === "%PDF-";
+		}
+		// "PK\x03\x04" — every .docx/.pptx is a zip archive.
+		return (
+			buf[0] === 0x50 && buf[1] === 0x4b && buf[2] === 0x03 && buf[3] === 0x04
+		);
+	} catch {
+		return false;
+	} finally {
+		await fd?.close();
+	}
+}
+
 // Local image URL: presets shipped from the frontend, or a file we uploaded
 // (every `/api/images/<uid>/<filename>` route was validated by us). Used to
 // keep external trackers / web beacons out of public marketplace content and

@@ -62,3 +62,100 @@ a[target="_blank"][rel*="noopener"] {
 [contenteditable] a[target="_blank"][rel*="noopener"]:hover {
 	text-decoration: underline;
 }
+
+/* === AI import magical loading === */
+
+/* Registers --ai-angle as an animatable angle property. Lets the conic
+ * gradient's `from` angle change over time while the host element stays put. */
+@property --ai-angle {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0deg;
+}
+
+@keyframes ai-angle-spin {
+	to {
+		--ai-angle: 360deg;
+	}
+}
+
+@keyframes ai-float {
+	0%,
+	100% {
+		transform: translateY(0) rotate(-1deg);
+	}
+	50% {
+		transform: translateY(-10px) rotate(2deg);
+	}
+}
+
+@keyframes ai-shimmer {
+	from {
+		background-position: -200% 0;
+	}
+	to {
+		background-position: 200% 0;
+	}
+}
+
+/* 2.5px rotating pink↔purple ring at the modal's outer edge. The negative
+ * inset cancels the modal's p-5 padding so the ring sits where the grey
+ * border was; we also flip the modal's border to transparent in JSX so this
+ * ring becomes the visible window edge. */
+/* Big blurred conic-gradient blob that sits BEHIND the modal (rendered via
+ * portal to <body> at z-49, just below the modal at z-50). The heavy blur
+ * + low opacity make the corners of the modal sit on a soft rainbow halo.
+ * Two animations: a one-shot scale/opacity enter, then a continuous
+ * gradient-angle rotation. */
+.ai-window-halo {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: 920px;
+	height: 920px;
+	transform: translate(-50%, -50%);
+	border-radius: 50%;
+	background: conic-gradient(
+		from var(--ai-angle),
+		var(--color-folder-pink),
+		var(--color-folder-purple),
+		var(--color-folder-blue),
+		var(--color-folder-purple),
+		var(--color-folder-pink)
+	);
+	filter: blur(80px);
+	opacity: 0.55;
+	animation: ai-halo-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards,
+		ai-angle-spin 8s linear infinite;
+	z-index: 49;
+	pointer-events: none;
+}
+
+@keyframes ai-halo-enter {
+	0% {
+		transform: translate(-50%, -50%) scale(0.05);
+		opacity: 0;
+	}
+	100% {
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 0.55;
+	}
+}
+
+.ai-pill-float {
+	animation: ai-float 3.5s ease-in-out infinite;
+}
+
+.ai-progress-fill {
+	background: linear-gradient(
+		90deg,
+		var(--color-folder-pink),
+		var(--color-folder-purple),
+		var(--color-folder-blue),
+		var(--color-folder-purple),
+		var(--color-folder-pink)
+	);
+	background-size: 200% 100%;
+	animation: ai-shimmer 2s linear infinite;
+	transition: width 0.4s ease-out;
+}

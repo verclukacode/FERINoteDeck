@@ -3,7 +3,10 @@ import { extractImageUrls, isAllowedImageUrl } from "../lib/imageValidation";
 import { prisma } from "../lib/prisma";
 
 // In-memory presence: pageId → userId → { username, avatarUrl, lastSeen }
-const presence = new Map<string, Map<string, { username: string; avatarUrl: string | null; lastSeen: number }>>();
+const presence = new Map<
+	string,
+	Map<string, { username: string; avatarUrl: string | null; lastSeen: number }>
+>();
 const PRESENCE_TTL = 12_000; // 12s — clients ping every 5s
 
 function getViewers(pageId: string) {
@@ -52,7 +55,11 @@ router.get("/", async (req: Request, res: Response) => {
  *       400: { description: Folder not found }
  */
 router.post("/", async (req: Request, res: Response) => {
-	const { folderId, title } = req.body as { folderId?: string; title?: string };
+	const { folderId, title, content } = req.body as {
+		folderId?: string;
+		title?: string;
+		content?: string;
+	};
 	const folder = await prisma.folder.findFirst({
 		where: { id: folderId, userId: req.user?.uid ?? "" },
 	});
@@ -65,7 +72,10 @@ router.post("/", async (req: Request, res: Response) => {
 			userId: req.user?.uid ?? "",
 			folderId: folder.id,
 			title: (title ?? "").trim() || "Untitled page",
-			content: "Nothing here yet, tap to edit.",
+			content:
+				typeof content === "string" && content.length > 0
+					? content
+					: "Nothing here yet, tap to edit.",
 			order,
 		},
 	});
@@ -159,7 +169,7 @@ router.post("/:id/presence", async (req: Request, res: Response) => {
 	});
 
 	if (!presence.has(pageId)) presence.set(pageId, new Map());
-	presence.get(pageId)!.set(uid, {
+	presence.get(pageId)?.set(uid, {
 		username: me?.username ?? uid,
 		avatarUrl: me?.avatarUrl ?? null,
 		lastSeen: Date.now(),
@@ -172,7 +182,9 @@ router.post("/:id/presence", async (req: Request, res: Response) => {
 router.get("/:id/presence", async (req: Request, res: Response) => {
 	const uid = req.user?.uid ?? "";
 	const pageId = String(req.params.id);
-	const viewers = getViewers(pageId).filter((v) => v.username !== (presence.get(pageId)?.get(uid)?.username));
+	const viewers = getViewers(pageId).filter(
+		(v) => v.username !== presence.get(pageId)?.get(uid)?.username,
+	);
 	res.json(viewers);
 });
 

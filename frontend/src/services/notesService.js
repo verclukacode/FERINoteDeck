@@ -57,8 +57,34 @@ export function getPage(id) {
 	return apiRequest(`/pages/${id}`);
 }
 
-export function createPage({ folderId, title }) {
-	return apiRequest("/pages", { method: "POST", body: { folderId, title } });
+export function createPage({ folderId, title, content }) {
+	const body = { folderId, title };
+	if (content !== undefined) body.content = content;
+	return apiRequest("/pages", { method: "POST", body });
+}
+
+// Upload files + prompt + password to the AI import endpoint. Returns
+// { title, content } — the page is NOT created yet; the caller picks a
+// folder + confirms the title before calling createPage.
+export async function importFiles({ files, prompt, password }) {
+	await auth.authStateReady();
+	const token = await auth.currentUser?.getIdToken();
+	const form = new FormData();
+	for (const f of files) form.append("files", f);
+	form.append("prompt", prompt ?? "");
+	form.append("password", password ?? "");
+	const res = await fetch(`${BASE}/import`, {
+		method: "POST",
+		headers: token ? { Authorization: `Bearer ${token}` } : {},
+		body: form,
+	});
+	const data = await res.json().catch(() => null);
+	if (!res.ok) {
+		const err = new Error(data?.error ?? "Import failed");
+		err.status = res.status;
+		throw err;
+	}
+	return data;
 }
 
 export function updatePage(id, patch) {

@@ -98,11 +98,23 @@ FIREBASE_PROJECT_ID=...
 FIREBASE_CLIENT_EMAIL=...
 FIREBASE_PRIVATE_KEY=...
 CORS_ORIGIN=http://localhost:5173
+
+# AI Import (optional — leave empty to disable the feature)
+OPENAI_API_KEY=...                    # platform.openai.com → API keys, server-only
+IMPORT_AI_PASSWORD=...                # shared secret users type in the Import modal
 ```
 
 `frontend/.env` — the `VITE_FIREBASE_*` values from step 3b.
 
 Both `.env` files are gitignored; the committed `.env.example` files are templates.
+
+**AI Import notes.** The "Import files" button in the notes sidebar lets users upload PDFs /
+DOCX / PPTX / TXT / MD / images plus a prompt and get a generated NoteDeck note back. The
+backend gates this with `IMPORT_AI_PASSWORD`: if either it or `OPENAI_API_KEY` is unset,
+`POST /api/import` returns 503 and the feature is effectively off. The password is checked
+with `crypto.timingSafeEqual` to avoid leaking length via timing. Calls use `gpt-4o-mini`
+with structured output; per-file cap is 10 MB, total cap is 20 MB, prompt cap is 1500
+characters.
 
 ---
 

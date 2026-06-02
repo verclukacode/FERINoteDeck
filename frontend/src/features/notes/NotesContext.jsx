@@ -137,13 +137,26 @@ export function NotesProvider({ children }) {
 		);
 	}, []);
 
-	const addPage = useCallback(async (folderId) => {
-		const page = await service.createPage({ folderId, title: "Untitled page" });
+	// Legacy callers pass a folderId string; the import flow passes
+	// { folderId, title, content }. Detect and forward.
+	const addPage = useCallback(async (arg) => {
+		const payload =
+			typeof arg === "string"
+				? { folderId: arg, title: "Untitled page" }
+				: {
+						folderId: arg.folderId,
+						title: arg.title?.trim() || "Untitled page",
+						content: arg.content,
+					};
+		const page = await service.createPage(payload);
 		setPages((prev) => [...prev, page]);
 		setFolders((prev) =>
-			prev.map((f) => (f.id === folderId ? { ...f, collapsed: false } : f)),
+			prev.map((f) =>
+				f.id === payload.folderId ? { ...f, collapsed: false } : f,
+			),
 		);
 		setSelectedPageId(page.id);
+		return page;
 	}, []);
 
 	const renamePage = useCallback(async (id, title) => {
