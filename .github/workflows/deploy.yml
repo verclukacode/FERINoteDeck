@@ -10,6 +10,9 @@ env:
   GHCR_OWNER: fdergachev
   BACKEND_IMAGE: ghcr.io/fdergachev/notedeck-backend
   FRONTEND_IMAGE: ghcr.io/fdergachev/notedeck-frontend
+  # Use Node.js 24 runtime for all GitHub Actions (actions/checkout, setup-node, etc.)
+  # Required since Node.js 20 is deprecated on runners as of June 2026.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ──────────────────────────────────────────────
@@ -27,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Enable Corepack (Yarn 4)
         run: corepack enable
