@@ -9,6 +9,9 @@
 #   FIREBASE_PROJECT_ID
 #   FIREBASE_CLIENT_EMAIL
 #   FIREBASE_PRIVATE_KEY  (keep the \n escapes, wrap in double quotes in .env)
+#
+# CI-injected env vars (set as GitHub Actions secrets, NOT needed in VM .env):
+#   OPENAI_API_KEY        OpenAI key for /api/import — optional; service returns 503 if unset
 
 services:
   db:
@@ -44,6 +47,7 @@ services:
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
       FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       - uploads:/app/backend/uploads
 

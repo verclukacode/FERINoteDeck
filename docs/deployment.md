@@ -58,6 +58,8 @@ FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxx@your-project-id.iam.gserviceaccount.com
 # Keep the literal \n in the key value and wrap in double quotes:
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
+
+# NOTE: OPENAI_API_KEY is injected by CI (GitHub Actions secret) — do NOT add it here.
 ```
 
 ---
@@ -78,6 +80,7 @@ Go to **GitHub → your repo → Settings → Secrets and variables → Actions 
 | `VITE_FIREBASE_STORAGE_BUCKET` | e.g. `your-project.appspot.com` |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Numeric sender ID |
 | `VITE_FIREBASE_APP_ID` | Firebase app ID |
+| `OPENAI_API_KEY` | OpenAI API key — optional; if unset `/api/import` returns 503 (feature disabled) |
 
 ### Generate VM_GHCR_TOKEN
 
