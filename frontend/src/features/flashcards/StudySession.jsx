@@ -55,7 +55,7 @@ export default function StudySession({ deckId, onClose }) {
 	const [queue, setQueue] = useState([]);
 	const [phase, setPhase] = useState("loading"); // loading | front | reveal | result | finish | error
 	const [input, setInput] = useState("");
-	const [result, setResult] = useState(null); // "correct" | "wrong"
+	const [result, setResult] = useState(""); // "" | "correct" | "wrong"
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState("");
 	const frontShownAt = useRef(Date.now());
@@ -112,7 +112,7 @@ export default function StudySession({ deckId, onClose }) {
 			}
 			setQueue(next);
 			setInput("");
-			setResult(null);
+			setResult("");
 			frontShownAt.current = Date.now();
 			setPhase(next.length ? "front" : "finish");
 		} catch (e) {

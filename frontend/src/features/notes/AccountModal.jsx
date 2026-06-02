@@ -601,6 +601,7 @@ function StudySettingsPanel({ onBack }) {
 
 	async function handleSubmit(e) {
 		e.preventDefault();
+		if (!form) return;
 		setError("");
 		setLoading(true);
 		try {
@@ -770,13 +771,13 @@ export default function AccountModal({ onClose }) {
 	const { avatarUrl, setAvatarUrl, username } = useNotes();
 	const navigate = useNavigate();
 	const [copied, setCopied] = useState(false);
-	const [panel, setPanel] = useState(null);
+	const [panel, setPanel] = useState("");
 
 	useEffect(() => {}, []);
 
 	useEffect(() => {
 		const onKey = (e) =>
-			e.key === "Escape" && (panel ? setPanel(null) : onClose());
+			e.key === "Escape" && (panel ? setPanel("") : onClose());
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
 	}, [onClose, panel]);
@@ -811,21 +812,21 @@ export default function AccountModal({ onClose }) {
 				</button>
 
 				{panel === "username" ? (
-					<ChangeUsernamePanel onBack={() => setPanel(null)} />
+					<ChangeUsernamePanel onBack={() => setPanel("")} />
 				) : panel === "email" ? (
-					<ChangeEmailPanel onBack={() => setPanel(null)} />
+					<ChangeEmailPanel onBack={() => setPanel("")} />
 				) : panel === "password" ? (
-					<ChangePasswordPanel onBack={() => setPanel(null)} />
+					<ChangePasswordPanel onBack={() => setPanel("")} />
 				) : panel === "study-settings" ? (
-					<StudySettingsPanel onBack={() => setPanel(null)} />
+					<StudySettingsPanel onBack={() => setPanel("")} />
 				) : panel === "avatar" ? (
 					<ChangeProfilePicPanel
 						currentAvatar={avatarUrl}
 						onSave={(url) => {
 							setAvatarUrl(url);
-							setPanel(null);
+							setPanel("");
 						}}
-						onBack={() => setPanel(null)}
+						onBack={() => setPanel("")}
 					/>
 				) : (
 					<>

@@ -24,15 +24,15 @@ export default function ShareModal({
 
 	// Direct share state
 	const [inviteUsername, setInviteUsername] = useState("");
-	const [usernameState, setUsernameState] = useState(null); // null | "checking" | "found" | "not_found" | string (error)
+	const [usernameState, setUsernameState] = useState(""); // "" | "checking" | "found" | "not_found" | string (error)
 	const [inviteSending, setInviteSending] = useState(false);
-	const [inviteStatus, setInviteStatus] = useState(null); // "sent" | error string
+	const [inviteStatus, setInviteStatus] = useState(""); // "" | "sent" | error string
 
 	// Debounced username existence check (available=false means user exists)
 	useEffect(() => {
 		const trimmed = inviteUsername.trim();
 		if (!trimmed) {
-			setUsernameState(null);
+			setUsernameState("");
 			return;
 		}
 		setUsernameState("checking");
@@ -70,7 +70,7 @@ export default function ShareModal({
 	async function handleSendInvite() {
 		if (usernameState !== "found" || !item?.id) return;
 		setInviteSending(true);
-		setInviteStatus(null);
+		setInviteStatus("");
 		try {
 			if (kind === "deck") {
 				await sendDeckInvite(item.id, inviteUsername.trim());
@@ -79,7 +79,7 @@ export default function ShareModal({
 			}
 			setInviteStatus("sent");
 			setInviteUsername("");
-			setUsernameState(null);
+			setUsernameState("");
 		} catch (e) {
 			setInviteStatus(e?.message ?? "Failed to send invite");
 		} finally {
@@ -252,7 +252,7 @@ export default function ShareModal({
 					{usernameState === "not_found" && (
 						<span className="text-folder-red">User not found.</span>
 					)}
-					{typeof usernameState === "string" &&
+				{usernameState &&
 						usernameState !== "checking" &&
 						usernameState !== "found" &&
 						usernameState !== "not_found" && (

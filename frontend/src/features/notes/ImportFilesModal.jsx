@@ -101,7 +101,7 @@ export default function ImportFilesModal({ onClose }) {
 	}
 
 	async function handleSave() {
-		if (!folderId) return;
+		if (!folderId || !generated) return;
 		setSaving(true);
 		try {
 			await addPage({ folderId, title, content: generated.content });
