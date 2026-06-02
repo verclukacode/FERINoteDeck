@@ -161,7 +161,32 @@ export async function generateNoteFromFiles(
 		throw new Error("OpenAI returned malformed JSON");
 	}
 	const title = (parsed.title ?? "Imported note").slice(0, 200).trim();
-	const body = (parsed.content ?? "").trim();
+	const body = normaliseForBlockEditor((parsed.content ?? "").trim());
 	const wrapped = `<<<NoteDeckMD>>>\n${body}\n<<<NoteDeckMD>>>`;
 	return { title, content: wrapped };
+}
+
+// Safety net: the editor's parser only accepts a fixed set of block forms,
+// but LLMs have strong markdown habits — they slip ### headings, * bullets,
+// "1)" numbered items, and indented sub-lists through despite the system
+// prompt. Normalise per line so the editor sees something it can render.
+function normaliseForBlockEditor(body: string): string {
+	return body
+		.split("\n")
+		.map((line) => {
+			// Strip leading whitespace — block editor doesn't support nesting, so
+			// indented "  - sub-item" becomes a top-level "- sub-item".
+			const stripped = line.replace(/^[ \t]+/, "");
+			// Demote h3+ to h2 (parser only handles # and ##).
+			const heading = stripped.match(/^#{3,6}\s+(.*)$/);
+			if (heading) return `## ${heading[1]}`;
+			// "* item" or "+ item" → "- item".
+			const altBullet = stripped.match(/^[*+]\s+(.*)$/);
+			if (altBullet) return `- ${altBullet[1]}`;
+			// "1) item" → "1. item".
+			const parenNum = stripped.match(/^(\d+)\)\s+(.*)$/);
+			if (parenNum) return `${parenNum[1]}. ${parenNum[2]}`;
+			return stripped;
+		})
+		.join("\n");
 }

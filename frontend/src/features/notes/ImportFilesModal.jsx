@@ -262,7 +262,7 @@ export default function ImportFilesModal({ onClose }) {
 						</label>
 
 						{files.length > 0 && (
-							<ul className="mt-3 flex flex-col gap-1">
+							<ul className="mt-3 flex max-h-[180px] flex-col gap-1 overflow-y-auto pr-1">
 								{files.map((f, i) => (
 									<li
 										key={`${f.name}-${f.size}-${i}`}
@@ -295,15 +295,18 @@ export default function ImportFilesModal({ onClose }) {
 
 						<label
 							htmlFor="ai-import-prompt"
-							className="mt-4 block px-1 text-sm font-semibold text-title"
+							className="mt-4 flex items-baseline gap-2 px-1"
 						>
-							Prompt
+							<span className="text-sm font-semibold text-title">
+								Additional prompt
+							</span>
+							<span className="text-xs font-medium text-body">optional</span>
 						</label>
 						<textarea
 							id="ai-import-prompt"
 							value={prompt}
 							onChange={(e) => setPrompt(e.target.value)}
-							placeholder="Summarise these lecture slides into key takeaways with bullet points."
+							placeholder="Leave empty for a balanced summary, or tell the AI how to shape the note — e.g. 'organise by topic, focus on the exam material'."
 							rows={3}
 							maxLength={PROMPT_MAX}
 							className="mt-2 w-full resize-none rounded-2xl bg-bg-secondary px-4 py-3 text-sm text-title outline-none placeholder:text-body/50"
