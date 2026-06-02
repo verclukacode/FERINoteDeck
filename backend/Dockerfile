@@ -9,7 +9,7 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 # Copy prisma schema so postinstall (prisma generate) can find it
 COPY backend/prisma ./backend/prisma
-RUN yarn install --immutable \
+RUN yarn install --frozen-lockfile \
    # Ensure the dir exists even when yarn hoists everything to root
    && mkdir -p backend/node_modules
 
@@ -21,7 +21,7 @@ COPY package.json yarn.lock .yarnrc.yml ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
-RUN yarn workspaces focus notedeck-backend --production \
+RUN yarn install --frozen-lockfile --production \
    && mkdir -p backend/node_modules
 
 # ---- Stage 2: compile TypeScript ----
