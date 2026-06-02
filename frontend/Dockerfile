@@ -24,6 +24,9 @@ RUN yarn workspace notedeck-frontend build
 
 # ---- Stage 2: serve with nginx ----
 FROM nginx:alpine
+# curl is bundled with nginx:alpine but not needed to serve static files.
+# Remove it to eliminate CVE-2026-6276 and CVE-2026-5773 (no fix in Alpine 3.23 yet).
+RUN apk del curl libcurl
 COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
