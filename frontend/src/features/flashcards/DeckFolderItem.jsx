@@ -5,19 +5,20 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useState } from "react";
+import userProfilePic from "../../assets/userProfilePic.svg";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import ContextMenu from "../../components/ContextMenu.jsx";
 import Icon from "../../components/Icon.jsx";
 import { useContextMenu } from "../../hooks/useContextMenu.js";
 import { folderHex } from "../../lib/constants.js";
-import userProfilePic from "../../assets/userProfilePic.svg";
 import DeckFolderPreview from "./DeckFolderPreview.jsx";
 import DeckPreview from "./DeckPreview.jsx";
 import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
 
 function DeckRow({ deck }) {
-	const { selectedDeckId, selectDeck, removeDeck, resetDeck, deckShares } = useFlashcards();
+	const { selectedDeckId, selectDeck, removeDeck, resetDeck, deckShares } =
+		useFlashcards();
 	const shares = !deck.sharedFromDeckId ? (deckShares[deck.id] ?? []) : [];
 	const { menu, open, close } = useContextMenu();
 	const [confirming, setConfirming] = useState(false);
@@ -148,7 +149,9 @@ export default function DeckFolderItem({ folder }) {
 	const { menu, open, close } = useContextMenu();
 	const [editing, setEditing] = useState(false);
 	const [confirming, setConfirming] = useState(false);
-	const folderDecks = decks.filter((d) => d.folderId === folder.id && !d.sharedFromDeckId);
+	const folderDecks = decks.filter(
+		(d) => d.folderId === folder.id && !d.sharedFromDeckId,
+	);
 	const {
 		attributes,
 		listeners,

@@ -50,11 +50,15 @@ export default function NotePanel() {
 		const pageId = selectedPage.id;
 
 		sendPresence(pageId).catch(() => {});
-		getPresence(pageId).then(setViewers).catch(() => {});
+		getPresence(pageId)
+			.then(setViewers)
+			.catch(() => {});
 
 		const interval = setInterval(() => {
 			sendPresence(pageId).catch(() => {});
-			getPresence(pageId).then(setViewers).catch(() => {});
+			getPresence(pageId)
+				.then(setViewers)
+				.catch(() => {});
 		}, 5000);
 
 		return () => clearInterval(interval);

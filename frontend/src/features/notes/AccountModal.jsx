@@ -107,7 +107,9 @@ function ChangeEmailPanel({ onBack }) {
 			</label>
 
 			<label className="flex flex-col gap-1">
-				<span className="text-sm font-medium text-title">Confirm new email</span>
+				<span className="text-sm font-medium text-title">
+					Confirm new email
+				</span>
 				<input
 					type="email"
 					value={confirmEmail}
@@ -265,7 +267,9 @@ function ChangePasswordPanel({ onBack }) {
 			</label>
 
 			<label className="flex flex-col gap-1">
-				<span className="text-sm font-medium text-title">Confirm new password</span>
+				<span className="text-sm font-medium text-title">
+					Confirm new password
+				</span>
 				<input
 					type="password"
 					value={confirmPassword}
@@ -316,14 +320,22 @@ function ChangeProfilePicPanel({ currentAvatar, onSave, onBack }) {
 				const canvas = document.createElement("canvas");
 				canvas.width = Math.round(img.width * scale);
 				canvas.height = Math.round(img.height * scale);
-				canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+				canvas
+					.getContext("2d")
+					.drawImage(img, 0, 0, canvas.width, canvas.height);
 				canvas.toBlob(
-					(blob) => (blob ? resolve(new File([blob], "avatar.jpg", { type: "image/jpeg" })) : reject(new Error("Compression failed"))),
+					(blob) =>
+						blob
+							? resolve(new File([blob], "avatar.jpg", { type: "image/jpeg" }))
+							: reject(new Error("Compression failed")),
 					"image/jpeg",
 					quality,
 				);
 			};
-			img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Could not load image")); };
+			img.onerror = () => {
+				URL.revokeObjectURL(objectUrl);
+				reject(new Error("Could not load image"));
+			};
 			img.src = objectUrl;
 		});
 	}

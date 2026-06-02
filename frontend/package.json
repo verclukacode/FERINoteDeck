@@ -8,6 +8,8 @@
 		"build": "vite build",
 		"lint": "eslint .",
 		"preview": "vite preview",
+		"test": "vitest run",
+		"test:coverage": "vitest run --coverage",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build"
 	},
@@ -22,6 +24,8 @@
 		"react-router-dom": "^7.15.1"
 	},
 	"devDependencies": {
+		"@vitest/coverage-v8": "^3.2.0",
+		"vitest": "^3.2.0",
 		"@eslint/js": "^10.0.1",
 		"@storybook/addon-docs": "^10.3.6",
 		"@storybook/react-vite": "^10.3.6",

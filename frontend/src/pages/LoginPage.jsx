@@ -44,7 +44,6 @@ function ForgotPasswordForm({ onBack }) {
 						value={resetEmail}
 						onChange={(e) => setResetEmail(e.target.value)}
 						className="rounded-full bg-bg px-4 py-3 text-sm text-title placeholder:text-body/50 outline-none"
-						autoFocus
 					/>
 				</div>
 			)}

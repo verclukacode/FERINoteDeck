@@ -15,8 +15,8 @@ import DeckFolderItem from "./DeckFolderItem.jsx";
 import DeckFolderPreview from "./DeckFolderPreview.jsx";
 import DeckPreview from "./DeckPreview.jsx";
 import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
-import SharedDeckItem from "./SharedDeckItem.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
+import SharedDeckItem from "./SharedDeckItem.jsx";
 
 // One DndContext drives both folder reordering and deck drag-and-drop
 // (within a folder and across folders).

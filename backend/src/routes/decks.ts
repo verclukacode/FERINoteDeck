@@ -48,17 +48,28 @@ router.get("/", async (req: Request, res: Response) => {
 	});
 
 	// For cloned decks, attach the original owner info via the invite record
-	const clonedIds = decks.map((d) => d.sharedFromDeckId).filter(Boolean) as string[];
+	const clonedIds = decks
+		.map((d) => d.sharedFromDeckId)
+		.filter(Boolean) as string[];
 	const invites = clonedIds.length
 		? await prisma.deckInvite.findMany({
-				where: { deckId: { in: clonedIds }, recipientId: uid, status: "accepted" },
-				select: { deckId: true, sender: { select: { username: true, avatarUrl: true, email: true } } },
+				where: {
+					deckId: { in: clonedIds },
+					recipientId: uid,
+					status: "accepted",
+				},
+				select: {
+					deckId: true,
+					sender: { select: { username: true, avatarUrl: true, email: true } },
+				},
 			})
 		: [];
 	const ownerMap = new Map(invites.map((i) => [i.deckId, i.sender]));
 
 	const result = decks.map((d) =>
-		d.sharedFromDeckId ? { ...d, _owner: ownerMap.get(d.sharedFromDeckId) ?? null } : d,
+		d.sharedFromDeckId
+			? { ...d, _owner: ownerMap.get(d.sharedFromDeckId) ?? null }
+			: d,
 	);
 
 	res.json(result);
@@ -239,7 +250,10 @@ router.get("/:id/stats/today", async (req: Request, res: Response) => {
 
 	const settings = await getOrCreateStudySettings(userId);
 	const now = Date.now();
-	const [startOfDay, endOfDay] = studyDayWindow(now, settings.newDayStartsAtHour);
+	const [startOfDay, endOfDay] = studyDayWindow(
+		now,
+		settings.newDayStartsAtHour,
+	);
 
 	const reviews = await prisma.review.findMany({
 		where: {

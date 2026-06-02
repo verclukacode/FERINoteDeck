@@ -31,12 +31,14 @@ function blocksToHtml(blocks, separatorImg) {
 	// Open/close wrapper divs to maintain continuous border-left
 	function setDepth(newDepth) {
 		while (currentDepth > newDepth) {
-			lines.push(`</div>`);
+			lines.push("</div>");
 			currentDepth--;
 		}
 		while (currentDepth < newDepth) {
 			currentDepth++;
-			lines.push(`<div style="border-left:2.5px solid #e5e5e5;padding-left:12px;margin-left:24px">`);
+			lines.push(
+				`<div style="border-left:2.5px solid #e5e5e5;padding-left:12px;margin-left:24px">`,
+			);
 		}
 	}
 
@@ -46,23 +48,37 @@ function blocksToHtml(blocks, separatorImg) {
 
 		setDepth(depth);
 
-		if (block.type === "h1") { underH1 = true; underH2 = false; }
-		else if (block.type === "h2") { underH2 = true; }
-		else if (block.type === "separator") { underH1 = false; underH2 = false; }
+		if (block.type === "h1") {
+			underH1 = true;
+			underH2 = false;
+		} else if (block.type === "h2") {
+			underH2 = true;
+		} else if (block.type === "separator") {
+			underH1 = false;
+			underH2 = false;
+		}
 
 		switch (block.type) {
 			case "h1":
-				lines.push(`<h1 style="font-size:24px;font-weight:700;margin:16px 0 4px">${inline(block.content)}</h1>`);
+				lines.push(
+					`<h1 style="font-size:24px;font-weight:700;margin:16px 0 4px">${inline(block.content)}</h1>`,
+				);
 				break;
 			case "h2":
-				lines.push(`<h2 style="font-size:18px;font-weight:600;margin:12px 0 4px">${inline(block.content)}</h2>`);
+				lines.push(
+					`<h2 style="font-size:18px;font-weight:600;margin:12px 0 4px">${inline(block.content)}</h2>`,
+				);
 				break;
 			case "bullet":
-				lines.push(`<div style="display:flex;gap:8px;margin:3px 0"><span>•</span><span>${inline(block.content)}</span></div>`);
+				lines.push(
+					`<div style="display:flex;gap:8px;margin:3px 0"><span>•</span><span>${inline(block.content)}</span></div>`,
+				);
 				break;
 			case "numbered":
 				numberedRun++;
-				lines.push(`<div style="display:flex;gap:8px;margin:3px 0"><span>${numberedRun}.</span><span>${inline(block.content)}</span></div>`);
+				lines.push(
+					`<div style="display:flex;gap:8px;margin:3px 0"><span>${numberedRun}.</span><span>${inline(block.content)}</span></div>`,
+				);
 				break;
 			case "task": {
 				const checked = !!block.checked;
@@ -71,10 +87,15 @@ function blocksToHtml(blocks, separatorImg) {
 
 				const addStrike = (html) =>
 					html.replace(/(?<=>|^)([^<]+)(?=<|$)/g, (m) =>
-						m.split("").map((c) => (/\s/.test(c) ? c : c + "̶")).join(""),
+						m
+							.split("")
+							.map((c) => (/\s/.test(c) ? c : `${c}̶`))
+							.join(""),
 					);
 
-				const textHtml = checked ? addStrike(inline(block.content)) : inline(block.content);
+				const textHtml = checked
+					? addStrike(inline(block.content))
+					: inline(block.content);
 				const textColor = checked ? "color:#777;" : "";
 
 				lines.push(`<table style="border-collapse:collapse;margin:4px 0"><tr>
@@ -84,11 +105,15 @@ function blocksToHtml(blocks, separatorImg) {
 				break;
 			}
 			case "separator":
-				lines.push(`<img src="${separatorImg}" style="width:100%;height:22px;margin:14px 0;display:block" />`);
+				lines.push(
+					`<img src="${separatorImg}" style="width:100%;height:22px;margin:14px 0;display:block" />`,
+				);
 				break;
 			case "image":
 				if (block.imageUrl) {
-					lines.push(`<div style="margin:8px 0"><img src="${block.imageUrl}" style="max-width:100%;border-radius:8px" /></div>`);
+					lines.push(
+						`<div style="margin:8px 0"><img src="${block.imageUrl}" style="max-width:100%;border-radius:8px" /></div>`,
+					);
 				}
 				break;
 			default:
@@ -111,13 +136,14 @@ function makeSeparatorImg() {
 	const W = 800 * DPR;
 	const H = 22 * DPR;
 	const c = document.createElement("canvas");
-	c.width = W; c.height = H;
+	c.width = W;
+	c.height = H;
 	const ctx = c.getContext("2d");
 	ctx.strokeStyle = "#c8c8c8";
 	ctx.lineWidth = 1.2;
 	ctx.lineCap = "round";
 	ctx.lineJoin = "round";
-	ctx.scale((W / 2000), DPR);
+	ctx.scale(W / 2000, DPR);
 	ctx.stroke(new Path2D(SQUIGGLE));
 	return c.toDataURL("image/png");
 }

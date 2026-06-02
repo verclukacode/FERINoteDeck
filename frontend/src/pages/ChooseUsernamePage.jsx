@@ -118,7 +118,6 @@ export default function ChooseUsernamePage() {
 								}
 								placeholder="your_username"
 								maxLength={20}
-								autoFocus
 								className="w-full rounded-full bg-bg py-3 pl-8 pr-4 text-sm text-title placeholder:text-body/50 outline-none"
 							/>
 						</div>

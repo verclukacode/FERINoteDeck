@@ -29,7 +29,9 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 	return (
 		<div className="border-b-2 border-border-soft px-5 py-3 flex flex-col gap-2">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-semibold uppercase tracking-wide text-body">Today</span>
+				<span className="text-xs font-semibold uppercase tracking-wide text-body">
+					Today
+				</span>
 				<button
 					type="button"
 					onClick={onOpenActivity}
@@ -40,12 +42,16 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 			</div>
 			<div className="flex items-center gap-2">
 				{hasStreak && (
-					<div className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${
-						streak.studiedToday ? "bg-folder-orange/15" : "bg-bg-secondary"
-					}`}>
+					<div
+						className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${
+							streak.studiedToday ? "bg-folder-orange/15" : "bg-bg-secondary"
+						}`}
+					>
 						<span className="text-xl">🔥</span>
 						<div>
-							<p className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}>
+							<p
+								className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}
+							>
 								{streak.streak} day{streak.streak !== 1 ? "s" : ""}
 							</p>
 							<p className="text-[10px] text-body mt-0.5">streak</p>
@@ -55,19 +61,25 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 				{hasStats && (
 					<>
 						<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
-							<span className="text-sm font-bold text-title">{stats.count}</span>
+							<span className="text-sm font-bold text-title">
+								{stats.count}
+							</span>
 							<span className="text-xs text-body">cards</span>
 						</div>
 						{stats.correctRate !== null && (
 							<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
-								<span className={`text-sm font-bold ${stats.correctRate >= 80 ? "text-folder-green" : stats.correctRate >= 50 ? "text-folder-blue" : "text-folder-red"}`}>
+								<span
+									className={`text-sm font-bold ${stats.correctRate >= 80 ? "text-folder-green" : stats.correctRate >= 50 ? "text-folder-blue" : "text-folder-red"}`}
+								>
 									{stats.correctRate}%
 								</span>
 								<span className="text-xs text-body">correct</span>
 							</div>
 						)}
 						<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
-							<span className="text-sm font-bold text-title">{formatTime(stats.totalMs)}</span>
+							<span className="text-sm font-bold text-title">
+								{formatTime(stats.totalMs)}
+							</span>
 							<span className="text-xs text-body">time</span>
 						</div>
 					</>
@@ -78,10 +90,10 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 }
 
 const STATE_CONFIG = [
-	{ key: "new",      label: "New",      color: "bg-folder-blue"   },
-	{ key: "learning", label: "Learning", color: "bg-[#ffbb00]"     },
+	{ key: "new", label: "New", color: "bg-folder-blue" },
+	{ key: "learning", label: "Learning", color: "bg-[#ffbb00]" },
 	{ key: "relearning", label: "Relearning", color: "bg-folder-orange" },
-	{ key: "review",   label: "Review",   color: "bg-folder-green"  },
+	{ key: "review", label: "Review", color: "bg-folder-green" },
 ];
 
 function CardStateBar({ cards }) {
@@ -111,7 +123,8 @@ function CardStateBar({ cards }) {
 					<div key={s.key} className="flex items-center gap-1.5">
 						<span className={`h-2 w-2 rounded-full ${s.color}`} />
 						<span className="text-xs text-body">
-							{s.label} <span className="font-semibold text-title">{counts[s.key]}</span>
+							{s.label}{" "}
+							<span className="font-semibold text-title">{counts[s.key]}</span>
 						</span>
 					</div>
 				))}
@@ -277,7 +290,11 @@ export default function DeckPanel() {
 			</div>
 
 			<CardStateBar cards={deckCards} />
-			<TodayStats stats={todayStats} streak={streak} onOpenActivity={() => setActivityOpen(true)} />
+			<TodayStats
+				stats={todayStats}
+				streak={streak}
+				onOpenActivity={() => setActivityOpen(true)}
+			/>
 
 			<div className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4">
 				{deckCards.map((card) => (
@@ -322,9 +339,7 @@ export default function DeckPanel() {
 					onClose={() => setLeaderboardOpen(false)}
 				/>
 			)}
-			{activityOpen && (
-				<ActivityModal onClose={() => setActivityOpen(false)} />
-			)}
+			{activityOpen && <ActivityModal onClose={() => setActivityOpen(false)} />}
 		</main>
 	);
 }

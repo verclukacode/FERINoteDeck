@@ -111,7 +111,10 @@ router.delete("/:id", async (req: Request, res: Response) => {
 	const uid = req.user?.uid ?? "";
 
 	const invite = await prisma.noteInvite.findFirst({
-		where: { id: String(req.params.id), OR: [{ senderId: uid }, { recipientId: uid }] },
+		where: {
+			id: String(req.params.id),
+			OR: [{ senderId: uid }, { recipientId: uid }],
+		},
 	});
 	if (!invite) {
 		return res.status(404).json({ error: "Invite not found" });

@@ -16,7 +16,10 @@ const MAX_QUERY_LEN = 200;
 
 // Score a single matched field. Earlier matches, prefix matches and exact
 // matches all rank higher than a generic substring hit.
-function scoreField(field: string | null | undefined, term: string): number {
+export function scoreField(
+	field: string | null | undefined,
+	term: string,
+): number {
 	if (!field) return 0;
 	const f = field.toLowerCase();
 	const i = f.indexOf(term);
@@ -27,7 +30,7 @@ function scoreField(field: string | null | undefined, term: string): number {
 }
 
 // Return a ~100-char window around the first occurrence of `term`.
-function snippet(text: string | null | undefined, term: string): string {
+export function snippet(text: string | null | undefined, term: string): string {
 	if (!text) return "";
 	const f = text.toLowerCase();
 	const i = f.indexOf(term);

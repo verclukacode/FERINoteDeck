@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -8,6 +9,24 @@ export default defineConfig({
 		port: 5173,
 		proxy: {
 			"/api": "http://localhost:3001",
+		},
+	},
+	test: {
+		environment: "node",
+		include: ["src/**/*.test.{js,jsx}"],
+		coverage: {
+			provider: "v8",
+			reporter: ["text", "lcov", "json-summary"],
+			include: [
+				"src/features/notes/editor/markdown.js",
+				"src/lib/constants.js",
+			],
+			thresholds: {
+				lines: 80,
+				functions: 80,
+				statements: 80,
+				branches: 70,
+			},
 		},
 	},
 });
