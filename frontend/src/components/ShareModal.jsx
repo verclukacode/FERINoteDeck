@@ -252,7 +252,7 @@ export default function ShareModal({
 					{usernameState === "not_found" && (
 						<span className="text-folder-red">User not found.</span>
 					)}
-				{usernameState &&
+					{usernameState &&
 						usernameState !== "checking" &&
 						usernameState !== "found" &&
 						usernameState !== "not_found" && (

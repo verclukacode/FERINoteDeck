@@ -145,10 +145,11 @@ export default function CreateFlashcardsModal({ page, onClose }) {
 					<>
 						<h2 className="px-1 text-2xl font-bold text-title">Save deck</h2>
 						<p className="mt-1 px-1 text-sm text-body">
-						{generated?.cards.length ?? 0} card
-						{(generated?.cards.length ?? 0) === 1 ? "" : "s"} ready. Pick a folder for{" "}
-						<span className="font-semibold text-title">
-							"{generated?.title}"
+							{generated?.cards.length ?? 0} card
+							{(generated?.cards.length ?? 0) === 1 ? "" : "s"} ready. Pick a
+							folder for{" "}
+							<span className="font-semibold text-title">
+								"{generated?.title}"
 							</span>
 							.
 						</p>
