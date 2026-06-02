@@ -86,23 +86,71 @@ router.get("/", async (req: Request, res: Response) => {
  *       400: { description: Folder not found }
  */
 router.post("/", async (req: Request, res: Response) => {
-	const { folderId, name } = req.body as { folderId?: string; name?: string };
+	const { folderId, name, cards } = req.body as {
+		folderId?: string;
+		name?: string;
+		cards?: Array<{ question?: string; answer?: string; type?: string }>;
+	};
+	const userId = req.user?.uid ?? "";
 	const folder = await prisma.flashcardFolder.findFirst({
-		where: { id: folderId, userId: req.user?.uid ?? "" },
+		where: { id: folderId, userId },
 	});
 	if (!folder) {
 		return res.status(400).json({ error: "Folder not found" });
 	}
 	const order = await prisma.deck.count({ where: { folderId } });
-	const deck = await prisma.deck.create({
-		data: {
-			userId: req.user?.uid ?? "",
-			folderId: folder.id,
-			name: (name ?? "").trim() || "New deck",
-			order,
-		},
+
+	const incomingCards = Array.isArray(cards) ? cards : [];
+	const result = await prisma.$transaction(async (tx) => {
+		const deck = await tx.deck.create({
+			data: {
+				userId,
+				folderId: folder.id,
+				name: (name ?? "").trim() || "New deck",
+				order,
+			},
+		});
+		if (incomingCards.length) {
+			await tx.flashCard.createMany({
+				data: incomingCards.map((c, i) => ({
+					userId,
+					deckId: deck.id,
+					type: typeof c.type === "string" ? c.type : "rate",
+					question: String(c.question ?? ""),
+					answer: String(c.answer ?? ""),
+					order: i,
+				})),
+			});
+		}
+		const createdCards = await tx.flashCard.findMany({
+			where: { deckId: deck.id },
+			// Strip BigInt scheduling fields from the response — matches the
+			// shape cloneDeckForUser returns so the frontend's addDeckFromClone
+			// can hydrate state uniformly.
+			select: {
+				id: true,
+				userId: true,
+				deckId: true,
+				type: true,
+				question: true,
+				answer: true,
+				order: true,
+				state: true,
+				createdAt: true,
+				updatedAt: true,
+			},
+			orderBy: { order: "asc" },
+		});
+		return { deck, cards: createdCards };
 	});
-	res.status(201).json(deck);
+
+	// Preserve existing single-deck contract when no cards are provided so
+	// existing callers (the "+ New deck" button) keep working unchanged.
+	if (incomingCards.length === 0) {
+		res.status(201).json(result.deck);
+	} else {
+		res.status(201).json(result);
+	}
 });
 
 /**

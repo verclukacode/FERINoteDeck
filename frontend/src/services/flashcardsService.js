@@ -57,8 +57,26 @@ export function listDecks() {
 	return apiRequest("/decks");
 }
 
-export function createDeck({ folderId, name }) {
-	return apiRequest("/decks", { method: "POST", body: { folderId, name } });
+export function createDeck({ folderId, name, cards }) {
+	const body = { folderId, name };
+	if (Array.isArray(cards) && cards.length) body.cards = cards;
+	return apiRequest("/decks", { method: "POST", body });
+}
+
+// Bulk-append cards to an existing deck (used by CSV import → "existing deck").
+export function bulkCreateCards({ deckId, cards }) {
+	return apiRequest("/cards/bulk", {
+		method: "POST",
+		body: { deckId, cards },
+	});
+}
+
+// AI deck generation: backend reads the page (owner or accepted invitee),
+// asks OpenAI for { cards: [{question, answer}] } and returns them
+// preview-only (nothing is persisted yet). Use createDeck with the returned
+// cards to commit the deck once the user picks a folder.
+export function generateDeckFromNote(pageId) {
+	return apiRequest(`/pages/${pageId}/generate-deck`, { method: "POST" });
 }
 
 export function updateDeck(id, patch) {

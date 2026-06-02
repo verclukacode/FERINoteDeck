@@ -3,6 +3,7 @@ import userProfilePic from "../../assets/userProfilePic.svg";
 import Icon from "../../components/Icon.jsx";
 import ShareModal from "../../components/ShareModal.jsx";
 import { getPresence, sendPresence } from "../../services/notesService.js";
+import CreateFlashcardsButton from "./CreateFlashcardsButton.jsx";
 import { useNotes } from "./NotesContext.jsx";
 import BlockEditor from "./editor/BlockEditor.jsx";
 import { exportNoteToPdf } from "./editor/exportPdf.js";
@@ -130,13 +131,7 @@ export default function NotePanel() {
 							<Icon name="paperplane" size={20} />
 						</button>
 					)}
-					<button
-						type="button"
-						className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-folder-purple/15 bg-folder-purple/15 px-5 text-[15px] font-semibold text-folder-purple"
-					>
-						<Icon name="flashcards" size={20} />
-						Create Flashcards
-					</button>
+					<CreateFlashcardsButton page={selectedPage} />
 				</div>
 			</div>
 			<div className="flex-1 overflow-y-auto py-6">

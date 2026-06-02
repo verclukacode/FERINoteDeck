@@ -111,8 +111,8 @@ a[target="_blank"][rel*="noopener"] {
 	position: fixed;
 	top: 50%;
 	left: 50%;
-	width: 920px;
-	height: 920px;
+	width: 1100px;
+	height: 1100px;
 	transform: translate(-50%, -50%);
 	border-radius: 50%;
 	background: conic-gradient(
@@ -125,6 +125,11 @@ a[target="_blank"][rel*="noopener"] {
 	);
 	filter: blur(80px);
 	opacity: 0.55;
+	/* Fade the edges of the conic disc to transparent so the circle's own
+	 * boundary isn't visible even with the blur. Mask is applied after the
+	 * filter, so it clips the already-blurred halo's outer ring. */
+	-webkit-mask: radial-gradient(circle, black 0%, black 35%, transparent 72%);
+	mask: radial-gradient(circle, black 0%, black 35%, transparent 72%);
 	animation: ai-halo-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) backwards,
 		ai-angle-spin 8s linear infinite;
 	z-index: 49;

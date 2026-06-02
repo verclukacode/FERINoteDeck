@@ -4,7 +4,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import userProfilePic from "../../assets/userProfilePic.svg";
 import ConfirmDialog from "../../components/ConfirmDialog.jsx";
 import ContextMenu from "../../components/ContextMenu.jsx";
@@ -15,6 +15,37 @@ import DeckFolderPreview from "./DeckFolderPreview.jsx";
 import DeckPreview from "./DeckPreview.jsx";
 import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
+import ImportCsvDialog from "./ImportCsvDialog.jsx";
+
+// Parse a `question;answer;card_type` CSV into card objects the deck API
+// accepts. Tolerates trailing newlines, empty lines, and a header row.
+// Trims each cell. card_type defaults to "rate" if missing or unrecognised.
+function parseCardsCsv(text) {
+	const rows = text
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0);
+	if (!rows.length) return [];
+
+	// Skip header if it literally says question;answer.
+	const first = rows[0].toLowerCase();
+	const start =
+		first.startsWith("question;") && first.includes("answer") ? 1 : 0;
+
+	const cards = [];
+	for (let i = start; i < rows.length; i++) {
+		const parts = rows[i].split(";").map((p) => p.trim());
+		const [question, answer, type] = parts;
+		if (!question || !answer) continue;
+		const lowerType = (type ?? "").toLowerCase();
+		cards.push({
+			question,
+			answer,
+			type: lowerType === "boolean" ? "boolean" : "rate",
+		});
+	}
+	return cards;
+}
 
 function DeckRow({ deck }) {
 	const { selectedDeckId, selectDeck, removeDeck, resetDeck, deckShares } =
@@ -149,9 +180,32 @@ export default function DeckFolderItem({ folder }) {
 	const { menu, open, close } = useContextMenu();
 	const [editing, setEditing] = useState(false);
 	const [confirming, setConfirming] = useState(false);
+	const [csvImport, setCsvImport] = useState(null);
+	const csvInputRef = useRef(null);
 	const folderDecks = decks.filter(
 		(d) => d.folderId === folder.id && !d.sharedFromDeckId,
 	);
+
+	async function handleCsvFile(e) {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file) return;
+		try {
+			const text = await file.text();
+			const cards = parseCardsCsv(text);
+			if (!cards.length) {
+				alert(
+					"No valid rows found. Each line must be `question;answer;card_type` (card_type is `rate` or `boolean`).",
+				);
+				return;
+			}
+			const baseName = file.name.replace(/\.[^.]+$/, "");
+			// Pop the dialog so the user can edit cards + choose destination.
+			setCsvImport({ cards, defaultName: baseName || "Imported deck" });
+		} catch (err) {
+			alert(`CSV import failed: ${err.message ?? err}`);
+		}
+	}
 	const {
 		attributes,
 		listeners,
@@ -242,6 +296,14 @@ export default function DeckFolderItem({ folder }) {
 							},
 						},
 						{
+							label: "Import CSV",
+							icon: "document",
+							onClick: () => {
+								csvInputRef.current?.click();
+								close();
+							},
+						},
+						{
 							label: "Delete folder",
 							icon: "trash",
 							danger: true,
@@ -253,6 +315,14 @@ export default function DeckFolderItem({ folder }) {
 					]}
 				/>
 			)}
+
+			<input
+				ref={csvInputRef}
+				type="file"
+				accept=".csv,text/csv,text/plain"
+				onChange={handleCsvFile}
+				className="hidden"
+			/>
 
 			{editing && (
 				<FlashcardFolderModal
@@ -270,6 +340,15 @@ export default function DeckFolderItem({ folder }) {
 						setConfirming(false);
 					}}
 					onCancel={() => setConfirming(false)}
+				/>
+			)}
+
+			{csvImport && (
+				<ImportCsvDialog
+					folderId={folder.id}
+					defaultDeckName={csvImport.defaultName}
+					initialCards={csvImport.cards}
+					onClose={() => setCsvImport(null)}
 				/>
 			)}
 		</div>

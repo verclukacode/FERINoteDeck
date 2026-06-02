@@ -13,6 +13,7 @@ import heading2 from "../assets/icons/heading2.svg?raw";
 import image from "../assets/icons/image.svg?raw";
 import listBullet from "../assets/icons/list-bullet.svg?raw";
 import listNumbered from "../assets/icons/list-numbered.svg?raw";
+import lock from "../assets/icons/lock.svg?raw";
 import paperplane from "../assets/icons/paperplane.svg?raw";
 import party from "../assets/icons/party.svg?raw";
 import plus from "../assets/icons/plus.svg?raw";
@@ -39,6 +40,7 @@ const ICONS = {
 	image,
 	"list-bullet": listBullet,
 	"list-numbered": listNumbered,
+	lock,
 	paperplane,
 	party,
 	plus,

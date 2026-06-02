@@ -1,5 +1,6 @@
 import { type Request, type Response, Router } from "express";
 import { extractImageUrls, isAllowedImageUrl } from "../lib/imageValidation";
+import { generateFlashcardsFromNote } from "../lib/openai";
 import { prisma } from "../lib/prisma";
 
 // In-memory presence: pageId → userId → { username, avatarUrl, lastSeen }
@@ -186,6 +187,58 @@ router.get("/:id/presence", async (req: Request, res: Response) => {
 		(v) => v.username !== presence.get(pageId)?.get(uid)?.username,
 	);
 	res.json(viewers);
+});
+
+/**
+ * @openapi
+ * /api/pages/{id}/generate-deck:
+ *   post:
+ *     summary: Generate a flashcard deck from this note (AI, tier-gated)
+ *     tags: [Pages]
+ *     responses:
+ *       200: { description: "{ title, cards } — preview, not saved yet" }
+ *       403: { description: Tier check failed (basic) }
+ *       404: { description: Page not found or no access }
+ *       503: { description: OPENAI_API_KEY not set }
+ */
+router.post("/:id/generate-deck", async (req: Request, res: Response) => {
+	if (!process.env.OPENAI_API_KEY) {
+		return res
+			.status(503)
+			.json({ error: "AI generation not configured on this server" });
+	}
+	const uid = req.user?.uid ?? "";
+	const account = await prisma.user.findUnique({
+		where: { id: uid },
+		select: { tier: true },
+	});
+	if (!account || account.tier === "basic") {
+		return res.status(403).json({
+			error: "AI generation requires a Pro or Premium account",
+		});
+	}
+
+	// Owner OR accepted-invite collaborator can generate a deck from a note.
+	const pageId = String(req.params.id);
+	const page = await prisma.page.findFirst({
+		where: {
+			id: pageId,
+			OR: [
+				{ userId: uid },
+				{ invites: { some: { recipientId: uid, status: "accepted" } } },
+			],
+		},
+		select: { id: true, title: true, content: true },
+	});
+	if (!page) return res.status(404).json({ error: "Page not found" });
+
+	try {
+		const cards = await generateFlashcardsFromNote(page.title, page.content);
+		res.json({ title: page.title, cards });
+	} catch (err) {
+		console.error("generate-deck failed", err);
+		res.status(500).json({ error: "Deck generation failed" });
+	}
 });
 
 router.get("/:id", async (req: Request, res: Response) => {

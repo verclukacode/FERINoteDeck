@@ -71,6 +71,67 @@ router.post("/", async (req: Request, res: Response) => {
 
 /**
  * @openapi
+ * /api/cards/bulk:
+ *   post:
+ *     summary: Bulk-create flashcards in an existing deck (CSV/AI import)
+ *     tags: [Cards]
+ *     responses:
+ *       201: { description: Array of created cards }
+ *       400: { description: Bad request }
+ *       404: { description: Deck not found }
+ */
+router.post("/bulk", async (req: Request, res: Response) => {
+	const { deckId, cards } = req.body as {
+		deckId?: string;
+		cards?: Array<{ question?: string; answer?: string; type?: string }>;
+	};
+	const userId = req.user?.uid ?? "";
+	const deck = await prisma.deck.findFirst({
+		where: { id: deckId, userId },
+		select: { id: true },
+	});
+	if (!deck) return res.status(404).json({ error: "Deck not found" });
+	const incoming = Array.isArray(cards) ? cards : [];
+	if (!incoming.length) {
+		return res.status(400).json({ error: "cards array is required" });
+	}
+
+	const baseOrder = await prisma.flashCard.count({
+		where: { deckId: deck.id },
+	});
+	await prisma.flashCard.createMany({
+		data: incoming.map((c, i) => ({
+			userId,
+			deckId: deck.id,
+			type: typeof c.type === "string" ? c.type : "rate",
+			question: String(c.question ?? ""),
+			answer: String(c.answer ?? ""),
+			order: baseOrder + i,
+		})),
+	});
+	// Return the new rows so the frontend can append to local state. Strip
+	// BigInt scheduling fields — these are fresh "new" cards anyway.
+	const created = await prisma.flashCard.findMany({
+		where: { deckId: deck.id, order: { gte: baseOrder } },
+		select: {
+			id: true,
+			userId: true,
+			deckId: true,
+			type: true,
+			question: true,
+			answer: true,
+			order: true,
+			state: true,
+			createdAt: true,
+			updatedAt: true,
+		},
+		orderBy: { order: "asc" },
+	});
+	res.status(201).json(created);
+});
+
+/**
+ * @openapi
  * /api/cards/{id}:
  *   patch:
  *     summary: Update a flashcard (type, question, answer)
