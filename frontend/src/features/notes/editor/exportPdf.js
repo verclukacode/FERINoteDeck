@@ -3,7 +3,7 @@ import { jsPDF } from "jspdf";
 import { parse } from "./markdown.js";
 
 // Build styled HTML string from blocks — mirrors the app's visual hierarchy
-function blocksToHtml(blocks) {
+function blocksToHtml(blocks, separatorImg) {
 	let underH1 = false;
 	let underH2 = false;
 	let numberedRun = 0;
@@ -73,7 +73,8 @@ function blocksToHtml(blocks) {
 				break;
 				}
 			case "separator":
-				lines.push(`<div style="border:none;border-top:2px dashed #ddd;margin:16px 0"></div>`);
+				lines.push(`<img src="${separatorImg}" style="width:100%;height:22px;margin:14px 0;display:block" />`);
+				break;
 				break;
 			case "image":
 				if (block.imageUrl) {
@@ -91,8 +92,27 @@ function blocksToHtml(blocks) {
 	return lines.join("\n");
 }
 
+import { SQUIGGLE } from "./dividerShape.js";
+
+function makeSeparatorImg() {
+	const DPR = 3; // 3x resolution
+	const W = 800 * DPR;
+	const H = 22 * DPR;
+	const c = document.createElement("canvas");
+	c.width = W; c.height = H;
+	const ctx = c.getContext("2d");
+	ctx.strokeStyle = "#c8c8c8";
+	ctx.lineWidth = 1.2;
+	ctx.lineCap = "round";
+	ctx.lineJoin = "round";
+	ctx.scale((W / 2000), DPR);
+	ctx.stroke(new Path2D(SQUIGGLE));
+	return c.toDataURL("image/png");
+}
+
 export async function exportNoteToPdf(page) {
 	const blocks = parse(page.content || "");
+	const separatorImg = makeSeparatorImg();
 
 	// Build an off-screen div with the note content
 	const container = document.createElement("div");
@@ -113,7 +133,7 @@ export async function exportNoteToPdf(page) {
 	container.innerHTML = `
 		<h1 style="font-size:28px;font-weight:700;margin:0 0 12px">${page.title || "Untitled"}</h1>
 		<hr style="border:none;border-top:1px solid #ddd;margin:0 0 20px" />
-		${blocksToHtml(blocks)}
+		${blocksToHtml(blocks, separatorImg)}
 	`;
 
 	document.body.appendChild(container);
