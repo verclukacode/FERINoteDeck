@@ -2,20 +2,20 @@ import { describe, expect, it } from "vitest";
 import { postAuthDest } from "./postAuthDest.js";
 
 describe("postAuthDest", () => {
-	it("returns '/' when location is null", () => {
-		expect(postAuthDest(null)).toBe("/");
+	it("returns '/app' when location is null", () => {
+		expect(postAuthDest(null)).toBe("/app");
 	});
 
-	it("returns '/' when location is undefined", () => {
-		expect(postAuthDest(undefined)).toBe("/");
+	it("returns '/app' when location is undefined", () => {
+		expect(postAuthDest(undefined)).toBe("/app");
 	});
 
-	it("returns '/' when location has no state", () => {
-		expect(postAuthDest({})).toBe("/");
+	it("returns '/app' when location has no state", () => {
+		expect(postAuthDest({})).toBe("/app");
 	});
 
-	it("returns '/' when state has no from", () => {
-		expect(postAuthDest({ state: {} })).toBe("/");
+	it("returns '/app' when state has no from", () => {
+		expect(postAuthDest({ state: {} })).toBe("/app");
 	});
 
 	it("returns the pathname when from has only a pathname", () => {
