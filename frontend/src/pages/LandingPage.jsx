@@ -26,7 +26,14 @@ function Navbar() {
 	);
 }
 
-function Screenshot({ src, alt, zoom = "center", scale, origin = "center center", className = "" }) {
+function Screenshot({
+	src,
+	alt,
+	zoom = "center",
+	scale,
+	origin = "center center",
+	className = "",
+}) {
 	return (
 		<div
 			className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gray-50 ${className}`}
@@ -38,7 +45,9 @@ function Screenshot({ src, alt, zoom = "center", scale, origin = "center center"
 				className="w-full h-full object-cover"
 				style={{
 					objectPosition: zoom,
-					...(scale ? { transform: `scale(${scale})`, transformOrigin: origin } : {}),
+					...(scale
+						? { transform: `scale(${scale})`, transformOrigin: origin }
+						: {}),
 				}}
 				onError={(e) => {
 					e.target.style.display = "none";
@@ -107,7 +116,9 @@ function FeatureSection({
 								</div>
 								<div>
 									<p className="font-semibold text-gray-900">{item.title}</p>
-									<p className="text-sm text-gray-500 mt-0.5">{item.description}</p>
+									<p className="text-sm text-gray-500 mt-0.5">
+										{item.description}
+									</p>
 								</div>
 							</button>
 						))}
@@ -145,21 +156,24 @@ export default function LandingPage() {
 			{/* Hero */}
 			<section
 				className="pt-32 pb-20 px-6 text-center"
-				style={{ background: "linear-gradient(160deg, #fff8f5 0%, #f0f4ff 50%, #fff 100%)" }}
+				style={{
+					background:
+						"linear-gradient(160deg, #fff8f5 0%, #f0f4ff 50%, #fff 100%)",
+				}}
 			>
 				<div className="max-w-3xl mx-auto flex flex-col items-center gap-6">
 					<span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-sm font-semibold text-orange-500">
 						✦ Your all-in-one study companion
 					</span>
 					<h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-tight">
-						Notes, flashcards{" "}
-						<span style={{ color: "#f4845f" }}>and more</span>
+						Notes, flashcards <span style={{ color: "#f4845f" }}>and more</span>
 						<br />
 						in one place
 					</h1>
 					<p className="text-xl text-gray-500 max-w-xl leading-relaxed">
 						Write rich notes, study with spaced repetition flashcards, generate
-						content with AI, and collaborate with your classmates — all in NoteDeck.
+						content with AI, and collaborate with your classmates — all in
+						NoteDeck.
 					</p>
 					<div className="flex flex-col sm:flex-row gap-3 mt-2">
 						<Link
@@ -188,7 +202,9 @@ export default function LandingPage() {
 							src="/screenshots/hero.png"
 							alt="NoteDeck app"
 							className="w-full object-cover object-top"
-							onError={(e) => { e.target.style.display = "none"; }}
+							onError={(e) => {
+								e.target.style.display = "none";
+							}}
 						/>
 						<div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
 					</div>
@@ -207,23 +223,68 @@ export default function LandingPage() {
 				color="#7c8ff5"
 				description="Write structured, beautiful notes that help you truly understand — not just memorize."
 				items={[
-					{ icon: "📝", title: "Block-based editor", description: "Text, headings, bullet & numbered lists, checklists, images and separators.", screenshot: "/screenshots/notes-editor.png", zoom: "top left" },
-					{ icon: "📁", title: "Color-coded folders", description: "Keep all your notes organized in a structure that makes sense to you.", screenshot: "/screenshots/notes-folders.png", zoom: "top left" },
-					{ icon: "📄", title: "Export to PDF", description: "Download any note as a clean PDF with one click.", screenshot: "/screenshots/notes-pdf.png", zoom: "top center" },
+					{
+						icon: "📝",
+						title: "Block-based editor",
+						description:
+							"Text, headings, bullet & numbered lists, checklists, images and separators.",
+						screenshot: "/screenshots/notes-editor.png",
+						zoom: "top left",
+					},
+					{
+						icon: "📁",
+						title: "Color-coded folders",
+						description:
+							"Keep all your notes organized in a structure that makes sense to you.",
+						screenshot: "/screenshots/notes-folders.png",
+						zoom: "top left",
+					},
+					{
+						icon: "📄",
+						title: "Export to PDF",
+						description: "Download any note as a clean PDF with one click.",
+						screenshot: "/screenshots/notes-pdf.png",
+						zoom: "top center",
+					},
 				]}
 			/>
 
 			{/* Flashcards */}
-			<section style={{ background: "linear-gradient(135deg, #f8f9ff 0%, #fff5f2 100%)" }}>
+			<section
+				style={{
+					background: "linear-gradient(135deg, #f8f9ff 0%, #fff5f2 100%)",
+				}}
+			>
 				<FeatureSection
 					coloredWord="Flashcards"
 					titleRest="that make you remember"
 					color="#f4845f"
 					description="Study smarter with a proven spaced repetition system. NoteDeck shows you each card at exactly the right moment."
 					items={[
-						{ icon: "🧠", title: "Anki-style SM-2 algorithm", description: "Cards come back at the perfect interval — right before you forget.", screenshot: "/screenshots/flashcards-deck.png", zoom: "top center" },
-						{ icon: "🔥", title: "Streak & daily stats", description: "Track your streak, accuracy and time to stay motivated.", screenshot: "/screenshots/flashcards-stats.png", zoom: "top center" },
-						{ icon: "✅", title: "Rate 1–4 or True/False", description: "Two card types for every kind of knowledge you need to learn.", screenshot: "/screenshots/flashcards-study.png", zoom: "top center" },
+						{
+							icon: "🧠",
+							title: "Anki-style SM-2 algorithm",
+							description:
+								"Cards come back at the perfect interval — right before you forget.",
+							screenshot: "/screenshots/flashcards-deck.png",
+							zoom: "top center",
+						},
+						{
+							icon: "🔥",
+							title: "Streak & daily stats",
+							description:
+								"Track your streak, accuracy and time to stay motivated.",
+							screenshot: "/screenshots/flashcards-stats.png",
+							zoom: "top center",
+						},
+						{
+							icon: "✅",
+							title: "Rate 1–4 or True/False",
+							description:
+								"Two card types for every kind of knowledge you need to learn.",
+							screenshot: "/screenshots/flashcards-study.png",
+							zoom: "top center",
+						},
 					]}
 					reverse={true}
 				/>
@@ -236,23 +297,71 @@ export default function LandingPage() {
 				color="#9b6cf5"
 				description="Let AI handle the boring parts — uploading files, creating flashcards and building test decks — so you can focus on learning."
 				items={[
-					{ icon: "✨", title: "Generate notes from files", description: "Upload PDF, DOCX, PPTX or images and get a structured note in seconds.", screenshot: "/screenshots/ai-import.png", zoom: "center center" },
-					{ icon: "🃏", title: "Create flashcards from notes", description: "One click turns any note into a ready-to-study flashcard deck.", screenshot: "/screenshots/ai-flashcards.png", zoom: "center center" },
-					{ icon: "📋", title: "Generate test decks", description: "Combine notes, decks and files into one comprehensive test.", screenshot: "/screenshots/generate-test.png", zoom: "center center" },
+					{
+						icon: "✨",
+						title: "Generate notes from files",
+						description:
+							"Upload PDF, DOCX, PPTX or images and get a structured note in seconds.",
+						screenshot: "/screenshots/ai-import.png",
+						zoom: "center center",
+					},
+					{
+						icon: "🃏",
+						title: "Create flashcards from notes",
+						description:
+							"One click turns any note into a ready-to-study flashcard deck.",
+						screenshot: "/screenshots/ai-flashcards.png",
+						zoom: "center center",
+					},
+					{
+						icon: "📋",
+						title: "Generate test decks",
+						description:
+							"Combine notes, decks and files into one comprehensive test.",
+						screenshot: "/screenshots/generate-test.png",
+						zoom: "center center",
+					},
 				]}
 			/>
 
 			{/* Sharing */}
-			<section style={{ background: "linear-gradient(135deg, #fff8f0 0%, #f0f4ff 100%)" }}>
+			<section
+				style={{
+					background: "linear-gradient(135deg, #fff8f0 0%, #f0f4ff 100%)",
+				}}
+			>
 				<FeatureSection
 					coloredWord="Sharing"
 					titleRest="built for students"
 					color="#f5a623"
 					description="Learning is better together. Share notes and decks directly with classmates or publish them for the whole community."
 					items={[
-						{ icon: "👤", title: "Direct sharing by @username", description: "Send a note or deck to any user — they can view and edit it.", screenshot: "/screenshots/sharing.png", zoom: "center top" },
-						{ icon: "🌍", title: "Publish to the Marketplace", description: "Make your best notes public so others can discover and clone them.", screenshot: "/screenshots/marketplace.png", zoom: "top center", scale: 1.65, origin: "38% 42%" },
-						{ icon: "🔔", title: "Notification inbox", description: "Accept or decline incoming note and deck invites from one place.", screenshot: "/screenshots/notifications.png", zoom: "center center" },
+						{
+							icon: "👤",
+							title: "Direct sharing by @username",
+							description:
+								"Send a note or deck to any user — they can view and edit it.",
+							screenshot: "/screenshots/sharing.png",
+							zoom: "center top",
+						},
+						{
+							icon: "🌍",
+							title: "Publish to the Marketplace",
+							description:
+								"Make your best notes public so others can discover and clone them.",
+							screenshot: "/screenshots/marketplace.png",
+							zoom: "top center",
+							scale: 1.65,
+							origin: "38% 42%",
+						},
+						{
+							icon: "🔔",
+							title: "Notification inbox",
+							description:
+								"Accept or decline incoming note and deck invites from one place.",
+							screenshot: "/screenshots/notifications.png",
+							zoom: "center center",
+						},
 					]}
 					reverse={true}
 				/>
@@ -265,9 +374,31 @@ export default function LandingPage() {
 				color="#4caf7d"
 				description="Browse thousands of notes and flashcard decks created by other students. Find exactly what you need and clone it instantly."
 				items={[
-					{ icon: "🔍", title: "Search by title or @username", description: "Find public notes and decks in seconds.", screenshot: "/screenshots/marketplace.png", zoom: "top center", scale: 1.65, origin: "38% 42%" },
-					{ icon: "👁", title: "Preview before cloning", description: "Read the full note or browse cards before adding to your workspace.", screenshot: "/screenshots/marketplace-preview.png", zoom: "top center" },
-					{ icon: "⚡", title: "One-click clone", description: "Add any public note or deck directly into your folders.", screenshot: "/screenshots/marketplace-clone.png", zoom: "top center" },
+					{
+						icon: "🔍",
+						title: "Search by title or @username",
+						description: "Find public notes and decks in seconds.",
+						screenshot: "/screenshots/marketplace.png",
+						zoom: "top center",
+						scale: 1.65,
+						origin: "38% 42%",
+					},
+					{
+						icon: "👁",
+						title: "Preview before cloning",
+						description:
+							"Read the full note or browse cards before adding to your workspace.",
+						screenshot: "/screenshots/marketplace-preview.png",
+						zoom: "top center",
+					},
+					{
+						icon: "⚡",
+						title: "One-click clone",
+						description:
+							"Add any public note or deck directly into your folders.",
+						screenshot: "/screenshots/marketplace-clone.png",
+						zoom: "top center",
+					},
 				]}
 			/>
 
@@ -278,9 +409,12 @@ export default function LandingPage() {
 						<span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-red-50 text-red-400">
 							Calendar
 						</span>
-						<h3 className="text-2xl font-bold text-gray-900">Never miss a deadline</h3>
+						<h3 className="text-2xl font-bold text-gray-900">
+							Never miss a deadline
+						</h3>
 						<p className="text-gray-500">
-							Track exams, deadlines and events with a color-coded calendar. Get upcoming event warnings straight in the app.
+							Track exams, deadlines and events with a color-coded calendar. Get
+							upcoming event warnings straight in the app.
 						</p>
 						<Screenshot
 							src="/screenshots/calendar.png"
@@ -293,9 +427,12 @@ export default function LandingPage() {
 						<span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-purple-50 text-purple-400">
 							AI Chat
 						</span>
-						<h3 className="text-2xl font-bold text-gray-900">Ask anything about your notes</h3>
+						<h3 className="text-2xl font-bold text-gray-900">
+							Ask anything about your notes
+						</h3>
 						<p className="text-gray-500">
-							Chat with AI directly in the context of your note. Get explanations, summaries and deeper insights instantly.
+							Chat with AI directly in the context of your note. Get
+							explanations, summaries and deeper insights instantly.
 						</p>
 						<Screenshot
 							src="/screenshots/chat.png"
@@ -310,7 +447,9 @@ export default function LandingPage() {
 			{/* Final CTA */}
 			<section
 				className="py-24 px-6 text-center"
-				style={{ background: "linear-gradient(160deg, #fff8f5 0%, #f0f4ff 100%)" }}
+				style={{
+					background: "linear-gradient(160deg, #fff8f5 0%, #f0f4ff 100%)",
+				}}
 			>
 				<div className="max-w-2xl mx-auto flex flex-col items-center gap-6">
 					<img src="/favicon.svg" alt="NoteDeck" className="w-16 h-16" />
@@ -318,7 +457,8 @@ export default function LandingPage() {
 						Start learning smarter today
 					</h2>
 					<p className="text-lg text-gray-500">
-						Join NoteDeck and bring your notes, flashcards and study schedule together.
+						Join NoteDeck and bring your notes, flashcards and study schedule
+						together.
 					</p>
 					<Link
 						to="/register"
