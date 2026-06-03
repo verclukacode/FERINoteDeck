@@ -314,15 +314,27 @@ NOTE TITLE: {{title}}
 NOTE CONTENT:
 {{content}}`;
 
+// Pure helper — extracted so it can be unit-tested without hitting OpenAI.
+// "(this note is empty)" placeholder keeps the assistant from confidently
+// answering when the note has no body. Content is substituted before title so
+// a user-controlled title containing "{{content}}" stays literal instead of
+// hijacking the slot.
+export function buildChatSystemPrompt(
+	noteTitle: string,
+	noteContent: string,
+): string {
+	return CHAT_SYSTEM_PROMPT_TEMPLATE.replace(
+		"{{content}}",
+		noteContent || "(this note is empty)",
+	).replace("{{title}}", noteTitle);
+}
+
 export async function* chatAboutNoteStream(
 	noteTitle: string,
 	noteContent: string,
 	history: ChatMessage[],
 ): AsyncGenerator<string> {
-	const system = CHAT_SYSTEM_PROMPT_TEMPLATE.replace(
-		"{{title}}",
-		noteTitle,
-	).replace("{{content}}", noteContent || "(this note is empty)");
+	const system = buildChatSystemPrompt(noteTitle, noteContent);
 	const stream = await getClient().chat.completions.create({
 		model: "gpt-4o-mini",
 		stream: true,

@@ -245,9 +245,66 @@ router.post("/:id/generate-deck", async (req: Request, res: Response) => {
 	}
 });
 
-const CHAT_MAX_MESSAGES = 40;
-const CHAT_MAX_CHARS = 4000;
-const SENTINEL = "<<<NoteDeckMD>>>";
+export const CHAT_MAX_MESSAGES = 40;
+export const CHAT_MAX_CHARS = 4000;
+export const SENTINEL = "<<<NoteDeckMD>>>";
+
+// Strip the editor's content sentinel and surrounding whitespace before the
+// note body becomes part of the OpenAI system prompt.
+export function stripContentSentinel(content: string): string {
+	return content.split(SENTINEL).join("").trim();
+}
+
+export type ChatValidationResult =
+	| { ok: true; messages: ChatMessage[] }
+	| { ok: false; error: string };
+
+// Pure validator for the POST /chat body. Caps total turns + per-message
+// length and rejects empty / wrong-role messages. Returns a typed result so
+// the route handler can map a single { ok: false } into a 400.
+export function validateChatMessages(raw: unknown): ChatValidationResult {
+	if (!Array.isArray(raw)) {
+		return { ok: false, error: "messages must be an array" };
+	}
+	if (raw.length === 0) {
+		return { ok: false, error: "messages cannot be empty" };
+	}
+	if (raw.length > CHAT_MAX_MESSAGES) {
+		return {
+			ok: false,
+			error: `Conversation limit reached (${CHAT_MAX_MESSAGES} turns)`,
+		};
+	}
+	const messages: ChatMessage[] = [];
+	for (const m of raw) {
+		if (
+			!m ||
+			typeof m !== "object" ||
+			((m as { role?: unknown }).role !== "user" &&
+				(m as { role?: unknown }).role !== "assistant")
+		) {
+			return {
+				ok: false,
+				error: "Each message must have role user or assistant",
+			};
+		}
+		const content = String((m as { content?: unknown }).content ?? "");
+		if (!content.trim()) {
+			return { ok: false, error: "Message content cannot be empty" };
+		}
+		if (content.length > CHAT_MAX_CHARS) {
+			return {
+				ok: false,
+				error: `Message exceeds ${CHAT_MAX_CHARS} characters`,
+			};
+		}
+		messages.push({
+			role: (m as { role: "user" | "assistant" }).role,
+			content,
+		});
+	}
+	return { ok: true, messages };
+}
 
 /**
  * @openapi
@@ -292,46 +349,15 @@ router.post("/:id/chat", async (req: Request, res: Response) => {
 	});
 	if (!page) return res.status(404).json({ error: "Page not found" });
 
-	const raw = (req.body as { messages?: unknown }).messages;
-	if (!Array.isArray(raw)) {
-		return res.status(400).json({ error: "messages must be an array" });
+	const validation = validateChatMessages(
+		(req.body as { messages?: unknown }).messages,
+	);
+	if (!validation.ok) {
+		return res.status(400).json({ error: validation.error });
 	}
-	if (raw.length === 0) {
-		return res.status(400).json({ error: "messages cannot be empty" });
-	}
-	if (raw.length > CHAT_MAX_MESSAGES) {
-		return res.status(400).json({
-			error: `Conversation limit reached (${CHAT_MAX_MESSAGES} turns)`,
-		});
-	}
-	const messages: ChatMessage[] = [];
-	for (const m of raw) {
-		if (
-			!m ||
-			typeof m !== "object" ||
-			((m as { role?: unknown }).role !== "user" &&
-				(m as { role?: unknown }).role !== "assistant")
-		) {
-			return res
-				.status(400)
-				.json({ error: "Each message must have role user or assistant" });
-		}
-		const content = String((m as { content?: unknown }).content ?? "");
-		if (!content.trim()) {
-			return res.status(400).json({ error: "Message content cannot be empty" });
-		}
-		if (content.length > CHAT_MAX_CHARS) {
-			return res.status(400).json({
-				error: `Message exceeds ${CHAT_MAX_CHARS} characters`,
-			});
-		}
-		messages.push({
-			role: (m as { role: "user" | "assistant" }).role,
-			content,
-		});
-	}
+	const { messages } = validation;
 
-	const strippedContent = page.content.split(SENTINEL).join("").trim();
+	const strippedContent = stripContentSentinel(page.content);
 
 	res.setHeader("Content-Type", "text/plain; charset=utf-8");
 	res.setHeader("Cache-Control", "no-cache, no-transform");
