@@ -32,8 +32,12 @@ Per-workspace (if needed):
 - `yarn workspace notedeck-frontend build` — frontend only (Vite build)
 - `yarn workspace notedeck-frontend storybook` — Storybook only
 - `yarn workspace notedeck-frontend lint` — ESLint (project-wide lint/format is Biome — see below)
+- `yarn workspace notedeck-backend test` — backend tests only (Vitest)
+- `yarn workspace notedeck-frontend test` — frontend tests only (Vitest)
 
-There is no test runner configured yet on either side.
+Root shortcuts:
+- `yarn test` — run all Vitest tests across both workspaces
+- `yarn test:coverage` — tests + v8 coverage report (used by CI / SonarCloud)
 
 Yarn 4 (via Corepack); `.yarnrc.yml` pins `nodeLinker: node-modules` so Vite/Storybook/Biome resolve normally (not PnP).
 

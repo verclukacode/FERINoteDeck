@@ -25,7 +25,7 @@ Firebase Authentication.
 
 ## Getting started
 
-**Prerequisites**: Node.js ≥ 18, a local MySQL server, and a Firebase project.
+**Prerequisites**: Node.js ≥ 18, Docker (for the MySQL container), and a Firebase project.
 Full setup (MySQL user/db, Prisma, Firebase service account + web config) is in
 **[backend/docs/SETUP.md](backend/docs/SETUP.md)** — start there.
 
@@ -49,9 +49,11 @@ yarn dev                                         # backend + frontend + Storyboo
 From the **repo root**:
 
 ```bash
-yarn dev        # backend (tsx watch), frontend (Vite), Storybook — concurrently
-yarn build      # compile backend TS (prisma generate + tsc) + Vite production build
-yarn lint       # Biome checks across the whole monorepo
+yarn dev              # backend (tsx watch), frontend (Vite), Storybook — concurrently
+yarn build            # compile backend TS (prisma generate + tsc) + Vite production build
+yarn lint             # Biome checks across the whole monorepo
+yarn test             # run all Vitest tests (backend + frontend)
+yarn test:coverage    # tests + v8 coverage report (used by CI / SonarCloud)
 ```
 
 Per workspace:
@@ -78,7 +80,7 @@ FERINoteDeck/
 │       ├── index.ts           # Express app + Swagger + route mounting
 │       ├── lib/               # prisma client, firebase, srs (SM-2), serialize
 │       ├── middleware/        # requireAuth (Firebase token)
-│       └── routes/            # folders, pages, images, users, flashcard-folders, decks, cards, marketplace, search
+│       └── routes/            # folders, pages, images, users, flashcard-folders, decks, cards, invites, deck-invites, calendar-tags, calendar-events, marketplace, import, search
 └── frontend/
     ├── ARCHITECTURE.md        # frontend src/ layout
     ├── docs/                  # editor.md, flashcards.md, marketplace.md, search.md

@@ -14,7 +14,7 @@ no per-block persistence. Code lives in `src/features/notes/editor/`.
 | `bullet` | Bullet list item | `- text` |
 | `numbered` | Numbered list item | `1. text` (number = position in the run) |
 | `task` | Checklist item | `- [ ] text` / `- [x] text` |
-| `image` | Image (base64) | `![caption](data:...)` |
+| `image` | Image | `![caption](/api/images/…)` |
 | `separator` | Hand-drawn divider | `---` |
 
 `text`, `bullet`, `numbered` and `task` support inline **bold** (`**…**`) and
@@ -36,8 +36,9 @@ auto-detected URL links. Headings are plain text.
 - **Links** — URLs colour automatically; Cmd/Ctrl+click opens them.
 - **Alt+↑ / Alt+↓** — move the current block up/down.
 - **Checklist** — click the checkbox; checked items show strikethrough.
-- **Image** — inserted via the slash menu; upload a file (max ~1.5 MB) — it is embedded
-  as a base64 data URL. There is no image hosting yet, so very large images are rejected.
+- **Image** — inserted via the slash menu; upload a file — it is uploaded to
+  `/api/images` and stored server-side; the markdown holds a `![caption](/api/images/…)`
+  URL. Very large images are rejected.
 
 ## Storage format
 
@@ -61,10 +62,6 @@ NoteDeck editor content:
 - **Round-trip escaping** — a plain `text` block whose line would otherwise look like a
   marker (e.g. you literally type `# hello`) is saved with a leading backslash
   (`\# hello`) and un-escaped on load, so it stays plain text across reloads.
-
-Because there is no backend yet, the markdown lives in `localStorage` (seeded from
-`data/seed.js`). Swapping in a real backend is still a one-file change in
-`notesService.js`.
 
 ## Files
 
