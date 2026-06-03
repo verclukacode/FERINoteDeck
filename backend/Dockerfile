@@ -9,8 +9,10 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 # Copy prisma schema so postinstall (prisma generate) can find it
 COPY backend/prisma ./backend/prisma
-RUN yarn install --frozen-lockfile \
-   # Ensure the dir exists even when yarn hoists everything to root
+# --mount=type=cache shares the Yarn download cache across stages and rebuilds,
+# so packages are unzipped from disk instead of re-downloaded every time.
+RUN --mount=type=cache,target=/root/.yarn,sharing=locked \
+   YARN_CACHE_FOLDER=/root/.yarn yarn install --frozen-lockfile \
    && mkdir -p backend/node_modules
 
 # ---- Stage 1b: production-only deps (no devDependencies) ----
@@ -21,7 +23,9 @@ COPY package.json yarn.lock .yarnrc.yml ./
 COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 COPY backend/prisma ./backend/prisma
-RUN yarn install --frozen-lockfile --production \
+# Reuses the same Yarn cache populated by the deps stage above.
+RUN --mount=type=cache,target=/root/.yarn,sharing=locked \
+   YARN_CACHE_FOLDER=/root/.yarn yarn install --frozen-lockfile --production \
    && mkdir -p backend/node_modules
 
 # ---- Stage 2: compile TypeScript ----

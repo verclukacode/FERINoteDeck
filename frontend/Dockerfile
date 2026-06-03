@@ -9,7 +9,10 @@ COPY backend/package.json ./backend/
 COPY frontend/package.json ./frontend/
 # prisma schema is required by backend's postinstall (prisma generate)
 COPY backend/prisma ./backend/prisma
-RUN yarn install --immutable
+# --mount=type=cache shares the Yarn download cache across rebuilds so packages
+# are read from disk instead of re-downloaded when yarn.lock hasn't changed.
+RUN --mount=type=cache,target=/root/.yarn,sharing=locked \
+   YARN_CACHE_FOLDER=/root/.yarn yarn install --immutable
 COPY frontend/ ./frontend/
 
 # Firebase config is baked in at build time via Vite env vars
