@@ -20,6 +20,7 @@ export default defineConfig({
 			include: [
 				"src/features/notes/editor/markdown.js",
 				"src/features/notes/editor/blockModel.js",
+				"src/features/notes/editor/inlineFormat.js",
 				"src/features/auth/firebaseError.js",
 				"src/features/marketplace/marketplaceLink.js",
 				"src/lib/constants.js",
