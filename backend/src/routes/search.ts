@@ -80,7 +80,7 @@ router.get("/", async (req: Request, res: Response) => {
 	}
 	const term = raw.toLowerCase();
 
-	const [pages, decks, cards] = await Promise.all([
+	const [pages, decks, cards, sharedInvites] = await Promise.all([
 		prisma.page.findMany({
 			where: {
 				userId,
@@ -113,6 +113,19 @@ router.get("/", async (req: Request, res: Response) => {
 			orderBy: { updatedAt: "desc" },
 			take: PER_KIND_FETCH,
 		}),
+		prisma.noteInvite.findMany({
+			where: {
+				recipientId: userId,
+				status: "accepted",
+				page: {
+					OR: [{ title: { contains: raw } }, { content: { contains: raw } }],
+				},
+			},
+			select: {
+				page: { select: { id: true, title: true, content: true } },
+			},
+			take: PER_KIND_FETCH,
+		}),
 	]);
 
 	const results: Result[] = [];
@@ -128,6 +141,21 @@ router.get("/", async (req: Request, res: Response) => {
 			title: p.title,
 			subtitle: contentScore > 0 ? snippet(p.content, term) : "",
 			folderId: p.folderId,
+			score,
+		});
+	}
+
+	for (const inv of sharedInvites) {
+		const p = inv.page;
+		const titleScore = scoreField(p.title, term) * 5;
+		const contentScore = scoreField(p.content, term);
+		const score = titleScore + contentScore;
+		if (!score) continue;
+		results.push({
+			kind: "note",
+			id: p.id,
+			title: p.title,
+			subtitle: contentScore > 0 ? snippet(p.content, term) : "",
 			score,
 		});
 	}
