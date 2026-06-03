@@ -170,6 +170,35 @@ export function listSharedPages() {
 	return apiRequest("/pages/shared");
 }
 
+// Stream a chat turn about a note. The backend adds the note context server-side,
+// so the client only sends user/assistant turns. Tier-gated (basic → 403).
+// `onChunk(text)` fires for each token batch as it arrives.
+export async function chatWithNoteStream(pageId, messages, onChunk, signal) {
+	const headers = await authHeader();
+	headers["Content-Type"] = "application/json";
+	const res = await fetch(`${BASE}/pages/${pageId}/chat`, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({ messages }),
+		signal,
+	});
+	if (!res.ok) {
+		const data = await res.json().catch(() => null);
+		const err = new Error(data?.error ?? "Chat failed");
+		err.status = res.status;
+		throw err;
+	}
+	const reader = res.body.getReader();
+	const decoder = new TextDecoder();
+	while (true) {
+		const { value, done } = await reader.read();
+		if (done) break;
+		if (value) onChunk(decoder.decode(value, { stream: true }));
+	}
+	const tail = decoder.decode();
+	if (tail) onChunk(tail);
+}
+
 // Upload an image file; returns { url } to embed in note markdown.
 export async function uploadImage(file) {
 	const headers = await authHeader();

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import DuoButton from "../../components/DuoButton.jsx";
 import Icon from "../../components/Icon.jsx";
 import { answerCard, getDeckQueue } from "../../services/flashcardsService.js";
+import { contentToHtml } from "../notes/editor/inlineFormat.js";
+import { useFlashcards } from "./FlashcardsContext.jsx";
 
 const norm = (s) => (s ?? "").trim().toLowerCase();
 
@@ -30,11 +32,15 @@ function Stats({ counts }) {
 function PromptCard({ children, height = "h-[480px]" }) {
 	return (
 		<div
-			className={`flex w-[620px] max-w-[90vw] items-center rounded-[30px] border-2 border-border-soft bg-bg px-14 ${height}`}
+			className={`flex w-[620px] max-w-[90vw] items-center justify-center overflow-hidden rounded-[30px] border-2 border-border-soft bg-bg px-10 py-8 ${height}`}
 		>
-			<p className="whitespace-pre-wrap text-[22px] font-semibold leading-[1.4] text-title">
-				{children}
-			</p>
+			<div className="max-h-full w-full overflow-y-auto overflow-x-hidden">
+				<p
+					className="whitespace-pre-wrap break-words text-center text-[22px] font-semibold leading-[1.4] text-title"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: contentToHtml escapes user input and only renders bold, URL autolinks, and KaTeX math
+					dangerouslySetInnerHTML={{ __html: contentToHtml(children || "—") }}
+				/>
+			</div>
 		</div>
 	);
 }
@@ -52,6 +58,7 @@ function liveCounts(queue) {
 }
 
 export default function StudySession({ deckId, onClose }) {
+	const { mergeCards } = useFlashcards();
 	const [queue, setQueue] = useState([]);
 	const [phase, setPhase] = useState("loading"); // loading | front | reveal | result | finish | error
 	const [input, setInput] = useState("");
@@ -100,6 +107,7 @@ export default function StudySession({ deckId, onClose }) {
 				grade,
 				Date.now() - frontShownAt.current,
 			);
+			mergeCards([updated]);
 			const shortStep =
 				(updated.state === "learning" || updated.state === "relearning") &&
 				updated.due != null &&
@@ -203,9 +211,13 @@ export default function StudySession({ deckId, onClose }) {
 								<span className="text-sm font-semibold uppercase tracking-wide text-white/70">
 									Correct answer
 								</span>
-								<p className="whitespace-pre-wrap text-xl font-semibold">
-									{card.answer || "—"}
-								</p>
+								<p
+									className="whitespace-pre-wrap break-words text-xl font-semibold"
+									// biome-ignore lint/security/noDangerouslySetInnerHtml: contentToHtml escapes user input and only renders bold, URL autolinks, and KaTeX math
+									dangerouslySetInnerHTML={{
+										__html: contentToHtml(card.answer || "—"),
+									}}
+								/>
 							</div>
 						)}
 					</div>

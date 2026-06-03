@@ -89,6 +89,10 @@ All routes require a valid Firebase ID token unless noted.
     <tr><td>PATCH</td><td><code>/api/pages/:id</code></td><td>Update page (title, content, order, isPublic, publicDescription)</td></tr>
     <tr><td>DELETE</td><td><code>/api/pages/:id</code></td><td>Delete page</td></tr>
     <tr><td>PATCH</td><td><code>/api/pages/reorder</code></td><td>Bulk-reorder pages</td></tr>
+    <tr><td>POST</td><td><code>/api/pages/:id/presence</code></td><td>Heartbeat — record this user is viewing the page (5s ping; 12s TTL)</td></tr>
+    <tr><td>GET</td><td><code>/api/pages/:id/presence</code></td><td>List other users currently viewing this page (excludes caller)</td></tr>
+    <tr><td>POST</td><td><code>/api/pages/:id/generate-deck</code></td><td>Generate a flashcard deck from this note via OpenAI. Tier-gated (basic → 403). Returns <code>&#123; title, cards &#125;</code> preview — not persisted; the frontend confirms a target folder before save. 503 if <code>OPENAI_API_KEY</code> unset.</td></tr>
+    <tr><td>POST</td><td><code>/api/pages/:id/chat</code></td><td>Chat with OpenAI grounded in this note's content. Tier-gated (basic → 403). Body: <code>&#123; messages: [&#123;role: "user"|"assistant", content&#125;] &#125;</code> (≤ 40 turns, ≤ 4000 chars each). Streams the reply as <code>text/plain</code> chunks (no SSE wrapper). 503 if <code>OPENAI_API_KEY</code> unset.</td></tr>
   </tbody>
 </table>
 

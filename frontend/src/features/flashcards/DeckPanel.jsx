@@ -21,13 +21,31 @@ function formatTime(ms) {
 	return rem ? `${m}m ${rem}s` : `${m}m`;
 }
 
+function StatChip({ value, label, valueClassName = "text-title" }) {
+	return (
+		<div className="flex items-center gap-2 rounded-2xl border-[2.5px] border-border-soft bg-bg px-4 py-2">
+			<span className={`text-base font-bold leading-none ${valueClassName}`}>
+				{value}
+			</span>
+			<span className="text-xs font-medium text-body">{label}</span>
+		</div>
+	);
+}
+
 function TodayStats({ stats, streak, onOpenActivity }) {
 	const hasStreak = streak && streak.streak > 0;
 	const hasStats = stats && stats.count > 0;
 	if (!hasStreak && !hasStats) return null;
 
+	const rateColor =
+		stats?.correctRate >= 80
+			? "text-folder-green"
+			: stats?.correctRate >= 50
+				? "text-folder-blue"
+				: "text-folder-red";
+
 	return (
-		<div className="border-b-2 border-border-soft px-5 py-3 flex flex-col gap-2">
+		<div className="flex flex-col gap-3 border-b-[2.5px] border-border-soft px-5 py-4">
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-semibold uppercase tracking-wide text-body">
 					Today
@@ -40,48 +58,37 @@ function TodayStats({ stats, streak, onOpenActivity }) {
 					30-day chart →
 				</button>
 			</div>
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2">
 				{hasStreak && (
 					<div
-						className={`flex items-center gap-2 rounded-2xl px-4 py-2 ${
-							streak.studiedToday ? "bg-folder-orange/15" : "bg-bg-secondary"
+						className={`flex items-center gap-2 rounded-2xl border-[2.5px] px-4 py-2 ${
+							streak.studiedToday
+								? "border-folder-orange/30 bg-folder-orange/15"
+								: "border-border-soft bg-bg"
 						}`}
 					>
-						<span className="text-xl">🔥</span>
-						<div>
-							<p
-								className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}
-							>
-								{streak.streak} day{streak.streak !== 1 ? "s" : ""}
-							</p>
-							<p className="text-[10px] text-body mt-0.5">streak</p>
-						</div>
+						<span className="text-xl leading-none">🔥</span>
+						<span
+							className={`text-base font-bold leading-none ${streak.studiedToday ? "text-folder-orange" : "text-body"}`}
+						>
+							{streak.streak}
+						</span>
+						<span className="text-xs font-medium text-body">
+							day{streak.streak !== 1 ? "s" : ""} streak
+						</span>
 					</div>
 				)}
 				{hasStats && (
 					<>
-						<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
-							<span className="text-sm font-bold text-title">
-								{stats.count}
-							</span>
-							<span className="text-xs text-body">cards</span>
-						</div>
+						<StatChip value={stats.count} label="cards" />
 						{stats.correctRate !== null && (
-							<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
-								<span
-									className={`text-sm font-bold ${stats.correctRate >= 80 ? "text-folder-green" : stats.correctRate >= 50 ? "text-folder-blue" : "text-folder-red"}`}
-								>
-									{stats.correctRate}%
-								</span>
-								<span className="text-xs text-body">correct</span>
-							</div>
+							<StatChip
+								value={`${stats.correctRate}%`}
+								label="correct"
+								valueClassName={rateColor}
+							/>
 						)}
-						<div className="flex items-center gap-2 rounded-[14px] bg-bg-secondary px-3 py-1.5">
-							<span className="text-sm font-bold text-title">
-								{formatTime(stats.totalMs)}
-							</span>
-							<span className="text-xs text-body">time</span>
-						</div>
+						<StatChip value={formatTime(stats.totalMs)} label="time" />
 					</>
 				)}
 			</div>
@@ -108,14 +115,16 @@ function CardStateBar({ cards }) {
 	const visible = STATE_CONFIG.filter((s) => counts[s.key] > 0);
 
 	return (
-		<div className="px-5 py-3 border-b-2 border-border-soft flex flex-col gap-2">
-			<div className="flex h-2 w-full overflow-hidden rounded-full gap-0.5">
+		<div className="flex flex-col gap-2 border-b-[2.5px] border-border-soft px-5 py-4">
+			<div className="flex h-6 w-full overflow-hidden rounded-full bg-bg-secondary">
 				{visible.map((s) => (
 					<div
 						key={s.key}
-						className={`${s.color} h-full rounded-full`}
+						className={`${s.color} relative h-full`}
 						style={{ width: `${(counts[s.key] / total) * 100}%` }}
-					/>
+					>
+						<span className="pointer-events-none absolute left-5 right-3 top-1.5 h-1.5 rounded-full bg-white/45" />
+					</div>
 				))}
 			</div>
 			<div className="flex gap-4">

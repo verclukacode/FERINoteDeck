@@ -1,5 +1,6 @@
 import bell from "../assets/icons/bell.svg?raw";
 import calendar from "../assets/icons/calendar.svg?raw";
+import chat from "../assets/icons/chat.svg?raw";
 import checkbox from "../assets/icons/checkbox.svg?raw";
 import checkmark from "../assets/icons/checkmark.svg?raw";
 import chevron from "../assets/icons/chevron.svg?raw";
@@ -27,6 +28,7 @@ import xmark from "../assets/icons/xmark.svg?raw";
 const ICONS = {
 	bell,
 	calendar,
+	chat,
 	checkbox,
 	checkmark,
 	chevron,
@@ -55,12 +57,22 @@ const ICONS = {
 export default function Icon({ name, size = 16, className = "", style }) {
 	const markup = ICONS[name];
 	if (!markup) return null;
+	// Force the SVG to render at exactly `size` by rewriting its width/height
+	// attrs — without this, SVGs with intrinsic dims (eg width="21") render at
+	// their natural size and ignore the wrapper span; ones using width="100%"
+	// hit a flex-sizing quirk inside `inline-flex` parents.
+	const sized = markup.replace(/<svg([^>]*)>/, (_, attrs) => {
+		const cleaned = attrs
+			.replace(/\swidth="[^"]*"/g, "")
+			.replace(/\sheight="[^"]*"/g, "");
+		return `<svg${cleaned} width="${size}" height="${size}">`;
+	});
 	return (
 		<span
 			className={`inline-flex items-center justify-center ${className}`}
 			style={{ width: size, height: size, ...style }}
 			// biome-ignore lint/security/noDangerouslySetInnerHtml: bundled local SVG assets
-			dangerouslySetInnerHTML={{ __html: markup }}
+			dangerouslySetInnerHTML={{ __html: sized }}
 		/>
 	);
 }

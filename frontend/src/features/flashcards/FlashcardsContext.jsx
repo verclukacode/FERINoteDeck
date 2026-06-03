@@ -270,6 +270,20 @@ export function FlashcardsProvider({ children }) {
 		await updateCard(id, patch);
 	}, []);
 
+	// Merge server-fresh card rows into local state without a PATCH — used by
+	// StudySession after each answer so the deck panel reflects the new SRS
+	// state (state / due / ease) as soon as the session updates them.
+	const mergeCards = useCallback((updated) => {
+		if (!Array.isArray(updated) || updated.length === 0) return;
+		setCards((prev) => {
+			const byId = new Map(prev.map((c) => [c.id, c]));
+			for (const u of updated) {
+				if (u?.id) byId.set(u.id, { ...(byId.get(u.id) ?? {}), ...u });
+			}
+			return Array.from(byId.values());
+		});
+	}, []);
+
 	const removeCard = useCallback(async (id) => {
 		setCards((prev) => prev.filter((c) => c.id !== id));
 		setSelectedCardId((cur) => (cur === id ? null : cur));
@@ -395,6 +409,7 @@ export function FlashcardsProvider({ children }) {
 			selectDeck,
 			addCard,
 			updateCard: updateCardLocal,
+			mergeCards,
 			removeCard,
 			selectCard,
 			resetCard,
@@ -428,6 +443,7 @@ export function FlashcardsProvider({ children }) {
 			selectDeck,
 			addCard,
 			updateCardLocal,
+			mergeCards,
 			removeCard,
 			selectCard,
 			resetCard,

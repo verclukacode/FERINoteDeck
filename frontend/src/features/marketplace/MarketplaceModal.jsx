@@ -211,7 +211,7 @@ export default function MarketplaceModal({ onClose, initialSelected = null }) {
 						)}
 					</div>
 
-					<div className="flex flex-1 flex-col">
+					<div className="flex min-w-0 flex-1 flex-col">
 						{selected ? (
 							<MarketplacePreview
 								key={`${selected.kind}:${selected.id}`}

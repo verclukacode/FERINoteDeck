@@ -1,4 +1,19 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* Wide display math should scroll inside its container instead of pushing
+   the surrounding box wider. Inline math wraps naturally with the text. */
+.katex-display {
+	max-width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	margin: 0.4em 0;
+}
+.ndmath {
+	max-width: 100%;
+	display: inline-block;
+	vertical-align: middle;
+}
 
 @theme {
 	--color-title: #181818;
@@ -163,4 +178,48 @@ a[target="_blank"][rel*="noopener"] {
 	background-size: 200% 100%;
 	animation: ai-shimmer 2s linear infinite;
 	transition: width 0.4s ease-out;
+}
+
+/* === Note chat panel === */
+
+/* Slide-in from the right edge when the chat panel mounts. Same easing curve
+ * as the AI halo's enter animation so the family feels consistent. */
+@keyframes chat-slide-in {
+	from {
+		transform: translateX(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+.chat-panel {
+	animation: chat-slide-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Three-dot typing indicator on the assistant bubble while the reply is in
+ * flight. Each dot lags 180ms behind the previous. */
+@keyframes chat-typing {
+	0%,
+	60%,
+	100% {
+		opacity: 0.3;
+		transform: translateY(0);
+	}
+	30% {
+		opacity: 1;
+		transform: translateY(-2px);
+	}
+}
+
+.chat-typing-dot {
+	animation: chat-typing 1.2s ease-in-out infinite;
+}
+.chat-typing-dot:nth-child(2) {
+	animation-delay: 0.18s;
+}
+.chat-typing-dot:nth-child(3) {
+	animation-delay: 0.36s;
 }

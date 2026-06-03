@@ -6,8 +6,19 @@ import {
 	getMarketplaceDeck,
 	getMarketplaceNote,
 } from "../../services/marketplaceService.js";
+import { contentToHtml } from "../notes/editor/inlineFormat.js";
 import NoteReadView from "./NoteReadView.jsx";
 import { buildMarketplaceLink } from "./marketplaceLink.js";
+
+function CardField({ value, className = "" }) {
+	return (
+		<p
+			className={`mt-1 whitespace-pre-wrap break-words text-sm ${className}`}
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: contentToHtml escapes user input and only renders bold, URL autolinks, and KaTeX math
+			dangerouslySetInnerHTML={{ __html: contentToHtml(value || "—") }}
+		/>
+	);
+}
 
 function DeckContent({ cards }) {
 	if (!cards?.length) {
@@ -23,16 +34,12 @@ function DeckContent({ cards }) {
 					<p className="text-xs font-semibold uppercase tracking-wide text-body">
 						Question {i + 1}
 					</p>
-					<p className="mt-1 whitespace-pre-wrap text-sm font-medium text-title">
-						{c.question || "—"}
-					</p>
+					<CardField value={c.question} className="font-medium text-title" />
 					<div className="my-3 h-[2.5px] rounded-full bg-border-soft" />
 					<p className="text-xs font-semibold uppercase tracking-wide text-body">
 						Answer
 					</p>
-					<p className="mt-1 whitespace-pre-wrap text-sm text-title">
-						{c.answer || "—"}
-					</p>
+					<CardField value={c.answer} className="text-title" />
 				</li>
 			))}
 		</ol>
@@ -91,13 +98,15 @@ export default function MarketplacePreview({ kind, id, onClone }) {
 		<div className="flex h-full flex-col">
 			<div className="flex items-start gap-4 border-b-[2.5px] border-border-soft px-6 py-5">
 				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-2">
+					<div className="flex min-w-0 items-center gap-2">
 						<Icon
 							name={kind === "note" ? "document" : "flashcards"}
 							size={18}
-							className="text-body"
+							className="shrink-0 text-body"
 						/>
-						<h3 className="truncate text-xl font-bold text-title">{title}</h3>
+						<h3 className="min-w-0 truncate text-xl font-bold text-title">
+							{title}
+						</h3>
 					</div>
 					{item.publicDescription && (
 						<p className="mt-1 text-sm text-body">{item.publicDescription}</p>

@@ -58,6 +58,14 @@ ABSOLUTELY NO nested or indented lists. If a source contains a sub-bullet, flatt
 into a separate top-level bullet (or merge it into the parent line). Every list item
 starts at column 0.
 
+LaTeX MATH: when the source contains equations, formulas, or symbolic notation, embed
+them using DOLLAR delimiters — NOT backslash-bracket or backslash-paren delimiters.
+- Inline math: $...$  (e.g. "energija $E = mc^2$ se ohranja")
+- Display math (own line): $$...$$
+NEVER use \\(...\\), \\[...\\], or LaTeX environments like \\begin{equation}. Always
+use dollar signs. The TeX body itself is standard LaTeX (e.g. $\\dot{S}_{gen}$,
+$\\sum_i x_i$, $$\\int_0^1 f(x)\\,dx$$).
+
 Do NOT use bold/italic markdown, code fences, tables, footnotes, or inline links — they
 are not supported. Do NOT include any prefaces, explanations, or trailing commentary.
 
@@ -285,6 +293,48 @@ export async function generateFlashcardsFromNote(
 		}))
 		.filter((c) => c.question && c.answer);
 	return cards;
+}
+
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+const CHAT_SYSTEM_PROMPT_TEMPLATE = `You are a study assistant chatting with a student about ONE
+of their notes. Your replies must:
+
+- Be written in the SAME language as the note. Never translate.
+- Be grounded in the note's content first; quote or paraphrase when useful.
+- If the student asks something the note doesn't cover, answer briefly from general knowledge
+  but flag it (e.g., "This isn't in your note, but…").
+- Stay conversational and concise — usually 1–3 sentences. Expand only when the student asks
+  for an explanation or example.
+- Use plain text. Do NOT use markdown formatting (no #, *, _, \`, lists, or tables) — the chat
+  UI renders text verbatim. Line breaks are OK for paragraph separation.
+
+NOTE TITLE: {{title}}
+
+NOTE CONTENT:
+{{content}}`;
+
+export async function* chatAboutNoteStream(
+	noteTitle: string,
+	noteContent: string,
+	history: ChatMessage[],
+): AsyncGenerator<string> {
+	const system = CHAT_SYSTEM_PROMPT_TEMPLATE.replace(
+		"{{title}}",
+		noteTitle,
+	).replace("{{content}}", noteContent || "(this note is empty)");
+	const stream = await getClient().chat.completions.create({
+		model: "gpt-4o-mini",
+		stream: true,
+		messages: [
+			{ role: "system", content: system },
+			...history.map((m) => ({ role: m.role, content: m.content })),
+		],
+	});
+	for await (const chunk of stream) {
+		const delta = chunk.choices[0]?.delta?.content;
+		if (delta) yield delta;
+	}
 }
 
 // Safety net: the editor's parser only accepts a fixed set of block forms,

@@ -1,6 +1,10 @@
 import { type Request, type Response, Router } from "express";
 import { extractImageUrls, isAllowedImageUrl } from "../lib/imageValidation";
-import { generateFlashcardsFromNote } from "../lib/openai";
+import {
+	type ChatMessage,
+	chatAboutNoteStream,
+	generateFlashcardsFromNote,
+} from "../lib/openai";
 import { prisma } from "../lib/prisma";
 
 // In-memory presence: pageId → userId → { username, avatarUrl, lastSeen }
@@ -238,6 +242,118 @@ router.post("/:id/generate-deck", async (req: Request, res: Response) => {
 	} catch (err) {
 		console.error("generate-deck failed", err);
 		res.status(500).json({ error: "Deck generation failed" });
+	}
+});
+
+const CHAT_MAX_MESSAGES = 40;
+const CHAT_MAX_CHARS = 4000;
+const SENTINEL = "<<<NoteDeckMD>>>";
+
+/**
+ * @openapi
+ * /api/pages/{id}/chat:
+ *   post:
+ *     summary: Chat with OpenAI grounded in this note's content (tier-gated)
+ *     tags: [Pages]
+ *     responses:
+ *       200: { description: "{ reply }" }
+ *       400: { description: Bad request (message shape, length) }
+ *       403: { description: Tier check failed (basic) }
+ *       404: { description: Page not found or no access }
+ *       503: { description: OPENAI_API_KEY not set }
+ */
+router.post("/:id/chat", async (req: Request, res: Response) => {
+	if (!process.env.OPENAI_API_KEY) {
+		return res
+			.status(503)
+			.json({ error: "AI chat not configured on this server" });
+	}
+	const uid = req.user?.uid ?? "";
+	const account = await prisma.user.findUnique({
+		where: { id: uid },
+		select: { tier: true },
+	});
+	if (!account || account.tier === "basic") {
+		return res
+			.status(403)
+			.json({ error: "AI chat requires a Pro or Premium account" });
+	}
+
+	const pageId = String(req.params.id);
+	const page = await prisma.page.findFirst({
+		where: {
+			id: pageId,
+			OR: [
+				{ userId: uid },
+				{ invites: { some: { recipientId: uid, status: "accepted" } } },
+			],
+		},
+		select: { id: true, title: true, content: true },
+	});
+	if (!page) return res.status(404).json({ error: "Page not found" });
+
+	const raw = (req.body as { messages?: unknown }).messages;
+	if (!Array.isArray(raw)) {
+		return res.status(400).json({ error: "messages must be an array" });
+	}
+	if (raw.length === 0) {
+		return res.status(400).json({ error: "messages cannot be empty" });
+	}
+	if (raw.length > CHAT_MAX_MESSAGES) {
+		return res.status(400).json({
+			error: `Conversation limit reached (${CHAT_MAX_MESSAGES} turns)`,
+		});
+	}
+	const messages: ChatMessage[] = [];
+	for (const m of raw) {
+		if (
+			!m ||
+			typeof m !== "object" ||
+			((m as { role?: unknown }).role !== "user" &&
+				(m as { role?: unknown }).role !== "assistant")
+		) {
+			return res
+				.status(400)
+				.json({ error: "Each message must have role user or assistant" });
+		}
+		const content = String((m as { content?: unknown }).content ?? "");
+		if (!content.trim()) {
+			return res.status(400).json({ error: "Message content cannot be empty" });
+		}
+		if (content.length > CHAT_MAX_CHARS) {
+			return res.status(400).json({
+				error: `Message exceeds ${CHAT_MAX_CHARS} characters`,
+			});
+		}
+		messages.push({
+			role: (m as { role: "user" | "assistant" }).role,
+			content,
+		});
+	}
+
+	const strippedContent = page.content.split(SENTINEL).join("").trim();
+
+	res.setHeader("Content-Type", "text/plain; charset=utf-8");
+	res.setHeader("Cache-Control", "no-cache, no-transform");
+	res.setHeader("X-Accel-Buffering", "no");
+	res.flushHeaders();
+
+	try {
+		for await (const delta of chatAboutNoteStream(
+			page.title,
+			strippedContent,
+			messages,
+		)) {
+			res.write(delta);
+		}
+		res.end();
+	} catch (err) {
+		console.error("chat failed", err);
+		if (!res.headersSent) {
+			res.status(500).json({ error: "Chat reply failed" });
+		} else {
+			res.end();
+		}
 	}
 });
 
