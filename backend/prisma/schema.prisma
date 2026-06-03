@@ -89,6 +89,7 @@ model Deck {
   publicDescription String?         @db.Text
   publishedAt       DateTime?
   sharedFromDeckId  String?
+  isTest            Boolean         @default(false)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)

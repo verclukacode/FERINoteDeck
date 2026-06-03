@@ -79,6 +79,28 @@ export function generateDeckFromNote(pageId) {
 	return apiRequest(`/pages/${pageId}/generate-deck`, { method: "POST" });
 }
 
+// Generate a test deck from notes + files. Accepts a FormData with optional
+// "files" entries and a "pageIds" JSON string. Saves directly to "Tests"
+// folder. Returns { deck, cards, folder? }.
+export async function generateTestDeck(formData) {
+	await auth.authStateReady();
+	const token = await auth.currentUser?.getIdToken();
+	const headers = token ? { Authorization: `Bearer ${token}` } : {};
+	const res = await fetch(`${BASE}/decks/generate-test`, {
+		method: "POST",
+		headers,
+		body: formData,
+	});
+	if (res.status === 204) return null;
+	const data = await res.json().catch(() => null);
+	if (!res.ok) {
+		const err = new Error(data?.error ?? "Request failed");
+		err.status = res.status;
+		throw err;
+	}
+	return data;
+}
+
 export function updateDeck(id, patch) {
 	return apiRequest(`/decks/${id}`, { method: "PATCH", body: patch });
 }

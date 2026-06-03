@@ -16,6 +16,7 @@ import DeckFolderPreview from "./DeckFolderPreview.jsx";
 import DeckPreview from "./DeckPreview.jsx";
 import FlashcardFolderModal from "./FlashcardFolderModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
+import GenerateTestButton from "./GenerateTestButton.jsx";
 import SharedDeckItem from "./SharedDeckItem.jsx";
 
 // One DndContext drives both folder reordering and deck drag-and-drop
@@ -28,6 +29,7 @@ export default function DeckList() {
 	const { folders, decks, loading, handleDndOver, handleDndEnd } =
 		useFlashcards();
 	const sharedDecks = decks.filter((d) => d.sharedFromDeckId);
+	const testDecks = decks.filter((d) => d.isTest);
 	const [adding, setAdding] = useState(false);
 	const [active, setActive] = useState(null);
 	const sensors = useSensors(
@@ -109,6 +111,8 @@ export default function DeckList() {
 			</button>
 			{adding && <FlashcardFolderModal onClose={() => setAdding(false)} />}
 
+			<GenerateTestButton />
+
 			{sharedDecks.length > 0 && (
 				<div className="flex flex-col gap-1">
 					<div className="flex items-center gap-3 py-1">
@@ -119,6 +123,21 @@ export default function DeckList() {
 						<div className="flex-1 border-t-[2px] border-dashed border-border-soft" />
 					</div>
 					{sharedDecks.map((deck) => (
+						<SharedDeckItem key={deck.id} deck={deck} />
+					))}
+				</div>
+			)}
+
+			{testDecks.length > 0 && (
+				<div className="flex flex-col gap-1">
+					<div className="flex items-center gap-3 py-1">
+						<div className="flex-1 border-t-[2px] border-dashed border-border-soft" />
+						<span className="text-xs font-semibold uppercase tracking-wide text-body">
+							Tests
+						</span>
+						<div className="flex-1 border-t-[2px] border-dashed border-border-soft" />
+					</div>
+					{testDecks.map((deck) => (
 						<SharedDeckItem key={deck.id} deck={deck} />
 					))}
 				</div>

@@ -192,6 +192,22 @@ export function FlashcardsProvider({ children }) {
 		setSelectedCardId(clonedCards[0]?.id ?? null);
 	}, []);
 
+	// Add a freshly-generated test deck + its cards to local state. Also adds
+	// the "Tests" folder if the backend auto-created it.
+	const addTestDeck = useCallback(({ deck, cards: newCards = [], folder }) => {
+		if (folder) {
+			setFolders((prev) =>
+				prev.some((f) => f.id === folder.id)
+					? prev
+					: [...prev, { ...folder, collapsed: false }],
+			);
+		}
+		setDecks((prev) => [...prev, deck]);
+		setCards((prev) => [...prev, ...newCards]);
+		setSelectedDeckId(deck.id);
+		setSelectedCardId(newCards[0]?.id ?? null);
+	}, []);
+
 	// Bulk-append cards into an existing deck (CSV import → "existing deck").
 	// Server returns the freshly-created rows so we can hydrate local state
 	// without a refetch.
@@ -400,6 +416,7 @@ export function FlashcardsProvider({ children }) {
 			renameDeck,
 			updateDeckShare,
 			addDeckFromClone,
+			addTestDeck,
 			importCardsIntoDeck,
 			acceptDeckInvite,
 			declineDeckInvite,
@@ -435,6 +452,7 @@ export function FlashcardsProvider({ children }) {
 			renameDeck,
 			updateDeckShare,
 			addDeckFromClone,
+			addTestDeck,
 			importCardsIntoDeck,
 			acceptDeckInvite,
 			declineDeckInvite,
