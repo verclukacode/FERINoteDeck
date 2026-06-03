@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import katex from "katex";
+import { describe, expect, it, vi } from "vitest";
 import {
 	URL_REGEX,
 	contentToHtml,
@@ -96,6 +97,25 @@ describe("contentToHtml", () => {
 		// Single $x without closing should be left as-is
 		const html = contentToHtml("costs $5 today");
 		expect(html).not.toContain("ndmath");
+	});
+
+	it("falls back to escaped text when KaTeX throws", () => {
+		const spy = vi.spyOn(katex, "renderToString").mockImplementationOnce(() => {
+			throw new Error("parse error");
+		});
+		const html = contentToHtml("$x^2$");
+		// catch block returns escapeHtml("$" + tex + "$")
+		expect(html).toContain("x^2");
+		spy.mockRestore();
+	});
+
+	it("falls back with $$ delimiters for display math when KaTeX throws", () => {
+		const spy = vi.spyOn(katex, "renderToString").mockImplementationOnce(() => {
+			throw new Error("parse error");
+		});
+		const html = contentToHtml("$$E=mc^2$$");
+		expect(html).toContain("E=mc^2");
+		spy.mockRestore();
 	});
 });
 
