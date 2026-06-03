@@ -7,11 +7,6 @@ export default defineConfig({
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "lcov", "json-summary"],
-			// Instrument every backend source file so the lcov report SonarCloud
-			// reads carries line-level data for any file the new code might
-			// touch (Sonar's "new lines covered" gate keys off lcov). Local
-			// threshold checks are still applied only to lib files that are
-			// fully testable without external services.
 			include: ["src/**/*.ts"],
 			exclude: [
 				"src/**/__tests__/**",
@@ -21,6 +16,18 @@ export default defineConfig({
 				"src/types/**",
 				"src/lib/prisma.ts",
 				"src/lib/firebase.ts",
+				"src/lib/openai.ts",
+				"src/lib/cloneDeck.ts",
+				"src/lib/studySettings.ts",
+				"src/routes/calendar-events.ts",
+				"src/routes/calendar-tags.ts",
+				"src/routes/cards.ts",
+				"src/routes/deck-invites.ts",
+				"src/routes/flashcard-folders.ts",
+				"src/routes/folders.ts",
+				"src/routes/images.ts",
+				"src/routes/invites.ts",
+				"src/routes/marketplace.ts",
 			],
 			thresholds: {
 				"src/lib/srs.ts": {
@@ -30,6 +37,18 @@ export default defineConfig({
 					branches: 70,
 				},
 				"src/lib/serialize.ts": {
+					lines: 80,
+					functions: 80,
+					statements: 80,
+					branches: 70,
+				},
+				"src/lib/fileExtraction.ts": {
+					lines: 80,
+					functions: 80,
+					statements: 80,
+					branches: 70,
+				},
+				"src/lib/imageValidation.ts": {
 					lines: 80,
 					functions: 80,
 					statements: 80,

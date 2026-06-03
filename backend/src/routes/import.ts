@@ -77,13 +77,13 @@ const upload = multer({
 	},
 });
 
-const NO_API_SUFFIX = "(no-api)";
+export const NO_API_SUFFIX = "(no-api)";
 // Lowest tier — gets everything except AI import.
 const BASIC_TIER = "basic";
 
 // Dummy note that exercises every supported block type, populated with the
 // real filenames + image URLs the user uploaded so the test feels grounded.
-function buildDummyNote(extracted: ExtractedFile[]): {
+export function buildDummyNote(extracted: ExtractedFile[]): {
 	title: string;
 	content: string;
 } {

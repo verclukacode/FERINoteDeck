@@ -13,7 +13,7 @@ import { prisma } from "../lib/prisma";
 import { getOrCreateStudySettings } from "../lib/studySettings";
 import { uploadsDir } from "./images";
 
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
+export const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
 // Delete a locally-stored avatar file if the URL points to one we own.
 // URLs look like /api/images/<uid>/<filename>; anything else (presets, null) is ignored.

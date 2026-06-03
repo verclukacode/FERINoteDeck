@@ -20,9 +20,17 @@ import {
 } from "../lib/studySettings";
 import { uploadsDir } from "./images";
 
+// Build a human-readable title for the generated test deck.
+export function buildTestTitle(sourceTitles: string[]): string {
+	if (sourceTitles.length === 1) return `Test: ${sourceTitles[0]}`;
+	const base = sourceTitles.slice(0, 2).join(", ");
+	const extra = sourceTitles.length > 2 ? ` +${sourceTitles.length - 2}` : "";
+	return `Test: ${base}${extra}`;
+}
+
 // The study day rolls over at `hour` local time (Anki's "next day starts at").
 // Returns [start, end) of the current study day in unix ms (server-local tz).
-function studyDayWindow(nowMs: number, hour: number): [number, number] {
+export function studyDayWindow(nowMs: number, hour: number): [number, number] {
 	const d = new Date(nowMs);
 	const rollover = new Date(
 		d.getFullYear(),
@@ -678,10 +686,7 @@ router.post(
 			});
 		}
 
-		const combinedTitle =
-			sourceTitles.length === 1
-				? `Test: ${sourceTitles[0]}`
-				: `Test: ${sourceTitles.slice(0, 2).join(", ")}${sourceTitles.length > 2 ? ` +${sourceTitles.length - 2}` : ""}`;
+		const combinedTitle = buildTestTitle(sourceTitles);
 		const combinedContent = contentParts.join("\n\n---\n\n");
 
 		let generatedCards: {

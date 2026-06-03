@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for lib/constants.js</title>
+    <title>Code coverage report for lib/serialize.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../prettify.css" />
     <link rel="stylesheet" href="../base.css" />
@@ -19,20 +19,20 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../index.html">All files</a> / <a href="index.html">lib</a> constants.js</h1>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">lib</a> serialize.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>7/7</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>12/12</span>
             </div>
         
             
@@ -86,58 +86,52 @@
 <a name='L21'></a><a href='#L21'>21</a>
 <a name='L22'></a><a href='#L22'>22</a>
 <a name='L23'></a><a href='#L23'>23</a>
-<a name='L24'></a><a href='#L24'>24</a>
-<a name='L25'></a><a href='#L25'>25</a>
-<a name='L26'></a><a href='#L26'>26</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L24'></a><a href='#L24'>24</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">38x</span>
+<span class="cline-any cline-yes">11x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">23x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">22x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">28x</span>
-<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export const FOLDER_COLORS = [
-	{ key: "red", hex: "#ff7070" },
-	{ key: "orange", hex: "#ffa070" },
-	{ key: "pink", hex: "#ff70c3" },
-	{ key: "green", hex: "#2fd5b1" },
-	{ key: "blue", hex: "#499ef3" },
-	{ key: "purple", hex: "#7092ff" },
-];
-&nbsp;
-export const DEFAULT_FOLDER_COLOR = "blue";
-&nbsp;
-export function folderHex(colorKey) {
-	const match = FOLDER_COLORS.find((c) =&gt; c.key === colorKey);
-	return match ? match.hex : FOLDER_COLORS[0].hex;
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// Prisma returns BigInt for BigInt columns, and JSON.stringify (used by
+// res.json) throws on BigInt. Our unix-ms timestamps and second durations are
+// all well below Number.MAX_SAFE_INTEGER, so convert every BigInt to a Number
+// before serializing. Use on any response carrying scheduling data.
+export function serialize&lt;T&gt;(value: T): T {
+	if (typeof value === "bigint") {
+		return Number(value) as unknown as T;
+	}
+	if (Array.isArray(value)) {
+		return value.map((v) =&gt; serialize(v)) as unknown as T;
+	}
+	if (value instanceof Date) {
+		return value;
+	}
+	if (value !== null &amp;&amp; typeof value === "object") {
+		const out: Record&lt;string, unknown&gt; = {};
+		for (const [k, v] of Object.entries(value as Record&lt;string, unknown&gt;)) {
+			out[k] = serialize(v);
+		}
+		return out as T;
+	}
+	return value;
 }
-&nbsp;
-export const STORAGE_KEYS = {
-	folders: "notedeck.folders",
-	pages: "notedeck.pages",
-};
-&nbsp;
-export const VIEW = {
-	NOTES: "notes",
-	FLASHCARDS: "flashcards",
-};
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -145,7 +139,7 @@ export const VIEW = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-03T12:03:13.729Z
+                at 2026-06-03T12:13:24.270Z
             </div>
         <script src="../prettify.js"></script>
         <script>

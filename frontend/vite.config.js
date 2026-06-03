@@ -19,7 +19,12 @@ export default defineConfig({
 			reporter: ["text", "lcov", "json-summary"],
 			include: [
 				"src/features/notes/editor/markdown.js",
+				"src/features/notes/editor/blockModel.js",
+				"src/features/auth/firebaseError.js",
+				"src/features/marketplace/marketplaceLink.js",
 				"src/lib/constants.js",
+				"src/lib/postAuthDest.js",
+				"src/lib/id.js",
 			],
 			thresholds: {
 				lines: 80,
