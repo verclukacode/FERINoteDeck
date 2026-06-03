@@ -397,12 +397,18 @@ export default function EditorBlock({
 				transform: isDragging ? undefined : CSS.Transform.toString(transform),
 				transition,
 				opacity: isDragging ? 0.4 : 1,
-				marginLeft: depth > 0 ? depth * 24 : undefined,
+				paddingLeft: depth > 0 ? depth * 24 + 12 : undefined,
 			}}
-			className={`group relative ${
-				depth > 0 ? "border-l-[2.5px] border-border-soft pl-3" : ""
-			} ${selected ? "bg-folder-blue/10" : ""}`}
+			className={`group relative ${selected ? "bg-folder-blue/10" : ""}`}
 		>
+			{Array.from({ length: depth }, (_, i) => i * 24).map((leftPx) => (
+				<span
+					key={leftPx}
+					aria-hidden="true"
+					className="pointer-events-none absolute top-0 bottom-0 w-[2.5px] bg-border-soft"
+					style={{ left: leftPx }}
+				/>
+			))}
 			{/* Grip: tap (no movement) opens the menu, drag reorders the block.
 			    dnd-kit suppresses onClick on a drag handle, so a tap is detected
 			    from pointer up/down positions instead. */}
