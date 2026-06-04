@@ -359,7 +359,7 @@ export default function LandingPage() {
 							title: "Notification inbox",
 							description:
 								"Accept or decline incoming note and deck invites from one place.",
-							screenshot: "/screenshots/notifications.png",
+							screenshot: "/screenshots/nottifications.png",
 							zoom: "center center",
 						},
 					]}
@@ -367,59 +367,60 @@ export default function LandingPage() {
 				/>
 			</section>
 
-			{/* Marketplace */}
+			{/* Calendar */}
 			<FeatureSection
-				coloredWord="Marketplace"
-				titleRest="for your community"
-				color="#4caf7d"
-				description="Browse thousands of notes and flashcard decks created by other students. Find exactly what you need and clone it instantly."
+				coloredWord="Calendar"
+				titleRest="to stay on top of deadlines"
+				color="#e85d5d"
+				description="Never miss an exam or deadline. NoteDeck's built-in calendar keeps your study schedule organized and sends you timely reminders."
 				items={[
 					{
-						icon: "🔍",
-						title: "Search by title or @username",
-						description: "Find public notes and decks in seconds.",
-						screenshot: "/screenshots/marketplace.png",
-						zoom: "top center",
-						scale: 1.65,
-						origin: "38% 42%",
-					},
-					{
-						icon: "👁",
-						title: "Preview before cloning",
+						icon: "📅",
+						title: "Month & week view",
 						description:
-							"Read the full note or browse cards before adding to your workspace.",
-						screenshot: "/screenshots/marketplace-preview.png",
+							"Switch between month and week view to plan ahead or focus on the current week.",
+						screenshot: "/screenshots/calendar.png",
 						zoom: "top center",
 					},
 					{
-						icon: "⚡",
-						title: "One-click clone",
+						icon: "🏷️",
+						title: "Color-coded tags",
 						description:
-							"Add any public note or deck directly into your folders.",
-						screenshot: "/screenshots/marketplace-clone.png",
+							"Organize events by type — Exams, Practice, Deadlines — each with its own color.",
+						screenshot: "/screenshots/calendar-tags.png",
+						zoom: "top center",
+					},
+					{
+						icon: "⚠️",
+						title: "Upcoming event warnings",
+						description:
+							"Get warned about events in the next 3 days directly in the app.",
+						screenshot: "/screenshots/calendar-warnings.png",
 						zoom: "top center",
 					},
 				]}
 			/>
 
-			{/* Calendar + AI Chat */}
+			{/* Marketplace + AI Chat */}
 			<section className="py-20 px-6 max-w-6xl mx-auto">
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 					<div className="flex flex-col gap-5 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm">
-						<span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-red-50 text-red-400">
-							Calendar
+						<span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-green-50 text-green-500">
+							Marketplace
 						</span>
 						<h3 className="text-2xl font-bold text-gray-900">
-							Never miss a deadline
+							Discover community content
 						</h3>
 						<p className="text-gray-500">
-							Track exams, deadlines and events with a color-coded calendar. Get
-							upcoming event warnings straight in the app.
+							Browse public notes and flashcard decks from other students.
+							Preview and clone anything into your workspace in one click.
 						</p>
 						<Screenshot
-							src="/screenshots/calendar.png"
-							alt="Calendar"
+							src="/screenshots/marketplace.png"
+							alt="Marketplace"
 							zoom="top center"
+							scale={1.65}
+							origin="38% 42%"
 							className="w-full aspect-[4/3] mt-2"
 						/>
 					</div>
