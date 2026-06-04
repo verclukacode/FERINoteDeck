@@ -67,67 +67,43 @@ Slash-command `/` swaps a block type instantly. Notes live in color-coded folder
 <p align="center">
   <img src="frontend/public/screenshots/notes-editor.png" alt="Block-based note editor" width="800"/>
 </p>
-<p align="center">
-  <img src="frontend/public/screenshots/notes-folders.png" alt="Color-coded folders" width="400"/>
-  <img src="frontend/public/screenshots/notes-pdf.png" alt="Export to PDF" width="400"/>
-</p>
 
 ### Flashcards that make you remember
 
 Study smarter with a proven spaced-repetition algorithm. Cards come back at exactly the right
 moment — right before you forget. Two card types ("rate 1-4" for open-ended recall, "true / false"
 for fact-checks), per-deck queues with daily limits, daily-streak tracking, accuracy + time
-statistics, and a 30-day activity chart.
-
-When a deck is shared with at least two people, a per-deck **leaderboard** ranks members by their
-average SM-2 ease — friendly competition without revealing individual answers.
+statistics, and a 30-day activity chart. When a deck is shared with at least two people, a
+per-deck **leaderboard** ranks members by their average SM-2 ease — friendly competition without
+revealing individual answers.
 
 <p align="center">
-  <img src="frontend/public/screenshots/flashcards-deck.png" alt="Deck overview" width="800"/>
-</p>
-<p align="center">
-  <img src="frontend/public/screenshots/flashcards-study.png" alt="Studying a card" width="400"/>
-  <img src="frontend/public/screenshots/flashcards-stats.png" alt="Streak and daily stats" width="400"/>
+  <img src="frontend/public/screenshots/flashcards-study.png" alt="Studying a flashcard" width="800"/>
 </p>
 
 ### AI that does the heavy lifting
 
-Let AI handle the boring parts so you can focus on actually learning. Tier-gated (free /
-Pro / Premium).
-
-- **Generate notes from files** — upload a PDF, DOCX, PPTX or image and get a structured NoteDeck
-  note back in seconds. An optional prompt steers tone, structure or focus.
-- **Generate flashcards from a note** — one click turns any note into a ready-to-study deck.
-  The deck is previewed (and editable per-card) before saving into the folder of your choice.
-- **Generate test decks** — combine notes, existing decks and uploaded files into one
-  comprehensive test deck.
+Let AI handle the boring parts so you can focus on actually learning. **Generate notes** from a
+PDF / DOCX / PPTX / image upload (with an optional prompt to steer the result), **generate
+flashcards** from any existing note (previewed and per-card editable before saving), and
+**generate test decks** that combine notes, existing decks and uploaded files into one
+comprehensive practice deck. Tier-gated (free / Pro / Premium).
 
 <p align="center">
-  <img src="frontend/public/screenshots/ai-import.png" alt="AI import" width="400"/>
-  <img src="frontend/public/screenshots/ai-flashcards.png" alt="AI flashcards" width="400"/>
-</p>
-<p align="center">
-  <img src="frontend/public/screenshots/generate-test.png" alt="Generate test deck" width="800"/>
+  <img src="frontend/public/screenshots/generate-test.png" alt="Generate test deck from notes, decks and files" width="800"/>
 </p>
 
 ### Sharing built for students
 
-Learning is better together. NoteDeck has two complementary sharing models:
-
-- **Direct sharing by `@username`** — send a note or deck to a specific classmate. **Notes** are
-  collaboratively editable; collaborators see each other's avatar on the page (presence). **Decks**
-  clone-on-accept so each member's spaced-repetition progress is independent — but the lineage
-  link drives the shared leaderboard.
-- **Public Marketplace** — opt-in publish any note or deck so the whole community can browse,
-  preview and clone it into their own workspace. Marketplace clones are fully independent —
-  unpublishing the source doesn't affect them.
+Learning is better together. **Direct sharing by `@username`** sends a note or deck to a specific
+classmate — notes are collaboratively editable (with live presence avatars), decks clone-on-accept
+so each member's spaced-repetition progress is independent while the lineage link still drives the
+shared leaderboard. The **public Marketplace** lets any user opt-in publish a note or deck for the
+whole community to preview and clone; marketplace clones are fully independent, so unpublishing
+the source doesn't affect them.
 
 <p align="center">
-  <img src="frontend/public/screenshots/sharing.png" alt="Direct sharing" width="400"/>
-  <img src="frontend/public/screenshots/marketplace.png" alt="Marketplace" width="400"/>
-</p>
-<p align="center">
-  <img src="frontend/public/screenshots/nottifications.png" alt="Notifications inbox" width="400"/>
+  <img src="frontend/public/screenshots/marketplace.png" alt="Browsing the marketplace" width="800"/>
 </p>
 
 ### Calendar to stay on top of deadlines
@@ -138,11 +114,7 @@ Practice — whatever you need), and **upcoming-event warnings**: events landing
 inside the app so you never miss an exam.
 
 <p align="center">
-  <img src="frontend/public/screenshots/calendar.png" alt="Calendar month view" width="800"/>
-</p>
-<p align="center">
-  <img src="frontend/public/screenshots/calendar-tags.png" alt="Color-coded tags" width="400"/>
-  <img src="frontend/public/screenshots/calendar-warnings.png" alt="Upcoming-event warnings" width="400"/>
+  <img src="frontend/public/screenshots/calendar.png" alt="Calendar month view with tagged events" width="800"/>
 </p>
 
 ### Ask anything about your notes
@@ -153,7 +125,7 @@ like I'm five", or follow-up questions — the reply streams in token-by-token. 
 history persists per note in your browser's session storage.
 
 <p align="center">
-  <img src="frontend/public/screenshots/chat.png" alt="Note chat assistant" width="800"/>
+  <img src="frontend/public/screenshots/chat.png" alt="Chatting with the AI assistant about a note" width="800"/>
 </p>
 
 ---
