@@ -1,41 +1,301 @@
 # NoteDeck
 
-A full-stack personal knowledge app — Express REST API + MySQL backend with a React + Vite
-frontend. Notes use a block-based markdown editor; flashcards use an Anki-style spaced-repetition
-scheduler with per-deck leaderboards when shared with others. Includes a calendar for events,
-a public marketplace for browsing/cloning others' notes & decks, and direct user-to-user sharing
-(with collaborator avatars on notes and clone-on-accept for decks). Accounts are handled with
-Firebase Authentication.
+> Your all-in-one study companion — notes, flashcards, calendar, AI, and a community marketplace, in one place.
 
-## Design
-[Figma design](https://www.figma.com/design/6tgxbVBCI2aQEKWJ6ljoyo/NoteDeck?node-id=2028-172&t=TxnQ93y2De1SI7VC-1)
+<p align="center">
+  <img src="frontend/public/screenshots/hero.png" alt="NoteDeck workspace" width="900"/>
+</p>
 
-## Stack
+NoteDeck is a full-stack web application that brings together everything a student needs to learn,
+revise and stay organised: a block-based note editor, an Anki-style flashcard system with
+spaced-repetition scheduling, a built-in calendar for deadlines and exams, AI-powered content
+generation (notes from files, flashcards from notes, test decks from anything), a public
+marketplace for community content, and direct user-to-user sharing.
+
+Designed as a personal knowledge tool that also recognises learning is rarely a solo activity,
+NoteDeck mixes deep individual workflows (blocks, SM-2, PDF export) with collaborative ones
+(shared notes, deck invites with per-deck leaderboards, marketplace clones).
+
+---
+
+## Table of contents
+
+- [Who is it for](#who-is-it-for)
+- [Key features](#key-features)
+  - [Notes](#notes-that-build-understanding)
+  - [Flashcards](#flashcards-that-make-you-remember)
+  - [AI superpowers](#ai-that-does-the-heavy-lifting)
+  - [Sharing and Marketplace](#sharing-built-for-students)
+  - [Calendar](#calendar-to-stay-on-top-of-deadlines)
+  - [Note chat assistant](#ask-anything-about-your-notes)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Tech stack](#tech-stack)
+- [Getting started](#getting-started)
+- [Scripts](#scripts)
+- [API](#api)
+- [Documentation](#documentation)
+- [Design](#design)
+
+---
+
+## Who is it for
+
+NoteDeck is built around four user personas that recur in real study workflows:
+
+| Persona | What they need | What NoteDeck gives them |
+|---|---|---|
+| **The note-taker** | A clean place to capture lectures, structure thoughts, and revisit them later. | Block-based editor with headings, lists, checklists, images, LaTeX math, color-coded folders, and one-click PDF export. |
+| **The exam crammer** | A way to actually remember what they read. | Anki-style SM-2 spaced repetition, rate-1-to-4 + true/false card types, daily queues, streaks, accuracy + time-on-cards stats. |
+| **The study-group student** | A way to share notes and decks with classmates and learn together. | Direct invites by `@username` (notes are co-editable, decks clone-on-accept so progress is independent), per-deck leaderboards ranked by SM-2 ease. |
+| **The AI-power student** | Less time wrangling files, more time learning. | Upload a PDF / DOCX / PPTX / image → AI generates a structured note. One click turns a note into a flashcard deck. Generate test decks from a mix of notes, decks and files. Chat with an assistant grounded in any note. (Pro / Premium tier.) |
+
+Every user persona benefits from the public **Marketplace**, where any user can opt-in publish a
+note or deck for the community to preview and clone.
+
+---
+
+## Key features
+
+### Notes that build understanding
+
+Write structured, beautiful notes with a block-based editor. Each block — text, h1/h2 headings,
+bullet / numbered / checklist lists, images, separators — drags, drops and transforms in place.
+Slash-command `/` swaps a block type instantly. Notes live in color-coded folders, support inline
+**LaTeX** rendering (`$x^2$` inline, `$$\int f(x)\,dx$$` display), and export to PDF.
+
+<p align="center">
+  <img src="frontend/public/screenshots/notes-editor.png" alt="Block-based note editor" width="800"/>
+</p>
+<p align="center">
+  <img src="frontend/public/screenshots/notes-folders.png" alt="Color-coded folders" width="400"/>
+  <img src="frontend/public/screenshots/notes-pdf.png" alt="Export to PDF" width="400"/>
+</p>
+
+### Flashcards that make you remember
+
+Study smarter with a proven spaced-repetition algorithm. Cards come back at exactly the right
+moment — right before you forget. Two card types ("rate 1-4" for open-ended recall, "true / false"
+for fact-checks), per-deck queues with daily limits, daily-streak tracking, accuracy + time
+statistics, and a 30-day activity chart.
+
+When a deck is shared with at least two people, a per-deck **leaderboard** ranks members by their
+average SM-2 ease — friendly competition without revealing individual answers.
+
+<p align="center">
+  <img src="frontend/public/screenshots/flashcards-deck.png" alt="Deck overview" width="800"/>
+</p>
+<p align="center">
+  <img src="frontend/public/screenshots/flashcards-study.png" alt="Studying a card" width="400"/>
+  <img src="frontend/public/screenshots/flashcards-stats.png" alt="Streak and daily stats" width="400"/>
+</p>
+
+### AI that does the heavy lifting
+
+Let AI handle the boring parts so you can focus on actually learning. Tier-gated (free /
+Pro / Premium).
+
+- **Generate notes from files** — upload a PDF, DOCX, PPTX or image and get a structured NoteDeck
+  note back in seconds. An optional prompt steers tone, structure or focus.
+- **Generate flashcards from a note** — one click turns any note into a ready-to-study deck.
+  The deck is previewed (and editable per-card) before saving into the folder of your choice.
+- **Generate test decks** — combine notes, existing decks and uploaded files into one
+  comprehensive test deck.
+
+<p align="center">
+  <img src="frontend/public/screenshots/ai-import.png" alt="AI import" width="400"/>
+  <img src="frontend/public/screenshots/ai-flashcards.png" alt="AI flashcards" width="400"/>
+</p>
+<p align="center">
+  <img src="frontend/public/screenshots/generate-test.png" alt="Generate test deck" width="800"/>
+</p>
+
+### Sharing built for students
+
+Learning is better together. NoteDeck has two complementary sharing models:
+
+- **Direct sharing by `@username`** — send a note or deck to a specific classmate. **Notes** are
+  collaboratively editable; collaborators see each other's avatar on the page (presence). **Decks**
+  clone-on-accept so each member's spaced-repetition progress is independent — but the lineage
+  link drives the shared leaderboard.
+- **Public Marketplace** — opt-in publish any note or deck so the whole community can browse,
+  preview and clone it into their own workspace. Marketplace clones are fully independent —
+  unpublishing the source doesn't affect them.
+
+<p align="center">
+  <img src="frontend/public/screenshots/sharing.png" alt="Direct sharing" width="400"/>
+  <img src="frontend/public/screenshots/marketplace.png" alt="Marketplace" width="400"/>
+</p>
+<p align="center">
+  <img src="frontend/public/screenshots/nottifications.png" alt="Notifications inbox" width="400"/>
+</p>
+
+### Calendar to stay on top of deadlines
+
+A built-in calendar with **month and week views**, color-coded **tags** (Exam, Assignment,
+Practice — whatever you need), and **upcoming-event warnings**: events landing in the next
+24 hours are flagged urgent, in the next 3 days they are warnings. Toasts surface them right
+inside the app so you never miss an exam.
+
+<p align="center">
+  <img src="frontend/public/screenshots/calendar.png" alt="Calendar month view" width="800"/>
+</p>
+<p align="center">
+  <img src="frontend/public/screenshots/calendar-tags.png" alt="Color-coded tags" width="400"/>
+  <img src="frontend/public/screenshots/calendar-warnings.png" alt="Upcoming-event warnings" width="400"/>
+</p>
+
+### Ask anything about your notes
+
+A purple Duolingo-style chat button at the bottom-right of any note opens a side panel where you
+can chat with an AI assistant grounded in the current note. Get explanations, summaries, "explain
+like I'm five", or follow-up questions — the reply streams in token-by-token. Conversation
+history persists per note in your browser's session storage.
+
+<p align="center">
+  <img src="frontend/public/screenshots/chat.png" alt="Note chat assistant" width="800"/>
+</p>
+
+---
+
+## Architecture
+
+NoteDeck follows a classic three-tier architecture with a clear separation between the SPA frontend,
+the REST API backend, and the MySQL database. Authentication is delegated to Firebase; AI features
+are mediated through the OpenAI API (the key never leaves the backend).
+
+```
+┌──────────────────────────┐        ┌──────────────────────────┐        ┌───────────────────┐
+│  React + Vite frontend   │  HTTPS │  Express 5 REST API      │  TCP   │  MySQL 8          │
+│                          │ ─────► │  (TypeScript, tsx)       │ ─────► │  (Prisma ORM)     │
+│  - block editor          │        │                          │        │                   │
+│  - flashcards UI         │        │  - routers (per feature) │        │  - users          │
+│  - calendar              │        │  - SM-2 scheduler        │        │  - folders/pages  │
+│  - marketplace           │        │  - file extraction       │        │  - decks/cards    │
+│  - chat panel            │        │  - image validation      │        │  - reviews        │
+│                          │ ◄───── │                          │ ◄───── │  - invites        │
+│  Firebase JS SDK         │  JSON  │  Firebase Admin SDK      │        │  - calendar       │
+└────────────┬─────────────┘        └────────────┬─────────────┘        └───────────────────┘
+             │                                   │
+             │ ID token                          │ verify + upsert User
+             ▼                                   ▼
+     ┌──────────────────┐                ┌──────────────────┐
+     │ Firebase Auth    │                │  OpenAI API      │
+     │ (Google identity │                │  (gpt-4o-mini    │
+     │  platform)       │                │   for notes,     │
+     └──────────────────┘                │   flashcards,    │
+                                         │   chat stream)   │
+                                         └──────────────────┘
+```
+
+**How a request flows:**
+
+1. User signs in with Firebase on the frontend → gets a JWT ID token.
+2. Every API call carries `Authorization: Bearer <token>`.
+3. The `requireAuth` middleware on the backend verifies the token with `firebase-admin`, then
+   upserts the corresponding `User` row in MySQL (linked by Firebase UID).
+4. The route handler runs scoped to `req.user.uid` and persists via Prisma.
+5. AI routes additionally check the user's `tier` column (basic = 403, pro / premium = allowed)
+   before calling OpenAI; the response is either returned as JSON (notes / flashcards) or streamed
+   as `text/plain` chunks (note chat).
+
+**Key design decisions:**
+
+- **One markdown sentinel** (`<<<NoteDeckMD>>>`) wraps every note's body so the editor can detect
+  its own format vs. paste from outside.
+- **Spaced-repetition state** lives entirely on the backend (`src/lib/srs.ts`) — clients post an
+  answer, the server returns the next interval and due-time as unix ms (`BigInt`, serialised via
+  `src/lib/serialize.ts`).
+- **Deck clones** (marketplace + accept-invite) duplicate the cards so a recipient's progress is
+  independent; shared decks link back via `Deck.sharedFromDeckId` for the leaderboard query.
+- **Uploaded images** are validated by mimetype + extension + post-write magic-byte verification,
+  served with `X-Content-Type-Options: nosniff` + `Content-Disposition: inline` to defang
+  polyglot payloads.
+- **Public note content** has its embedded image URLs allowlisted (only `/avatars/*` or
+  `/api/images/*`) so attackers can't drop tracker beacons in shared content.
+
+A high-level ER diagram, SM-2 state diagram and use-case diagram live in
+[backend/docs/SETUP.md](backend/docs/SETUP.md).
+
+---
+
+## Project structure
+
+```
+FERINoteDeck/
+├── package.json                # Yarn 4 workspaces root
+├── biome.json                  # Lint / format config (whole monorepo)
+├── sonar-project.properties    # SonarCloud coverage + exclusions
+├── db/
+│   └── docker-compose.yml      # MySQL 8 container (yarn db:up)
+├── backend/                    # Express + TypeScript REST API
+│   ├── prisma/
+│   │   └── schema.prisma       # Single source of truth for the DB schema
+│   ├── docs/
+│   │   └── SETUP.md            # Local setup, ER + SM-2 + use-case diagrams
+│   └── src/
+│       ├── index.ts            # Express app + Swagger + route mounting
+│       ├── lib/                # prisma, firebase, openai, srs (SM-2), serialize, fileExtraction, imageValidation, cloneDeck
+│       ├── middleware/         # requireAuth (Firebase ID-token verify + User upsert)
+│       └── routes/             # folders, pages, images, users, flashcard-folders, decks, cards,
+│                               # invites, deck-invites, calendar-tags, calendar-events,
+│                               # marketplace, import, search
+└── frontend/                   # React 19 + Vite + Tailwind v4
+    ├── ARCHITECTURE.md         # Frontend src/ layout + data flow
+    ├── docs/                   # editor.md, flashcards.md, marketplace.md, search.md
+    ├── public/screenshots/     # Landing-page assets (reused in this README)
+    └── src/
+        ├── main.jsx / routes/  # React entrypoint and react-router config
+        ├── pages/              # NotesPage, LandingPage, Login, Register, VerifyEmail, ChooseUsername
+        ├── features/notes/     # sidebar, folder list, block editor, invites, chat panel, AccountModal
+        ├── features/flashcards/    # decks, cards, study session (SM-2), invites, leaderboard
+        ├── features/marketplace/   # browse, preview, clone public notes / decks
+        ├── features/calendar/      # month / week views, events with tags, upcoming-event toasts
+        ├── features/search/        # Spotlight-style cross-feature search
+        ├── components/         # DuoButton, Modal, Icon, ShareModal, ConfirmDialog…
+        ├── hooks/              # useMediaQuery, useResizableWidth, useContextMenu
+        └── services/           # notesService, flashcardsService, marketplaceService,
+                                # calendarService, searchService — all fetch() with Firebase Bearer
+```
+
+---
+
+## Tech stack
 
 | Layer | Technology |
 |---|---|
 | Backend | Node.js, Express 5, TypeScript, tsx |
 | Database | MySQL 8 via Prisma (Docker Compose in `db/`) |
-| Auth | Firebase Authentication (`firebase-admin` verifies ID tokens) |
-| Frontend | React 19, Vite, Tailwind CSS v4, react-router |
+| Auth | Firebase Authentication (`firebase-admin` verifies ID tokens server-side) |
+| AI | OpenAI `gpt-4o-mini` (structured JSON for notes / cards, streaming for chat) |
+| Frontend | React 19, Vite, Tailwind CSS v4, react-router 7, KaTeX (math), `@dnd-kit` (drag) |
 | Component docs | Storybook 10 (React + Vite) |
-| API docs | Swagger UI (swagger-jsdoc + swagger-ui-express) |
+| API docs | Swagger UI (`swagger-jsdoc` + `swagger-ui-express`) |
+| Testing | Vitest (BE unit + FE unit, jsdom) |
 | Linting | Biome (lint + format, whole monorepo) |
-| Monorepo | Yarn workspaces (Yarn 4 via Corepack) + concurrently |
+| CI / quality | GitHub Actions → SonarCloud quality gate (lint, tests, coverage, duplications, hotspots) |
+| Deployment | Docker images → GHCR → Nginx ([docs/deployment.md](docs/deployment.md)) |
+| Monorepo | Yarn 4 workspaces (via Corepack) + concurrently |
+
+---
 
 ## Getting started
 
-**Prerequisites**: Node.js ≥ 18, Docker (for the MySQL container), and a Firebase project.
-Full setup (MySQL user/db, Prisma, Firebase service account + web config) is in
+**Prerequisites**: Node.js ≥ 18, Docker (for the MySQL container), a Firebase project, and
+optionally an `OPENAI_API_KEY` to enable the AI features. The full setup walk-through
+(MySQL user / DB, Prisma migrations, Firebase service account + web config) lives in
 **[backend/docs/SETUP.md](backend/docs/SETUP.md)** — start there.
 
 ```bash
 yarn                                            # install all workspace deps
-cp backend/.env.example backend/.env            # then fill in DB + Firebase
+cp backend/.env.example backend/.env            # then fill in DB + Firebase + OpenAI
 cp frontend/.env.example frontend/.env          # Firebase web config
 yarn workspace notedeck-backend prisma:push     # create the MySQL tables
-yarn dev                                         # backend + frontend + Storybook
+yarn dev                                         # backend + frontend + Storybook (concurrently)
 ```
+
+`yarn dev` automatically starts the MySQL container via the `predev` hook, so a separate
+`docker compose up` is not needed.
 
 | Service | URL |
 |---|---|
@@ -43,6 +303,8 @@ yarn dev                                         # backend + frontend + Storyboo
 | Swagger UI | http://localhost:3001/api-docs |
 | Frontend | http://localhost:5173 |
 | Storybook | http://localhost:6006 |
+
+---
 
 ## Scripts
 
@@ -54,6 +316,8 @@ yarn build            # compile backend TS (prisma generate + tsc) + Vite produc
 yarn lint             # Biome checks across the whole monorepo
 yarn test             # run all Vitest tests (backend + frontend)
 yarn test:coverage    # tests + v8 coverage report (used by CI / SonarCloud)
+yarn db:up            # start the MySQL container
+yarn db:down          # stop the MySQL container (data preserved in db/data/)
 ```
 
 Per workspace:
@@ -65,35 +329,9 @@ yarn workspace notedeck-frontend dev         # frontend only (Vite)
 yarn workspace notedeck-frontend storybook   # Storybook dev server
 ```
 
-To auto-fix lint/format: `./node_modules/.bin/biome check --fix .`
+Auto-fix lint / format: `./node_modules/.bin/biome check --fix .`
 
-## Project structure
-
-```
-FERINoteDeck/
-├── package.json          # Yarn workspaces root
-├── biome.json            # Biome lint/format config
-├── backend/
-│   ├── prisma/schema.prisma   # MySQL schema (notes, flashcards, users)
-│   ├── docs/SETUP.md          # local setup + ER diagram + API overview
-│   └── src/
-│       ├── index.ts           # Express app + Swagger + route mounting
-│       ├── lib/               # prisma client, firebase, srs (SM-2), serialize
-│       ├── middleware/        # requireAuth (Firebase token)
-│       └── routes/            # folders, pages, images, users, flashcard-folders, decks, cards, invites, deck-invites, calendar-tags, calendar-events, marketplace, import, search
-└── frontend/
-    ├── ARCHITECTURE.md        # frontend src/ layout
-    ├── docs/                  # editor.md, flashcards.md, marketplace.md, search.md
-    └── src/
-        ├── routes/router.jsx
-        ├── pages/             # NotesPage, Login, Register, VerifyEmail, ChooseUsername
-        ├── features/notes/    # sidebar, folders/pages, block editor, invites, account modal
-        ├── features/flashcards/   # decks, cards, study session (SM-2), deck invites, leaderboard
-        ├── features/marketplace/  # browse, preview, clone public notes/decks
-        ├── features/calendar/     # month/week views, events with tags, upcoming-event toasts
-        ├── features/search/       # Spotlight-style cross-feature search
-        └── services/          # notesService, flashcardsService, marketplaceService, calendarService, searchService
-```
+---
 
 ## API
 
@@ -101,19 +339,25 @@ Base URL `http://localhost:3001/api`. Every route requires an
 `Authorization: Bearer <Firebase ID token>` header and is scoped to the authenticated user.
 Browse the full, live spec at **`/api-docs`** (Swagger). Route groups:
 
-- **Notes**: `/folders`, `/pages` (incl. `/pages/shared`), `/images` (helmet-secured, magic-byte verified)
-- **Flashcards**: `/flashcard-folders`, `/decks` (incl. `/decks/:id/queue`, `/decks/:id/leaderboard`),
-  `/cards` (incl. `/cards/:id/answer`, `/cards/:id/reset`)
+- **Notes**: `/folders`, `/pages` (incl. `/pages/shared`, `/pages/:id/presence`,
+  `/pages/:id/generate-deck`, `/pages/:id/chat` — streaming), `/images` (helmet-secured, magic-byte verified)
+- **Flashcards**: `/flashcard-folders`, `/decks` (incl. `/decks/:id/queue`,
+  `/decks/:id/leaderboard`, `/decks/:id/generate-test`), `/cards` (incl. `/cards/:id/answer`,
+  `/cards/:id/reset`)
 - **Direct sharing**:
-  - `/invites` — note-share invites (POST/GET pending, `/sent`, PATCH accept/decline, DELETE revoke)
+  - `/invites` — note-share invites (POST / GET pending, `/sent`, PATCH accept / decline, DELETE revoke)
   - `/deck-invites` — deck-share invites (accept clones the deck and links via `Deck.sharedFromDeckId`)
 - **Marketplace**: `/marketplace` (search public notes + decks), `/marketplace/notes/:id`,
   `/marketplace/decks/:id`, `/marketplace/*/clone`
-- **Calendar**: `/calendar-tags`, `/calendar-events` (incl. `/calendar-events/upcoming` for the 3-day warning/urgent buckets)
+- **Calendar**: `/calendar-tags`, `/calendar-events` (incl. `/calendar-events/upcoming` for the
+  3-day warning / urgent buckets)
+- **Import (AI)**: `/import` — multipart file upload + prompt → structured note (tier-gated)
 - **Search**: `/search?q=` (cross-feature, relevance-sorted, scoped to the caller)
 - **Account**: `/users/me`, `/users/me/avatar`, `/users/me/study-settings`
 
 Data is persisted in MySQL (see the ER diagram in [backend/docs/SETUP.md](backend/docs/SETUP.md)).
+
+---
 
 ## Documentation
 
@@ -125,23 +369,17 @@ Data is persisted in MySQL (see the ER diagram in [backend/docs/SETUP.md](backen
 - [frontend/docs/search.md](frontend/docs/search.md) — cross-feature search + relevance scoring
 - [docs/deployment.md](docs/deployment.md) — Docker / GHCR / Nginx CI-CD pipeline
 
-## Configuration
+A live component catalogue is also available via **Storybook** (`yarn workspace notedeck-frontend storybook`)
+at http://localhost:6006 — every UI component has interaction tests (`play` functions) and the
+backend API reference lives there as well (`Backend.mdx`).
 
-Backend `backend/.env` (see `backend/.env.example`): `PORT`, `DATABASE_URL`, `FIREBASE_PROJECT_ID`,
-`FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `CORS_ORIGIN`. Frontend `frontend/.env`
-(see `frontend/.env.example`): `VITE_FIREBASE_*` web config.
+---
 
-## Linting
+## Design
 
-```bash
-yarn lint                                  # check everything (exit 1 on errors)
-./node_modules/.bin/biome check --fix .    # auto-fix safe issues
-```
+Original UI design and prototypes:
+**[Figma — NoteDeck](https://www.figma.com/design/6tgxbVBCI2aQEKWJ6ljoyo/NoteDeck?node-id=2028-172&t=TxnQ93y2De1SI7VC-1)**
 
-Biome covers `backend/` and `frontend/` from the repo root via `biome.json` — recommended lint
-rules, import sorting, tabs, and double quotes for JS/TS.
-
-## Tailwind CSS
-
-Tailwind v4 via the `@tailwindcss/vite` plugin — no `tailwind.config.js`. Design tokens live in an
-`@theme {}` block in `frontend/src/styles/index.css`.
+Visual style is loosely "Duolingo-meets-Notion": offset shadows on every primary button, generous
+border radii (22.5 px / 30 px), folder colour as a primary navigation cue, and a single rounded
+sans-serif (`ui-rounded` / SF Pro Rounded) throughout. Light theme only.
