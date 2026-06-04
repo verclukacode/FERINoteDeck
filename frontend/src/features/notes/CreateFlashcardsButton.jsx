@@ -5,18 +5,31 @@ import { useNotes } from "./NotesContext.jsx";
 
 // The "Create Flashcards" pill in the NotePanel header. Basic-tier users see
 // a locked, dimmed version; Pro/Premium opens the AI generation modal.
-export default function CreateFlashcardsButton({ page }) {
+//
+// Two modes:
+// - Uncontrolled (default): owns the modal state internally.
+// - Controlled: pass an `onClick` callback to take over the click; the parent
+//   is responsible for rendering the modal. Used by NotePanel so its mobile
+//   "more" menu can trigger the same modal as this button.
+export default function CreateFlashcardsButton({ page, onClick }) {
 	const { tier } = useNotes();
-	const [open, setOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
 	const locked = tier === "basic";
 	const disabled = locked || !page;
+	const controlled = typeof onClick === "function";
+
+	const handleClick = () => {
+		if (disabled) return;
+		if (controlled) onClick();
+		else setInternalOpen(true);
+	};
 
 	return (
 		<>
 			<button
 				type="button"
 				disabled={disabled}
-				onClick={disabled ? undefined : () => setOpen(true)}
+				onClick={disabled ? undefined : handleClick}
 				aria-label={
 					locked
 						? "Create flashcards (requires Pro or Premium)"
@@ -31,8 +44,11 @@ export default function CreateFlashcardsButton({ page }) {
 				<Icon name="flashcards" size={20} />
 				Create Flashcards
 			</button>
-			{open && page && (
-				<CreateFlashcardsModal page={page} onClose={() => setOpen(false)} />
+			{!controlled && internalOpen && page && (
+				<CreateFlashcardsModal
+					page={page}
+					onClose={() => setInternalOpen(false)}
+				/>
 			)}
 		</>
 	);

@@ -21,9 +21,12 @@ const DEFAULT_STAGES = [
 
 // Portalled to <body> at z-49 so it sits behind the modal (z-50). Mounting
 // triggers the one-shot grow-in animation via the .ai-window-halo class.
+// Hidden on mobile (`<640px`) — iOS Safari composites the halo's blurred
+// layer above the modal on small screens, and shrinking it to fit looks
+// muddy anyway. Desktop still gets the full effect.
 export function ModalHalo() {
 	return createPortal(
-		<div className="ai-window-halo" aria-hidden="true" />,
+		<div className="ai-window-halo hidden sm:block" aria-hidden="true" />,
 		document.body,
 	);
 }

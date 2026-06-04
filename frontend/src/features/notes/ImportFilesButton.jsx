@@ -22,7 +22,7 @@ export default function ImportFilesButton() {
 					locked ? "Generate note (requires Pro or Premium)" : "Generate note"
 				}
 				title={locked ? "Available with a Pro or Premium account" : undefined}
-				className={`flex h-[45px] w-full items-center justify-center gap-2 bg-folder-purple text-white shadow-[0_2.5px_0_#5b78dd] ${locked ? "cursor-not-allowed opacity-40" : ""}`}
+				className={`flex h-[45px] w-full shrink-0 items-center justify-center gap-2 bg-folder-purple text-white shadow-[0_2.5px_0_#5b78dd] ${locked ? "cursor-not-allowed opacity-40" : ""}`}
 			>
 				{locked && <Icon name="lock" size={16} />}
 				Generate note

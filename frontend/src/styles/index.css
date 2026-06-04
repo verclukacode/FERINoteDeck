@@ -39,6 +39,17 @@ body,
 	height: 100%;
 }
 
+/* Disable pinch-zoom and double-tap zoom across the whole app. The viewport
+   meta tag covers most browsers, but recent iOS Safari ignores
+   `user-scalable=no` — `touch-action: pan-x pan-y` makes the same rule
+   stick: only scrolling gestures pass through. */
+html,
+body {
+	touch-action: pan-x pan-y;
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
 body {
 	margin: 0;
 	font-family: var(--font-sans);

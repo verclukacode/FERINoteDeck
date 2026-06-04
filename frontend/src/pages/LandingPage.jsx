@@ -2,25 +2,76 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 function Navbar() {
+	const [menuOpen, setMenuOpen] = useState(false);
 	return (
-		<nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md border-b border-gray-100">
-			<div className="flex items-center gap-2.5">
-				<img src="/favicon.svg" alt="NoteDeck" className="w-9 h-9" />
-				<span className="text-xl font-bold text-gray-900">NoteDeck</span>
-			</div>
-			<div className="flex items-center gap-3">
+		<nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-3 border-b border-gray-100 bg-white/80 px-4 py-3 backdrop-blur-md sm:px-8 sm:py-4">
+			<Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+				<img
+					src="/favicon.svg"
+					alt="NoteDeck"
+					className="h-8 w-8 shrink-0 sm:h-9 sm:w-9"
+				/>
+				<span className="truncate text-lg font-bold text-gray-900 sm:text-xl">
+					NoteDeck
+				</span>
+			</Link>
+
+			{/* Desktop: Duo-style buttons inline */}
+			<div className="hidden shrink-0 items-center gap-3 sm:flex">
 				<Link
 					to="/login"
-					className="px-5 py-2 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+					className="inline-flex h-11 items-center justify-center rounded-full border-[2.5px] border-gray-200 bg-white px-5 text-sm font-bold text-gray-700 shadow-[0_2.5px_0_rgba(0,0,0,0.08)] transition-transform active:translate-y-[2.5px] active:[box-shadow:none]"
 				>
 					Log in
 				</Link>
 				<Link
 					to="/register"
-					className="px-5 py-2 text-sm font-semibold text-white bg-[#f4845f] rounded-full shadow-[0_2.5px_0_#d4623d] hover:opacity-90 transition-opacity"
+					className="inline-flex h-11 items-center justify-center rounded-full border-[2.5px] border-black/10 bg-[#f4845f] px-5 text-sm font-bold text-white shadow-[0_2.5px_0_#d4623d] transition-transform active:translate-y-[2.5px] active:[box-shadow:none]"
 				>
 					Get started
 				</Link>
+			</div>
+
+			{/* Mobile: hamburger that opens a small dropdown */}
+			<div className="relative shrink-0 sm:hidden">
+				<button
+					type="button"
+					onClick={() => setMenuOpen((v) => !v)}
+					aria-label="Open menu"
+					className="flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-gray-200 bg-white text-gray-700 shadow-[0_2.5px_0_rgba(0,0,0,0.08)]"
+				>
+					<span className="flex flex-col gap-1">
+						<span className="block h-[2px] w-5 rounded-full bg-gray-700" />
+						<span className="block h-[2px] w-5 rounded-full bg-gray-700" />
+						<span className="block h-[2px] w-5 rounded-full bg-gray-700" />
+					</span>
+				</button>
+				{menuOpen && (
+					<>
+						<button
+							type="button"
+							aria-label="Close menu"
+							onClick={() => setMenuOpen(false)}
+							className="fixed inset-0 z-40 cursor-default"
+						/>
+						<div className="absolute right-0 top-full z-50 mt-2 flex w-44 flex-col overflow-hidden rounded-2xl border-[2.5px] border-gray-100 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+							<Link
+								to="/login"
+								onClick={() => setMenuOpen(false)}
+								className="px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+							>
+								Log in
+							</Link>
+							<Link
+								to="/register"
+								onClick={() => setMenuOpen(false)}
+								className="border-t border-gray-100 bg-[#f4845f]/10 px-4 py-3 text-sm font-bold text-[#f4845f]"
+							>
+								Get started
+							</Link>
+						</div>
+					</>
+				)}
 			</div>
 		</nav>
 	);
@@ -39,10 +90,15 @@ function Screenshot({
 			className={`relative overflow-hidden rounded-2xl shadow-2xl bg-gray-50 ${className}`}
 			style={{ border: "2.5px solid #e5e7eb" }}
 		>
+			{/* key={src} forces React to remount the <img> when the source
+			    changes — the previous onError handler used to set
+			    style.display="none" on the element and that style stuck around
+			    after a successful src swap, leaving the image hidden. */}
 			<img
+				key={src}
 				src={src}
 				alt={alt}
-				className="absolute inset-0 w-full h-full object-cover"
+				className="absolute inset-0 h-full w-full object-cover"
 				style={{
 					objectPosition: zoom,
 					...(scale
@@ -50,7 +106,7 @@ function Screenshot({
 						: {}),
 				}}
 				onError={(e) => {
-					e.target.style.display = "none";
+					e.currentTarget.style.visibility = "hidden";
 				}}
 			/>
 		</div>
@@ -81,25 +137,27 @@ function FeatureSection({
 	const [active, setActive] = useState(0);
 	const current = items[active];
 	return (
-		<section className="py-20 px-6 max-w-6xl mx-auto">
+		<section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
 			<div
-				className={`flex flex-col gap-12 items-center lg:gap-16 ${
+				className={`flex flex-col items-center gap-8 sm:gap-12 lg:gap-16 ${
 					reverse ? "lg:flex-row-reverse" : "lg:flex-row"
 				}`}
 			>
 				{/* Text */}
-				<div className="flex-1 flex flex-col gap-5">
-					<h2 className="text-4xl font-bold text-gray-900 leading-tight">
+				<div className="flex w-full flex-1 flex-col gap-4 sm:gap-5">
+					<h2 className="text-2xl font-bold leading-tight text-gray-900 sm:text-3xl lg:text-4xl">
 						<span style={{ color }}>{coloredWord}</span> {titleRest}
 					</h2>
-					<p className="text-lg text-gray-500 leading-relaxed">{description}</p>
-					<div className="flex flex-col gap-2 mt-1">
+					<p className="text-base leading-relaxed text-gray-500 sm:text-lg">
+						{description}
+					</p>
+					<div className="mt-1 flex flex-col gap-2">
 						{items.map((item, i) => (
 							<button
 								key={item.title}
 								type="button"
 								onClick={() => setActive(i)}
-								className={`flex items-start gap-4 px-4 py-4 rounded-2xl text-left transition-all ${
+								className={`flex items-start gap-3 rounded-2xl px-3 py-3 text-left transition-all sm:gap-4 sm:px-4 sm:py-4 ${
 									active === i ? "bg-gray-50 shadow-sm" : "hover:bg-gray-50/60"
 								}`}
 								style={
@@ -109,14 +167,14 @@ function FeatureSection({
 								}
 							>
 								<div
-									className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl text-lg"
+									className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg"
 									style={{ background: `${color}15`, color }}
 								>
 									{item.icon}
 								</div>
-								<div>
+								<div className="min-w-0">
 									<p className="font-semibold text-gray-900">{item.title}</p>
-									<p className="text-sm text-gray-500 mt-0.5">
+									<p className="mt-0.5 text-sm text-gray-500">
 										{item.description}
 									</p>
 								</div>
@@ -125,22 +183,26 @@ function FeatureSection({
 					</div>
 					<Link
 						to="/register"
-						className="inline-flex items-center gap-1 font-semibold text-sm mt-1"
-						style={{ color }}
+						className="mt-2 inline-flex h-11 w-fit items-center justify-center gap-1 rounded-full border-[2.5px] px-5 text-sm font-bold text-white shadow-[0_2.5px_0_rgba(0,0,0,0.15)] transition-transform active:translate-y-[2.5px] active:[box-shadow:none]"
+						style={{
+							background: color,
+							borderColor: "rgba(0,0,0,0.1)",
+							boxShadow: `0 2.5px 0 ${color}80`,
+						}}
 					>
 						Try it now →
 					</Link>
 				</div>
 
 				{/* Screenshot — swaps based on active item */}
-				<div className="flex-1 w-full">
+				<div className="w-full flex-1">
 					<Screenshot
 						src={current.screenshot}
 						alt={current.title}
 						zoom={current.zoom ?? "top center"}
 						scale={current.scale}
 						origin={current.origin}
-						className="w-full aspect-[4/3]"
+						className="aspect-[4/3] w-full"
 					/>
 				</div>
 			</div>
@@ -155,37 +217,35 @@ export default function LandingPage() {
 
 			{/* Hero */}
 			<section
-				className="pt-32 pb-20 px-6 text-center"
+				className="px-4 pt-24 pb-12 text-center sm:px-6 sm:pt-32 sm:pb-20"
 				style={{
 					background:
 						"linear-gradient(160deg, #fff8f5 0%, #f0f4ff 50%, #fff 100%)",
 				}}
 			>
-				<div className="max-w-3xl mx-auto flex flex-col items-center gap-6">
-					<span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 border border-orange-100 text-sm font-semibold text-orange-500">
+				<div className="mx-auto flex max-w-3xl flex-col items-center gap-5 sm:gap-6">
+					<span className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-4 py-1.5 text-xs font-semibold text-orange-500 sm:text-sm">
 						✦ Your all-in-one study companion
 					</span>
-					<h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 leading-tight">
+					<h1 className="text-3xl font-extrabold leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
 						Notes, flashcards <span style={{ color: "#f4845f" }}>and more</span>
-						<br />
-						in one place
+						<br className="hidden sm:inline" /> in one place
 					</h1>
-					<p className="text-xl text-gray-500 max-w-xl leading-relaxed">
+					<p className="max-w-xl text-base leading-relaxed text-gray-500 sm:text-xl">
 						Write rich notes, study with spaced repetition flashcards, generate
 						content with AI, and collaborate with your classmates — all in
 						NoteDeck.
 					</p>
-					<div className="flex flex-col sm:flex-row gap-3 mt-2">
+					<div className="mt-2 flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
 						<Link
 							to="/register"
-							className="px-8 py-3.5 text-base font-bold text-white rounded-full shadow-[0_3px_0_#d4623d] hover:opacity-90 transition-opacity"
-							style={{ background: "#f4845f" }}
+							className="inline-flex h-12 items-center justify-center rounded-full border-[2.5px] border-black/10 bg-[#f4845f] px-8 text-base font-bold text-white shadow-[0_3px_0_#d4623d] transition-transform active:translate-y-[3px] active:[box-shadow:none]"
 						>
 							Get started for free
 						</Link>
 						<Link
 							to="/login"
-							className="px-8 py-3.5 text-base font-semibold text-gray-700 bg-white rounded-full border border-gray-200 hover:border-gray-300 transition-colors shadow-sm"
+							className="inline-flex h-12 items-center justify-center rounded-full border-[2.5px] border-gray-200 bg-white px-8 text-base font-bold text-gray-700 shadow-[0_3px_0_rgba(0,0,0,0.08)] transition-transform active:translate-y-[3px] active:[box-shadow:none]"
 						>
 							Log in
 						</Link>
@@ -193,7 +253,7 @@ export default function LandingPage() {
 				</div>
 
 				{/* Hero screenshot */}
-				<div className="mt-14 max-w-5xl mx-auto">
+				<div className="mx-auto mt-8 max-w-5xl sm:mt-14">
 					<div
 						className="relative overflow-hidden rounded-3xl shadow-[0_40px_100px_rgba(0,0,0,0.12)]"
 						style={{ border: "2.5px solid #e5e7eb" }}
@@ -402,16 +462,16 @@ export default function LandingPage() {
 			/>
 
 			{/* Marketplace + AI Chat */}
-			<section className="py-20 px-6 max-w-6xl mx-auto">
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-					<div className="flex flex-col gap-5 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm">
-						<span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-green-50 text-green-500">
+			<section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
+					<div className="flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:gap-5 sm:p-8">
+						<span className="inline-flex w-fit items-center rounded-full bg-green-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-green-500">
 							Marketplace
 						</span>
-						<h3 className="text-2xl font-bold text-gray-900">
+						<h3 className="text-xl font-bold text-gray-900 sm:text-2xl">
 							Discover community content
 						</h3>
-						<p className="text-gray-500">
+						<p className="text-sm text-gray-500 sm:text-base">
 							Browse public notes and flashcard decks from other students.
 							Preview and clone anything into your workspace in one click.
 						</p>
@@ -421,17 +481,17 @@ export default function LandingPage() {
 							zoom="top center"
 							scale={1.65}
 							origin="38% 42%"
-							className="w-full aspect-[4/3] mt-2"
+							className="mt-2 aspect-[4/3] w-full"
 						/>
 					</div>
-					<div className="flex flex-col gap-5 p-8 rounded-3xl border border-gray-100 bg-white shadow-sm">
-						<span className="inline-flex w-fit items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-purple-50 text-purple-400">
+					<div className="flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:gap-5 sm:p-8">
+						<span className="inline-flex w-fit items-center rounded-full bg-purple-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-purple-400">
 							AI Chat
 						</span>
-						<h3 className="text-2xl font-bold text-gray-900">
+						<h3 className="text-xl font-bold text-gray-900 sm:text-2xl">
 							Ask anything about your notes
 						</h3>
-						<p className="text-gray-500">
+						<p className="text-sm text-gray-500 sm:text-base">
 							Chat with AI directly in the context of your note. Get
 							explanations, summaries and deeper insights instantly.
 						</p>
@@ -439,7 +499,7 @@ export default function LandingPage() {
 							src="/screenshots/chat.png"
 							alt="AI Chat"
 							zoom="right top"
-							className="w-full aspect-[4/3] mt-2"
+							className="mt-2 aspect-[4/3] w-full"
 						/>
 					</div>
 				</div>
@@ -447,24 +507,27 @@ export default function LandingPage() {
 
 			{/* Final CTA */}
 			<section
-				className="py-24 px-6 text-center"
+				className="px-4 py-16 text-center sm:px-6 sm:py-24"
 				style={{
 					background: "linear-gradient(160deg, #fff8f5 0%, #f0f4ff 100%)",
 				}}
 			>
-				<div className="max-w-2xl mx-auto flex flex-col items-center gap-6">
-					<img src="/favicon.svg" alt="NoteDeck" className="w-16 h-16" />
-					<h2 className="text-4xl font-extrabold text-gray-900">
+				<div className="mx-auto flex max-w-2xl flex-col items-center gap-5 sm:gap-6">
+					<img
+						src="/favicon.svg"
+						alt="NoteDeck"
+						className="h-12 w-12 sm:h-16 sm:w-16"
+					/>
+					<h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl lg:text-4xl">
 						Start learning smarter today
 					</h2>
-					<p className="text-lg text-gray-500">
+					<p className="text-base text-gray-500 sm:text-lg">
 						Join NoteDeck and bring your notes, flashcards and study schedule
 						together.
 					</p>
 					<Link
 						to="/register"
-						className="mt-2 px-10 py-4 text-base font-bold text-white rounded-full shadow-[0_3px_0_#d4623d] hover:opacity-90 transition-opacity"
-						style={{ background: "#f4845f" }}
+						className="mt-2 inline-flex h-14 items-center justify-center rounded-full border-[2.5px] border-black/10 bg-[#f4845f] px-10 text-base font-bold text-white shadow-[0_3px_0_#d4623d] transition-transform active:translate-y-[3px] active:[box-shadow:none]"
 					>
 						Create free account
 					</Link>

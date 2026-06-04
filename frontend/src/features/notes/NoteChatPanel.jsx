@@ -84,7 +84,7 @@ export default function NoteChatPanel({
 	}
 
 	return (
-		<div className="chat-panel flex w-[420px] max-w-[90vw] shrink-0 flex-col border-l-[2.5px] border-border-soft bg-bg">
+		<div className="chat-panel fixed inset-0 z-40 flex flex-col border-l-[2.5px] border-border-soft bg-bg sm:relative sm:inset-auto sm:z-auto sm:w-[420px] sm:max-w-[90vw] sm:shrink-0">
 			{/* Header */}
 			<div className="flex items-center gap-3 border-b-[2.5px] border-border-soft px-4 py-3">
 				<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-folder-purple/15 text-folder-purple">

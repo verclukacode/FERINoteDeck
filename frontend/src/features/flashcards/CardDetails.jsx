@@ -13,7 +13,8 @@ const typeLabel = (value) =>
 	CARD_TYPES.find((t) => t.value === value)?.label ?? CARD_TYPES[0].label;
 
 export default function CardDetails() {
-	const { selectedCard, updateCard, removeCard, resetCard } = useFlashcards();
+	const { selectedCard, selectCard, updateCard, removeCard, resetCard } =
+		useFlashcards();
 	const [draft, setDraft] = useState({
 		question: "",
 		answer: "",
@@ -50,8 +51,18 @@ export default function CardDetails() {
 	};
 
 	return (
-		<aside className="relative flex w-[420px] shrink-0 flex-col overflow-hidden rounded-[30px] border-[2.5px] border-folder-blue/40 bg-folder-blue/15">
+		<aside
+			className={`${selectedCard ? "flex" : "hidden"} relative flex-1 flex-col overflow-hidden rounded-[30px] border-[2.5px] border-folder-blue/40 bg-folder-blue/15 sm:flex sm:w-[420px] sm:flex-none sm:shrink-0`}
+		>
 			<div className="flex items-center gap-3 border-b-2 border-folder-blue/30 px-6 pb-5 pt-7">
+				<button
+					type="button"
+					aria-label="Back to deck"
+					onClick={() => selectCard(null)}
+					className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[2.5px] border-folder-blue/30 bg-bg/70 text-title sm:hidden"
+				>
+					<Icon name="chevron" size={16} className="rotate-90" />
+				</button>
 				<h2 className="min-w-0 flex-1 truncate text-3xl font-bold text-title">
 					Selected question
 				</h2>

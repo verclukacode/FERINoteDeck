@@ -162,7 +162,9 @@ export default function StudySession({ deckId, onClose }) {
 				<Icon name="xmark" size={16} />
 			</button>
 
-			{phase !== "loading" && phase !== "error" && <Stats counts={counts} />}
+			{phase !== "loading" && phase !== "error" && phase !== "finish" && (
+				<Stats counts={counts} />
+			)}
 
 			{phase === "loading" ? (
 				<div className="flex flex-1 items-center justify-center text-body">
@@ -181,9 +183,11 @@ export default function StudySession({ deckId, onClose }) {
 				</div>
 			) : phase === "finish" ? (
 				<>
-					<div className="flex flex-1 flex-col items-center justify-center gap-6 px-4">
+					<div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
 						<Icon name="party" size={64} className="text-white" />
-						<p className="text-6xl font-bold text-white">You are done!</p>
+						<p className="text-4xl font-bold text-white sm:text-6xl">
+							You are done!
+						</p>
 					</div>
 					<div className="flex justify-center px-4 pb-12">
 						<DuoButton

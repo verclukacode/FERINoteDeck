@@ -94,14 +94,14 @@ export default function SearchModal({ onClose }) {
 	const term = q.trim();
 
 	return (
-		<div className="absolute inset-0 z-50 flex items-start justify-center pt-[10vh]">
+		<div className="fixed inset-0 z-50 flex items-start justify-center px-3 pt-4 sm:px-0 sm:pt-[10vh]">
 			<button
 				type="button"
 				aria-label="Close"
 				onClick={onClose}
 				className="absolute inset-0 bg-black/15"
 			/>
-			<div className="relative flex max-h-[70vh] w-[640px] max-w-[90vw] flex-col rounded-[30px] border-[2.5px] border-border-soft bg-bg shadow-[0_5px_0_rgba(0,0,0,0.12)]">
+			<div className="relative flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-[30px] border-[2.5px] border-border-soft bg-bg shadow-[0_5px_0_rgba(0,0,0,0.12)] sm:max-h-[70vh] sm:w-[640px] sm:max-w-[90vw]">
 				<div className="flex items-center gap-3 border-b-[2.5px] border-border-soft px-6 py-4">
 					<Icon name="search" size={18} className="text-body" />
 					<input

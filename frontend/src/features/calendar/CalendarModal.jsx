@@ -60,14 +60,10 @@ export default function CalendarModal({ onClose }) {
 
 	return (
 		<>
-			<Modal
-				open
-				onClose={onClose}
-				className="w-[820px] max-w-[calc(100vw-2rem)] p-0 overflow-hidden"
-			>
-				<div className="flex h-[560px] max-h-[calc(100vh-4rem)]">
+			<Modal open onClose={onClose} className="w-[820px] p-0">
+				<div className="flex h-[calc(100dvh-2rem)] max-h-[560px] flex-col sm:h-[560px] sm:flex-row">
 					{/* LEFT — Calendar */}
-					<div className="flex w-[360px] shrink-0 flex-col gap-4 border-r-[2.5px] border-border-soft p-6">
+					<div className="flex flex-col gap-4 border-b-[2.5px] border-border-soft p-5 sm:w-[360px] sm:shrink-0 sm:border-b-0 sm:border-r-[2.5px] sm:p-6">
 						{/* Header */}
 						<div className="flex items-center justify-between">
 							<h2 className="text-2xl font-bold text-title">Calendar</h2>

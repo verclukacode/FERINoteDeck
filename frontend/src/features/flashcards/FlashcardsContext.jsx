@@ -264,8 +264,19 @@ export function FlashcardsProvider({ children }) {
 	const selectDeck = useCallback(
 		(id) => {
 			setSelectedDeckId(id);
-			const first = cards.find((c) => c.deckId === id);
-			setSelectedCardId(first?.id ?? null);
+			// On desktop pre-select the first card so the right pane has content.
+			// On mobile the deck list is its own screen — selecting a card jumps
+			// to the CardDetails view, so don't auto-trigger that here.
+			const isDesktop =
+				typeof window !== "undefined" &&
+				typeof window.matchMedia === "function" &&
+				window.matchMedia("(min-width: 640px)").matches;
+			if (isDesktop) {
+				const first = cards.find((c) => c.deckId === id);
+				setSelectedCardId(first?.id ?? null);
+			} else {
+				setSelectedCardId(null);
+			}
 		},
 		[cards],
 	);

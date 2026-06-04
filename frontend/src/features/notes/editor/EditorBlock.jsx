@@ -27,13 +27,15 @@ const PLACEHOLDERS = {
 	task: "To-do",
 };
 
+// `break-words` lets long unbroken strings (URLs, raw LaTeX, etc.) wrap inside
+// the editor instead of pushing the panel wider than the viewport.
 const TYPE_CLASS = {
-	h1: "text-2xl font-bold text-title",
-	h2: "text-lg font-semibold text-title",
-	text: "text-title",
-	bullet: "text-title",
-	numbered: "text-title",
-	task: "text-title",
+	h1: "text-2xl font-bold text-title break-words",
+	h2: "text-lg font-semibold text-title break-words",
+	text: "text-title break-words",
+	bullet: "text-title break-words",
+	numbered: "text-title break-words",
+	task: "text-title break-words",
 };
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;

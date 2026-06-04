@@ -84,7 +84,7 @@ export default function ChooseUsernamePage() {
 
 	return (
 		<div className="flex min-h-full items-center justify-center bg-bg p-4">
-			<div className="w-full max-w-sm rounded-3xl bg-bg-secondary p-10">
+			<div className="w-full max-w-sm rounded-3xl bg-bg-secondary p-6 sm:p-10">
 				<div className="mb-8 flex items-center justify-center gap-3">
 					<AppLogo />
 					<div>
@@ -118,7 +118,7 @@ export default function ChooseUsernamePage() {
 								}
 								placeholder="your_username"
 								maxLength={20}
-								className="w-full rounded-full bg-bg py-3 pl-8 pr-4 text-sm text-title placeholder:text-body/50 outline-none"
+								className="w-full rounded-full bg-bg py-3.5 pl-8 pr-4 text-base text-title placeholder:text-body/50 outline-none sm:py-3 sm:text-sm"
 							/>
 						</div>
 						{hint && (

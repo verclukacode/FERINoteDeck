@@ -112,16 +112,16 @@ export default function MarketplaceModal({ onClose, initialSelected = null }) {
 	}
 
 	return (
-		<div className="absolute inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
 			<button
 				type="button"
 				aria-label="Close"
 				onClick={onClose}
 				className="absolute inset-0 bg-black/15"
 			/>
-			<div className="relative flex h-[80vh] w-[1000px] max-w-[95vw] flex-col rounded-[30px] border-[2.5px] border-border-soft bg-bg shadow-[0_5px_0_rgba(0,0,0,0.12)]">
+			<div className="relative flex h-[calc(100dvh-1.5rem)] w-full max-w-[1000px] flex-col rounded-[30px] border-[2.5px] border-border-soft bg-bg shadow-[0_5px_0_rgba(0,0,0,0.12)] sm:h-[80vh]">
 				{/* Header */}
-				<div className="flex items-center gap-3 border-b-[2.5px] border-border-soft px-6 py-5">
+				<div className="flex items-center gap-3 border-b-[2.5px] border-border-soft px-4 py-4 sm:px-6 sm:py-5">
 					<Icon name="store" size={22} className="text-folder-blue" />
 					<h2 className="flex-1 text-2xl font-bold text-title">Marketplace</h2>
 					<button
@@ -135,7 +135,7 @@ export default function MarketplaceModal({ onClose, initialSelected = null }) {
 				</div>
 
 				{/* Toolbar */}
-				<div className="flex items-center gap-3 border-b-[2.5px] border-border-soft px-6 py-4">
+				<div className="flex items-center gap-2 border-b-[2.5px] border-border-soft px-4 py-3 sm:gap-3 sm:px-6 sm:py-4">
 					<div className="relative flex-1">
 						<span className="absolute left-3 top-1/2 -translate-y-1/2 text-body">
 							<Icon name="search" size={16} />
@@ -167,9 +167,12 @@ export default function MarketplaceModal({ onClose, initialSelected = null }) {
 					</div>
 				</div>
 
-				{/* Body: list (left) + preview (right) */}
+				{/* Body: list (left) + preview (right). On mobile only one is
+				    visible at a time — picking an item flips to the preview. */}
 				<div className="flex flex-1 overflow-hidden">
-					<div className="flex w-[40%] min-w-[320px] flex-col gap-2 overflow-y-auto border-r-[2.5px] border-border-soft px-4 py-4">
+					<div
+						className={`${selected ? "hidden" : "flex"} w-full flex-col gap-2 overflow-y-auto border-r-[2.5px] border-border-soft px-4 py-4 sm:flex sm:w-[40%] sm:min-w-[320px]`}
+					>
 						{error && (
 							<p className="text-center text-sm text-folder-red">{error}</p>
 						)}
@@ -211,13 +214,16 @@ export default function MarketplaceModal({ onClose, initialSelected = null }) {
 						)}
 					</div>
 
-					<div className="flex min-w-0 flex-1 flex-col">
+					<div
+						className={`${selected ? "flex" : "hidden"} min-w-0 flex-1 flex-col sm:flex`}
+					>
 						{selected ? (
 							<MarketplacePreview
 								key={`${selected.kind}:${selected.id}`}
 								kind={selected.kind}
 								id={selected.id}
 								onClone={() => setPicker(selected)}
+								onBack={() => setSelected(null)}
 							/>
 						) : (
 							<div className="flex flex-1 items-center justify-center text-center text-sm text-body">

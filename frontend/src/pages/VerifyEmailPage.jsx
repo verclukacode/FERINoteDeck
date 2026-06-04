@@ -43,7 +43,7 @@ export default function VerifyEmailPage() {
 
 	return (
 		<div className="flex min-h-full items-center justify-center bg-bg p-4">
-			<div className="w-full max-w-sm rounded-3xl bg-bg-secondary p-10">
+			<div className="w-full max-w-sm rounded-3xl bg-bg-secondary p-6 sm:p-10">
 				<div className="mb-8 flex items-center justify-center gap-3">
 					<AppLogo />
 					<div>

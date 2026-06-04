@@ -796,19 +796,19 @@ export default function AccountModal({ onClose }) {
 	}
 
 	return (
-		<div className="absolute inset-0 z-50 flex items-center justify-center">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
 			<button
 				type="button"
 				aria-label="Close"
 				onClick={onClose}
 				className="absolute inset-0 bg-black/15"
 			/>
-			<div className="relative w-[460px] rounded-[30px] border-[2.5px] border-border-soft bg-bg p-6 shadow-[0_5px_0_rgba(0,0,0,0.12)]">
+			<div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-[460px] overflow-y-auto rounded-[30px] border-[2.5px] border-border-soft bg-bg p-5 shadow-[0_5px_0_rgba(0,0,0,0.12)] sm:max-h-[calc(100dvh-2rem)] sm:p-6">
 				{/* Close X */}
 				<button
 					type="button"
 					onClick={onClose}
-					className="absolute right-8 top-8 flex h-8 w-8 items-center justify-center rounded-full bg-bg-secondary text-body hover:bg-border-soft"
+					className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full bg-bg-secondary text-body hover:bg-border-soft sm:right-8 sm:top-8"
 				>
 					<Icon name="xmark" size={14} />
 				</button>

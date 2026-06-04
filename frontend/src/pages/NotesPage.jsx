@@ -10,6 +10,7 @@ import {
 	parseMarketplaceLink,
 } from "../features/marketplace/marketplaceLink.js";
 import AccountModal from "../features/notes/AccountModal.jsx";
+import { MobileNavProvider } from "../features/notes/MobileNavContext.jsx";
 import NotePanel from "../features/notes/NotePanel.jsx";
 import { NotesProvider, useNotes } from "../features/notes/NotesContext.jsx";
 import Sidebar from "../features/notes/Sidebar.jsx";
@@ -57,7 +58,7 @@ function NotesWorkspace() {
 	}
 
 	return (
-		<div className="relative flex h-full gap-4 bg-bg p-4">
+		<div className="relative flex h-full gap-2 bg-bg p-2 sm:gap-4 sm:p-4">
 			<Sidebar
 				onOpenMarketplace={() => setMarketplaceOpen(true)}
 				onOpenSearch={() => setSearchOpen(true)}
@@ -69,7 +70,7 @@ function NotesWorkspace() {
 			) : view === VIEW.FLASHCARDS ? (
 				<FlashcardsView />
 			) : (
-				<main className="flex flex-1 overflow-hidden rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary">
+				<main className="flex min-w-0 flex-1 overflow-hidden rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary">
 					<NotePanel />
 				</main>
 			)}
@@ -92,7 +93,9 @@ export default function NotesPage() {
 		<NotesProvider>
 			<FlashcardsProvider>
 				<CalendarProvider>
-					<NotesWorkspace />
+					<MobileNavProvider>
+						<NotesWorkspace />
+					</MobileNavProvider>
 				</CalendarProvider>
 			</FlashcardsProvider>
 		</NotesProvider>

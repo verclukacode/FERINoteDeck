@@ -48,7 +48,7 @@ function DeckContent({ cards }) {
 
 // Right-pane preview of a single marketplace item. Loads the full payload on
 // `(kind, id)` change and shows a Clone button that opens the folder picker.
-export default function MarketplacePreview({ kind, id, onClone }) {
+export default function MarketplacePreview({ kind, id, onClone, onBack }) {
 	const [item, setItem] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
@@ -96,7 +96,17 @@ export default function MarketplacePreview({ kind, id, onClone }) {
 
 	return (
 		<div className="flex h-full flex-col">
-			<div className="flex items-start gap-4 border-b-[2.5px] border-border-soft px-6 py-5">
+			<div className="flex items-start gap-3 border-b-[2.5px] border-border-soft px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
+				{onBack && (
+					<button
+						type="button"
+						aria-label="Back to list"
+						onClick={onBack}
+						className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title sm:hidden"
+					>
+						<Icon name="chevron" size={14} className="rotate-90" />
+					</button>
+				)}
 				<div className="min-w-0 flex-1">
 					<div className="flex min-w-0 items-center gap-2">
 						<Icon

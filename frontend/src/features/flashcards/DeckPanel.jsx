@@ -7,6 +7,7 @@ import {
 	getDeckTodayStats,
 	getStreak,
 } from "../../services/flashcardsService.js";
+import { useMobileNav } from "../notes/MobileNavContext.jsx";
 import ActivityModal from "./ActivityModal.jsx";
 import DeckLeaderboardModal from "./DeckLeaderboardModal.jsx";
 import { useFlashcards } from "./FlashcardsContext.jsx";
@@ -160,7 +161,8 @@ function DeckTitle({ deck, onRename }) {
 				if (e.key === "Enter") e.currentTarget.blur();
 			}}
 			onBlur={commit}
-			className="-mx-2 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-3xl font-bold text-title outline-none focus:bg-bg"
+			maxLength={200}
+			className="-mx-2 min-w-0 flex-1 truncate rounded-lg bg-transparent px-2 text-xl font-bold text-title outline-none focus:bg-bg sm:text-3xl"
 		/>
 	);
 }
@@ -198,7 +200,9 @@ export default function DeckPanel() {
 		deckShares,
 		revokeDeckShare,
 	} = useFlashcards();
+	const { openSidebar } = useMobileNav();
 	const [studying, setStudying] = useState(false);
+	const [moreOpen, setMoreOpen] = useState(false);
 	const [sharing, setSharing] = useState(false);
 	const [leaderboardOpen, setLeaderboardOpen] = useState(false);
 	const [activityOpen, setActivityOpen] = useState(false);
@@ -252,50 +256,121 @@ export default function DeckPanel() {
 
 	if (!selectedDeck) {
 		return (
-			<main className="flex flex-1 items-center justify-center rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary text-body">
+			<main className="relative flex flex-1 items-center justify-center rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary text-body">
+				<button
+					type="button"
+					aria-label="Open sidebar"
+					onClick={openSidebar}
+					className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title sm:hidden"
+				>
+					<Icon name="grip" size={16} />
+				</button>
 				Select a deck to open it.
 			</main>
 		);
 	}
 
 	return (
-		<main className="flex flex-1 flex-col overflow-hidden rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary">
+		<main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[30px] border-[2.5px] border-border-soft bg-bg-secondary">
 			<div className="flex h-[88px] items-center gap-4 border-b-2 border-border-soft px-6">
+				<button
+					type="button"
+					aria-label="Open sidebar"
+					onClick={openSidebar}
+					className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title sm:hidden"
+				>
+					<Icon name="grip" size={16} />
+				</button>
 				<DeckTitle
 					key={selectedDeck.id}
 					deck={selectedDeck}
 					onRename={renameDeck}
 				/>
-				{memberCount >= 2 && (
-					<button
-						type="button"
-						onClick={() => setLeaderboardOpen(true)}
-						className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-border-soft bg-bg px-4 text-[15px] font-semibold text-title"
-						aria-label="Leaderboard"
-					>
-						<Icon name="party" size={20} />
-						Leaderboard
-					</button>
-				)}
-				{!selectedDeck.sharedFromDeckId && (
-					<button
-						type="button"
-						onClick={() => setSharing(true)}
-						className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
-						aria-label="Share deck"
-					>
-						<Icon name="paperplane" size={20} />
-					</button>
-				)}
+				{/* Desktop: Leaderboard + Share inline */}
+				<div className="ml-auto hidden shrink-0 items-center gap-2.5 sm:flex">
+					{memberCount >= 2 && (
+						<button
+							type="button"
+							onClick={() => setLeaderboardOpen(true)}
+							className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-border-soft bg-bg px-4 text-[15px] font-semibold text-title"
+							aria-label="Leaderboard"
+						>
+							<Icon name="party" size={20} />
+							Leaderboard
+						</button>
+					)}
+					{!selectedDeck.sharedFromDeckId && (
+						<button
+							type="button"
+							onClick={() => setSharing(true)}
+							className="flex h-[45px] w-[45px] items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
+							aria-label="Share deck"
+						>
+							<Icon name="paperplane" size={20} />
+						</button>
+					)}
+				</div>
 				<button
 					type="button"
 					disabled={!dueCount}
 					onClick={() => setStudying(true)}
-					className="flex h-[45px] items-center gap-2 rounded-full border-[2.5px] border-folder-pink/30 bg-folder-pink/15 px-5 text-[15px] font-semibold text-folder-pink disabled:opacity-40"
+					className="flex h-[45px] shrink-0 items-center gap-2 rounded-full border-[2.5px] border-folder-pink/30 bg-folder-pink/15 px-4 text-[15px] font-semibold text-folder-pink disabled:opacity-40 sm:px-5"
 				>
 					<Icon name="study-hat" size={20} />
-					Study {dueCount ?? 0}
+					{dueCount ?? 0}
+					<span className="hidden sm:inline">&nbsp;&middot;&nbsp;Study</span>
 				</button>
+				{/* Mobile: Leaderboard + Share collapse into a kebab menu. */}
+				{(memberCount >= 2 || !selectedDeck.sharedFromDeckId) && (
+					<div className="relative shrink-0 sm:hidden">
+						<button
+							type="button"
+							onClick={() => setMoreOpen((v) => !v)}
+							aria-label="More actions"
+							className="flex h-10 w-10 items-center justify-center rounded-full border-[2.5px] border-border-soft bg-bg text-title"
+						>
+							<Icon name="more" size={18} />
+						</button>
+						{moreOpen && (
+							<>
+								<button
+									type="button"
+									aria-label="Close menu"
+									onClick={() => setMoreOpen(false)}
+									className="fixed inset-0 z-40 cursor-default"
+								/>
+								<div className="absolute right-0 top-full z-50 mt-2 flex w-48 flex-col overflow-hidden rounded-[18px] border-[2.5px] border-border-soft bg-bg shadow-[0_5px_0_rgba(0,0,0,0.10)]">
+									{memberCount >= 2 && (
+										<button
+											type="button"
+											onClick={() => {
+												setMoreOpen(false);
+												setLeaderboardOpen(true);
+											}}
+											className="flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-title hover:bg-bg-secondary"
+										>
+											<Icon name="party" size={16} />
+											Leaderboard
+										</button>
+									)}
+									{!selectedDeck.sharedFromDeckId && (
+										<button
+											type="button"
+											onClick={() => {
+												setMoreOpen(false);
+												setSharing(true);
+											}}
+											className={`flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-title hover:bg-bg-secondary ${memberCount >= 2 ? "border-t-[2px] border-border-soft" : ""}`}
+										>
+											<Icon name="paperplane" size={16} />
+											Share deck
+										</button>
+									)}
+								</div>
+							</>
+						)}
+					</div>
+				)}
 			</div>
 
 			<CardStateBar cards={deckCards} />
