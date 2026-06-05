@@ -29,6 +29,7 @@ NoteDeck mixes deep individual workflows (blocks, SM-2, PDF export) with collabo
   - [Calendar](#calendar-to-stay-on-top-of-deadlines)
   - [Note chat assistant](#ask-anything-about-your-notes)
 - [Architecture](#architecture)
+- [Development workflow & quality](#development-workflow--quality)
 - [Project structure](#project-structure)
 - [Tech stack](#tech-stack)
 - [Getting started](#getting-started)
@@ -188,6 +189,81 @@ are mediated through the OpenAI API (the key never leaves the backend).
 
 A high-level ER diagram, SM-2 state diagram and use-case diagram live in
 [backend/docs/SETUP.md](backend/docs/SETUP.md).
+
+---
+
+## Development workflow & quality
+
+This section describes how the team works and how the codebase stays healthy.
+
+### Work organization
+
+- **Monorepo with Yarn 4 workspaces** — backend and frontend share a single dependency graph
+  and run side-by-side from one command (`yarn dev`).
+- **GitHub-flow on a single `main` branch** — short-lived feature branches, opened as pull
+  requests against `main`. Each PR is reviewed by at least one teammate and must clear the
+  full **Quality Gate** (see below) before it can merge.
+- **Tasks and issues on GitHub** — features and bugs are captured as GitHub issues; PRs
+  reference the issue(s) they close so the project history is self-documenting.
+- **Component-driven UI development** — every new frontend component ships with a
+  `*.stories.jsx` Storybook story (with `@storybook/test` `play` functions for interaction
+  tests), so design and behaviour are reviewable in isolation. Backend route changes update
+  `frontend/src/stories/Backend.mdx` so the API reference stays in sync.
+- **Conventions are code** — Biome enforces formatting and import order automatically, so style
+  is never a review comment.
+
+### CI / CD pipeline
+
+Every push to `main` triggers `.github/workflows/deploy.yml`, which runs five sequential jobs.
+Any failed step aborts the pipeline before deployment.
+
+| # | Job | What it checks / does |
+|---|---|---|
+| 1 | **Quality Gate** | `yarn lint` (Biome) → `yarn workspace notedeck-backend test:coverage` → `yarn workspace notedeck-frontend test:coverage` → upload lcov to **SonarCloud** and wait for the quality-gate verdict. |
+| 2 | **Build & Push Backend Image** | Multi-stage Docker build of the backend → push to `ghcr.io` (GHCR). |
+| 3 | **Build & Push Frontend Image** | Multi-stage Docker build of the Vite production bundle (served by Nginx) → push to `ghcr.io`. |
+| 4 | **Security Scan (Docker Scout)** | Scan both freshly built images for known CVEs against the Docker Scout database. |
+| 5 | **Deploy to VM** | Over SSH, upload `docker-compose.prod.yml` to the VM and `docker compose pull && up -d` the new images. |
+
+### SonarCloud quality gate
+
+The SonarCloud quality gate enforces, on **new code**:
+
+- **Coverage ≥ 80 %** (lcov from Vitest)
+- **Duplicated lines ≤ 3 %**
+- **Zero new bugs / vulnerabilities** (reliability and security rating must stay at A)
+- **Maintainability rating A** (limited technical debt)
+- **All new security hotspots reviewed**
+
+Coverage and lint configs (`sonar-project.properties`, `backend/vitest.config.ts`,
+`biome.json`) are checked into the repo and reviewed alongside the code they govern.
+
+### Quality-encoded code
+
+A handful of design decisions move quality concerns from review checklists into the code itself:
+
+- **TypeScript strict mode** on the backend; the frontend uses JSDoc / Prisma-generated types
+  where it talks to the API.
+- **Prisma as the single source of truth** for the DB schema — the `prisma:push` script means
+  the running database can never silently drift from the model.
+- **`requireAuth` middleware** is the only auth chokepoint — every route runs scoped to
+  `req.user.uid`, so authorisation is structural, not per-handler.
+- **Image upload pipeline** combines a mimetype + extension allowlist with a post-write
+  magic-byte verification and a URL allowlist for embedded images in published content
+  (`backend/src/lib/imageValidation.ts`) — uploads that fail any check are removed from disk.
+- **Atomic deck cloning** (`backend/src/lib/cloneDeck.ts`) runs inside a single Prisma
+  transaction; either the new deck + all its cards land together or neither does.
+
+### Local quality checks
+
+The same checks CI runs are available locally:
+
+```bash
+yarn lint                                  # Biome — checks formatting + lint rules
+./node_modules/.bin/biome check --fix .    # Auto-fix safe issues
+yarn test                                  # All Vitest tests
+yarn test:coverage                          # Tests + lcov coverage report Sonar reads
+```
 
 ---
 
