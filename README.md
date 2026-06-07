@@ -6,6 +6,10 @@
   <img src="frontend/public/screenshots/hero.png" alt="NoteDeck workspace" width="900"/>
 </p>
 
+<p align="center">
+  <a href="https://notedeck.derhachov.dev"><strong>Live app → notedeck.derhachov.dev</strong></a>
+</p>
+
 NoteDeck is a full-stack web application that brings together everything a student needs to learn,
 revise and stay organised: a block-based note editor, an Anki-style flashcard system with
 spaced-repetition scheduling, a built-in calendar for deadlines and exams, AI-powered content
