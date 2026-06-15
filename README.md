@@ -9,6 +9,9 @@
 <p align="center">
   <a href="https://notedeck.derhachov.dev"><strong>Live app → notedeck.derhachov.dev</strong></a>
 </p>
+<p align="center">
+🎥 [Watch the NoteDeck promo](https://youtu.be/k42crs4Pl2g)
+</p>
 
 NoteDeck is a full-stack web application that brings together everything a student needs to learn,
 revise and stay organised: a block-based note editor, an Anki-style flashcard system with
